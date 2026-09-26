@@ -1,0 +1,10 @@
+# CMake output
+build/
+
+# Generated reference firmware: copies of the Keil pack / the source firmware projects plus their
+# µVision build output (AXF, objects, listings, logs, GUI state). Recreate with scripts/.
+reference/
+
+# Keil AN198 (UVSC) package: Keil-licensed, 14 MB. Re-fetch per PROVENANCE.md.
+third_party/uvsc/*
+!third_party/uvsc/PROVENANCE.md
