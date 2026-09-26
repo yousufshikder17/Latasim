@@ -14,6 +14,12 @@ if (-not $Project) { $Project = Join-Path (Split-Path $PSScriptRoot) 'reference\
 $dst = Split-Path $Project
 $log = Join-Path $env:TEMP 'vwb-sim.log'   # LOG > rejects paths with spaces (error 10)
 
+# µVision saves a session's breakpoints into the project's .uvoptx on exit and restores
+# them after the INI runs (so an INI "BK *" can't clear them). Start every run clean,
+# using Keil's own empty form.
+$opt = [IO.Path]::ChangeExtension($Project, '.uvoptx')
+[IO.File]::WriteAllText($opt, ([regex]::Replace([IO.File]::ReadAllText($opt), '<Breakpoint>[\s\S]*?</Breakpoint>', '<Breakpoint/>')))
+
 Remove-Item $log -EA SilentlyContinue
 (Get-Content $Ini -Raw).Replace('%LOG%', $log) | Set-Content "$dst\sim.ini" -Encoding ascii
 

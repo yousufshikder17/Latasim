@@ -19,6 +19,11 @@ function Addr($sym) {
 }
 $delay = Addr 'delay'; $final = Addr 'BarrelShift'
 
+# Breakpoints saved into the project by an earlier session come back after the INI
+# runs; reset to Keil's empty form so this run starts clean (see run-sim.ps1).
+$opt = "$fw\Bitband.uvoptx"
+[IO.File]::WriteAllText($opt, ([regex]::Replace([IO.File]::ReadAllText($opt), '<Breakpoint>[\s\S]*?</Breakpoint>', '<Breakpoint/>')))
+
 Remove-Item $log -EA SilentlyContinue
 (Get-Content "$root\spikes\uvsc\bitband-observe.ini" -Raw).Replace('%LOG%', $log) | Set-Content "$fw\sim.ini" -Encoding ascii
 "uvsc_spike $fw\Bitband.uvprojx $delay $Stops $final"

@@ -135,4 +135,5 @@ The original plan said that if the reference firmware turned out to use raw regi
    - 10-port `UVSC_Init`.
    - Watchdog.
    - Hidden sessions only.
+   - Clear breakpoints saved in the project before each launch.
    - Async handshake via `UVSOCK.h`.

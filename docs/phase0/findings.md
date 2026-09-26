@@ -208,9 +208,10 @@ So `LED_On(0)` and `LPC_GPIO1->FIOSET = 1u<<28` really are the same operation on
 13. `UVSOCK.h` is missing from the official package.
 14. Commands are asynchronous, and `DBG_STATUS` polling is racy right after run commands.
 15. `-j0` sessions are invisible. Visible sessions pop up over whatever else is on screen, so B3 must always run hidden.
+16. **µVision saves a session's breakpoints into the project's `.uvoptx` on exit and restores them in the next session, after the INI has run.** Found on 2026-09-26: E5's `BA WRITE` hook came back as breakpoint #2 in a later UVSC run and halted it (`HIT_WRITE`). An INI `BK *` cannot clear them. The runners now reset `<Breakpoint>` to Keil's empty `<Breakpoint/>` before every launch; B3 must do the same.
 
 **Host-side B2 (analysis, not an experiment)**
-16. Firmware that dereferences **numeric addresses** (the bit-band test's `0x233806F0`, `0x42680060`) cannot be redirected to a host register model by swapping `LPC17xx.h`; only `LPC_GPIOn->…` accesses can.
+17. Firmware that dereferences **numeric addresses** (the bit-band test's `0x233806F0`, `0x42680060`) cannot be redirected to a host register model by swapping `LPC17xx.h`; only `LPC_GPIOn->…` accesses can.
    - Catching numeric-address writes on the host needs address-space trapping (reserve those ranges, handle the access fault, emulate the store) or compiler instrumentation.
    - Neither is proven. This is the hardest part of B2.
 
