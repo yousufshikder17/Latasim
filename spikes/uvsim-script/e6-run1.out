@@ -1,0 +1,82 @@
+uv4 exited_by_itself=True exit=0 wall=84s
+orphan_uv4=0
+DEFINE unsigned long nbytes
+DEFINE unsigned long ndump
+DEFINE unsigned long dumping
+
+SIGNAL void ssp1_tap (void) {
+  while (1) {
+    wwatch (SSP1_OUT);
+    nbytes++;
+    if (dumping && ndump < 48) {
+      printf("B%02u %02X cs=%u\n", ndump, SSP1_OUT & 0xFF, (_RDWORD(0x2009C014) >> 6) & 1);
+      ndump++;
+    }
+  }
+}
+FUNC void mark (unsigned long id) {
+  printf("MARK %u states=%u ssp1_bytes=%u\n", id, states, nbytes);
+}
+
+nbytes = 0
+ndump = 0
+dumping = 0
+ssp1_tap ()
+BS GLCD_Clear, 1, "mark(1)"
+BS GLCD_DisplayString, 1, "mark(2)"
+G, GLCD_DisplayString
+MARK 1 states=129799085 ssp1_bytes=306
+MARK 2 states=144855956 ssp1_bytes=153946
+dumping = 1
+G, GLCD_SetTextColor
+B00 70 cs=0
+B01 00 cs=0
+B02 50 cs=0
+B03 72 cs=0
+B04 00 cs=0
+B05 00 cs=0
+B06 70 cs=0
+B07 00 cs=0
+B08 51 cs=0
+B09 72 cs=0
+B10 00 cs=0
+B11 17 cs=0
+B12 70 cs=0
+B13 00 cs=0
+B14 52 cs=0
+B15 72 cs=0
+B16 00 cs=0
+B17 00 cs=0
+B18 70 cs=0
+B19 00 cs=0
+B20 53 cs=0
+B21 72 cs=0
+B22 00 cs=0
+B23 0F cs=0
+B24 70 cs=0
+B25 00 cs=0
+B26 20 cs=0
+B27 72 cs=0
+B28 00 cs=0
+B29 00 cs=0
+B30 70 cs=0
+B31 00 cs=0
+B32 21 cs=0
+B33 72 cs=0
+B34 00 cs=0
+B35 00 cs=0
+B36 70 cs=0
+B37 00 cs=0
+B38 22 cs=0
+B39 72 cs=0
+B40 00 cs=0
+B41 1F cs=0
+B42 00 cs=0
+B43 1F cs=0
+B44 00 cs=0
+B45 1F cs=0
+B46 00 cs=0
+B47 1F cs=0
+mark (3)
+MARK 3 states=146473247 ssp1_bytes=170106
+LOG OFF
