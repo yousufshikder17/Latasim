@@ -1,0 +1,1062 @@
+
+00:00:02.00 [T->] CUv3Client::GEN_GET_VERSION()
+00:00:02.00 [-->] [GEN_GET_VERSION      ] 
+00:00:02.01 [<--] [GEN_GET_VERSION      ] [(nVal) 229]
+00:00:02.01 [<-T] CUv3Client::GEN_GET_VERSION() = UVSC_STATUS_SUCCESS         
+00:00:02.01 [T->] CUv3Client::DBG_ENTER()
+00:00:02.01 [-->] [DBG_ENTER            ] 
+00:00:02.04 [<--] [DBG_ENTER            ] [OK]
+00:00:02.32 [<==] [DBG_CMD_OUTPUT       ] [(SSTR) Running with Code Size Limit: 32K]
+00:00:02.32 [<==] [DBG_CMD_OUTPUT       ] [(SSTR) Load "%USERPROFILE%\\Projects\\Developer Tools\\Virtual Workbench\\reference\\bitband-test\\Objects\\Bitband.axf" ]
+00:00:02.32 [<==] [PRJ_PBAR_INIT        ] [OK                        (100)]
+00:00:02.32 [<==] [PRJ_PBAR_TEXT        ] [OK                        (Loading object code...)]
+00:00:02.32 [<==] [PRJ_PBAR_SET         ] [OK                        (100)]
+00:00:02.39 [<==] [PRJ_PBAR_STOP        ] [OK                        (0)]
+00:00:02.61 [<==] [DBG_RESET            ] [OK]
+00:00:03.86 [<==] [DBG_CMD_OUTPUT       ] [(SSTR) Include "%USERPROFILE%\\Projects\\Developer Tools\\Virtual Workbench\\reference\\bitband-test\\sim.ini" ]
+00:00:03.86 [<==] [DBG_CMD_OUTPUT       ] [(SSTR) // INI for the UVSC spike on the bit-band test snapshot (installed as sim.ini, run at DBG_ENTER).]
+00:00:03.86 [<==] [DBG_CMD_OUTPUT       ] [(SSTR) // No G / EXIT: execution is driven over UVSC. Pins are logged at every delay() entry]
+00:00:03.86 [<==] [DBG_CMD_OUTPUT       ] [(SSTR) // (= after each LED operation); the LOG is closed at BarrelShift (the spike's final stop).]
+00:00:03.86 [<==] [DBG_CMD_OUTPUT       ] [(SSTR) LOG >%USERPROFILE%\AppData\Local\Temp\vwb-sim.log]
+00:00:03.86 [<==] [DBG_CMD_OUTPUT       ] [(SSTR) FUNC void snap (void) {]
+00:00:03.86 [<==] [DBG_CMD_OUTPUT       ] [(SSTR)   printf("SNAP states=%u P1.28=%u P1.27=%u P2.2=%u\n", states,]
+00:00:03.86 [<==] [DBG_CMD_OUTPUT       ] [(SSTR)          (_RDWORD(0x2009C034) >> 28) & 1, (_RDWORD(0x2009C034) >> 27) & 1, (_RDWORD(0x2009C054) >> 2) & 1);]
+00:00:03.86 [<==] [DBG_CMD_OUTPUT       ] [(SSTR) }]
+00:00:03.86 [<==] [DBG_CMD_OUTPUT       ] [(SSTR) FUNC void fin (void) {]
+00:00:03.86 [<==] [DBG_CMD_OUTPUT       ] [(SSTR)   snap();]
+00:00:03.86 [<==] [DBG_CMD_OUTPUT       ] [(SSTR)   exec("LOG OFF");   // flush; the post-reset SNAP is checked in the UVSC wire log instead]
+00:00:03.86 [<==] [DBG_CMD_OUTPUT       ] [(SSTR) }]
+00:00:03.86 [<==] [DBG_CMD_OUTPUT       ] [(SSTR) BS delay, 1, "snap()"]
+00:00:03.87 [<==] [DBG_CHANGE_BP        ] [(BKRSP) Type:Exec cmdRsp.status=BP_CREATED Addr:0x000007B6 Count:1 nTickMark:0x00000001 Expr:delay]
+00:00:03.87 [<==] [DBG_CMD_OUTPUT       ] [(SSTR) BS BarrelShift, 1, "fin()"]
+00:00:03.89 [<==] [DBG_CHANGE_BP        ] [(BKRSP) Type:Exec cmdRsp.status=BP_CREATED Addr:0x000005B0 Count:1 nTickMark:0x00000002 Expr:BarrelShift]
+00:00:03.89 [<==] [DBG_CMD_OUTPUT       ] [(SSTR) ]
+00:00:03.89 [<==] [DBG_ENTER            ] [OK]
+00:00:03.89 [-->] [GEN_CPLX_COMPLETE    ] 
+00:00:03.92 [<==] [DBG_START_EXECUTION  ] [OK]
+00:00:03.92 [<--] [GEN_CPLX_COMPLETE    ] [OK]
+00:00:03.92 [<-T] CUv3Client::DBG_ENTER() = UVSC_STATUS_SUCCESS         
+00:00:04.04 [<==] [DBG_STOP_EXECUTION   ] [(BPREASON) eReason:EXEC nPC:0x000007EC nAdr:0x000007EC nBpNum:-1 nTickMark:0x00000000 ]
+00:00:06.92 [T->] CUv3Client::DBG_STATUS()
+00:00:06.92 [-->] [DBG_STATUS           ] 
+00:00:06.93 [<--] [DBG_STATUS           ] [(nVal) Stopped]
+00:00:06.93 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:06.93 [T->] CUv3Client::DBG_RUN_TO_ADDRESS()
+00:00:06.93 [-->] [DBG_RUN_TO_ADDRESS   ] [???]
+00:00:06.96 [<--] [DBG_RUN_TO_ADDRESS   ] [???]
+00:00:06.96 [<==] [DBG_START_EXECUTION  ] [OK]
+00:00:06.96 [-->] [GEN_CPLX_COMPLETE    ] 
+00:00:06.96 [<==] [UV_DBG_SERIAL_OUTPUT ] [(SERIO) Channel:3 Count:1 Data: 0A  String:"
+"]
+00:00:06.96 [<==] [UV_DBG_SERIAL_OUTPUT ] [(SERIO) Channel:3 Count:10 Data: 4D 61 73 6B 20 6D 6F 64 65 0A  String:"Mask mode
+"]
+00:00:06.98 [<==] [UV_DBG_SERIAL_OUTPUT ] [(SERIO) Channel:3 Count:18 Data: 41 64 64 72 3A 20 30 78 30 31 30 30 30 30 30 31 20 0A  String:"Addr: 0x01000001 
+"]
+00:00:06.98 [<==] [UV_DBG_SERIAL_OUTPUT ] [(SERIO) Channel:3 Count:18 Data: 41 64 64 72 3A 20 30 78 30 30 30 30 30 30 30 31 20 0A  String:"Addr: 0x00000001 
+"]
+00:00:06.98 [<==] [DBG_CMD_OUTPUT       ] [(SSTR) SNAP states=9101 P1.28=0 P1.27=1 P2.2=0]
+00:00:06.98 [<==] [DBG_STOP_EXECUTION   ] [(BPREASON) eReason:EXEC nPC:0x000007B6 nAdr:0x000007B6 nBpNum:0 nTickMark:0x00000001 ]
+00:00:07.00 [<--] [GEN_CPLX_COMPLETE    ] [OK]
+00:00:07.00 [<-T] CUv3Client::DBG_RUN_TO_ADDRESS() = UVSC_STATUS_SUCCESS         
+00:00:07.00 [T->] CUv3Client::DBG_STATUS()
+00:00:07.00 [-->] [DBG_STATUS           ] 
+00:00:07.03 [<--] [DBG_STATUS           ] [(nVal) Stopped]
+00:00:07.03 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:07.03 [T->] CUv3Client::DBG_RUN_TO_ADDRESS()
+00:00:07.03 [-->] [DBG_RUN_TO_ADDRESS   ] [???]
+00:00:07.06 [<--] [DBG_RUN_TO_ADDRESS   ] [???]
+00:00:07.06 [<==] [DBG_START_EXECUTION  ] [OK]
+00:00:07.06 [-->] [GEN_CPLX_COMPLETE    ] 
+00:00:07.09 [<--] [GEN_CPLX_COMPLETE    ] [OK]
+00:00:07.09 [<-T] CUv3Client::DBG_RUN_TO_ADDRESS() = UVSC_STATUS_SUCCESS         
+00:00:07.09 [T->] CUv3Client::DBG_STATUS()
+00:00:07.09 [-->] [DBG_STATUS           ] 
+00:00:07.12 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:07.12 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:07.23 [T->] CUv3Client::DBG_STATUS()
+00:00:07.23 [-->] [DBG_STATUS           ] 
+00:00:07.25 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:07.25 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:07.36 [T->] CUv3Client::DBG_STATUS()
+00:00:07.36 [-->] [DBG_STATUS           ] 
+00:00:07.37 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:07.37 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:07.48 [T->] CUv3Client::DBG_STATUS()
+00:00:07.48 [-->] [DBG_STATUS           ] 
+00:00:07.50 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:07.50 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:07.59 [T->] CUv3Client::DBG_STATUS()
+00:00:07.59 [-->] [DBG_STATUS           ] 
+00:00:07.62 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:07.62 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:07.71 [T->] CUv3Client::DBG_STATUS()
+00:00:07.71 [-->] [DBG_STATUS           ] 
+00:00:07.73 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:07.73 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:07.84 [T->] CUv3Client::DBG_STATUS()
+00:00:07.84 [-->] [DBG_STATUS           ] 
+00:00:07.86 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:07.86 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:07.96 [T->] CUv3Client::DBG_STATUS()
+00:00:07.96 [-->] [DBG_STATUS           ] 
+00:00:07.98 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:07.98 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:08.09 [T->] CUv3Client::DBG_STATUS()
+00:00:08.09 [-->] [DBG_STATUS           ] 
+00:00:08.11 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:08.11 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:08.21 [T->] CUv3Client::DBG_STATUS()
+00:00:08.21 [-->] [DBG_STATUS           ] 
+00:00:08.23 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:08.23 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:08.32 [T->] CUv3Client::DBG_STATUS()
+00:00:08.32 [-->] [DBG_STATUS           ] 
+00:00:08.34 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:08.34 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:08.45 [T->] CUv3Client::DBG_STATUS()
+00:00:08.45 [-->] [DBG_STATUS           ] 
+00:00:08.46 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:08.46 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:08.57 [T->] CUv3Client::DBG_STATUS()
+00:00:08.57 [-->] [DBG_STATUS           ] 
+00:00:08.59 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:08.59 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:08.70 [T->] CUv3Client::DBG_STATUS()
+00:00:08.70 [-->] [DBG_STATUS           ] 
+00:00:08.71 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:08.71 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:08.81 [T->] CUv3Client::DBG_STATUS()
+00:00:08.81 [-->] [DBG_STATUS           ] 
+00:00:08.82 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:08.82 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:08.93 [T->] CUv3Client::DBG_STATUS()
+00:00:08.93 [-->] [DBG_STATUS           ] 
+00:00:08.95 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:08.95 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:09.06 [T->] CUv3Client::DBG_STATUS()
+00:00:09.06 [-->] [DBG_STATUS           ] 
+00:00:09.07 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:09.07 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:09.18 [T->] CUv3Client::DBG_STATUS()
+00:00:09.18 [-->] [DBG_STATUS           ] 
+00:00:09.20 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:09.20 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:09.31 [T->] CUv3Client::DBG_STATUS()
+00:00:09.31 [-->] [DBG_STATUS           ] 
+00:00:09.32 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:09.32 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:09.42 [T->] CUv3Client::DBG_STATUS()
+00:00:09.42 [-->] [DBG_STATUS           ] 
+00:00:09.43 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:09.43 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:09.54 [T->] CUv3Client::DBG_STATUS()
+00:00:09.54 [-->] [DBG_STATUS           ] 
+00:00:09.56 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:09.56 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:09.67 [T->] CUv3Client::DBG_STATUS()
+00:00:09.67 [-->] [DBG_STATUS           ] 
+00:00:09.68 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:09.68 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:09.79 [T->] CUv3Client::DBG_STATUS()
+00:00:09.79 [-->] [DBG_STATUS           ] 
+00:00:09.81 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:09.81 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:09.92 [T->] CUv3Client::DBG_STATUS()
+00:00:09.92 [-->] [DBG_STATUS           ] 
+00:00:09.93 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:09.93 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:10.03 [T->] CUv3Client::DBG_STATUS()
+00:00:10.03 [-->] [DBG_STATUS           ] 
+00:00:10.04 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:10.04 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:10.15 [T->] CUv3Client::DBG_STATUS()
+00:00:10.15 [-->] [DBG_STATUS           ] 
+00:00:10.17 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:10.17 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:10.28 [T->] CUv3Client::DBG_STATUS()
+00:00:10.28 [-->] [DBG_STATUS           ] 
+00:00:10.29 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:10.29 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:10.40 [T->] CUv3Client::DBG_STATUS()
+00:00:10.40 [-->] [DBG_STATUS           ] 
+00:00:10.42 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:10.42 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:10.53 [T->] CUv3Client::DBG_STATUS()
+00:00:10.53 [-->] [DBG_STATUS           ] 
+00:00:10.54 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:10.54 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:10.64 [T->] CUv3Client::DBG_STATUS()
+00:00:10.64 [-->] [DBG_STATUS           ] 
+00:00:10.65 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:10.65 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:10.76 [T->] CUv3Client::DBG_STATUS()
+00:00:10.76 [-->] [DBG_STATUS           ] 
+00:00:10.78 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:10.78 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:10.89 [T->] CUv3Client::DBG_STATUS()
+00:00:10.89 [-->] [DBG_STATUS           ] 
+00:00:10.90 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:10.90 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:11.01 [T->] CUv3Client::DBG_STATUS()
+00:00:11.01 [-->] [DBG_STATUS           ] 
+00:00:11.03 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:11.03 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:11.14 [T->] CUv3Client::DBG_STATUS()
+00:00:11.14 [-->] [DBG_STATUS           ] 
+00:00:11.15 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:11.15 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:11.25 [T->] CUv3Client::DBG_STATUS()
+00:00:11.25 [-->] [DBG_STATUS           ] 
+00:00:11.26 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:11.26 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:11.37 [T->] CUv3Client::DBG_STATUS()
+00:00:11.37 [-->] [DBG_STATUS           ] 
+00:00:11.39 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:11.39 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:11.50 [T->] CUv3Client::DBG_STATUS()
+00:00:11.50 [-->] [DBG_STATUS           ] 
+00:00:11.51 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:11.51 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:11.57 [<==] [DBG_CMD_OUTPUT       ] [(SSTR) SNAP states=10009142 P1.28=1 P1.27=1 P2.2=1]
+00:00:11.59 [<==] [DBG_STOP_EXECUTION   ] [(BPREASON) eReason:EXEC nPC:0x000007B6 nAdr:0x000007B6 nBpNum:0 nTickMark:0x00000001 ]
+00:00:11.62 [T->] CUv3Client::DBG_STATUS()
+00:00:11.62 [-->] [DBG_STATUS           ] 
+00:00:11.64 [<--] [DBG_STATUS           ] [(nVal) Stopped]
+00:00:11.64 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:11.64 [T->] CUv3Client::DBG_RUN_TO_ADDRESS()
+00:00:11.64 [-->] [DBG_RUN_TO_ADDRESS   ] [???]
+00:00:11.67 [<--] [DBG_RUN_TO_ADDRESS   ] [???]
+00:00:11.67 [<==] [DBG_START_EXECUTION  ] [OK]
+00:00:11.67 [-->] [GEN_CPLX_COMPLETE    ] 
+00:00:11.68 [<--] [GEN_CPLX_COMPLETE    ] [OK]
+00:00:11.68 [<-T] CUv3Client::DBG_RUN_TO_ADDRESS() = UVSC_STATUS_SUCCESS         
+00:00:11.68 [T->] CUv3Client::DBG_STATUS()
+00:00:11.68 [-->] [DBG_STATUS           ] 
+00:00:11.71 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:11.71 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:11.82 [T->] CUv3Client::DBG_STATUS()
+00:00:11.82 [-->] [DBG_STATUS           ] 
+00:00:11.84 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:11.84 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:11.95 [T->] CUv3Client::DBG_STATUS()
+00:00:11.95 [-->] [DBG_STATUS           ] 
+00:00:11.96 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:11.96 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:12.07 [T->] CUv3Client::DBG_STATUS()
+00:00:12.07 [-->] [DBG_STATUS           ] 
+00:00:12.09 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:12.09 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:12.20 [T->] CUv3Client::DBG_STATUS()
+00:00:12.20 [-->] [DBG_STATUS           ] 
+00:00:12.21 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:12.21 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:12.32 [T->] CUv3Client::DBG_STATUS()
+00:00:12.32 [-->] [DBG_STATUS           ] 
+00:00:12.36 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:12.36 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:12.46 [T->] CUv3Client::DBG_STATUS()
+00:00:12.46 [-->] [DBG_STATUS           ] 
+00:00:12.48 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:12.48 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:12.59 [T->] CUv3Client::DBG_STATUS()
+00:00:12.59 [-->] [DBG_STATUS           ] 
+00:00:12.61 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:12.61 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:12.71 [T->] CUv3Client::DBG_STATUS()
+00:00:12.71 [-->] [DBG_STATUS           ] 
+00:00:12.73 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:12.73 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:12.84 [T->] CUv3Client::DBG_STATUS()
+00:00:12.84 [-->] [DBG_STATUS           ] 
+00:00:12.86 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:12.86 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:12.96 [T->] CUv3Client::DBG_STATUS()
+00:00:12.96 [-->] [DBG_STATUS           ] 
+00:00:12.98 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:12.98 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:13.07 [T->] CUv3Client::DBG_STATUS()
+00:00:13.07 [-->] [DBG_STATUS           ] 
+00:00:13.09 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:13.09 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:13.20 [T->] CUv3Client::DBG_STATUS()
+00:00:13.20 [-->] [DBG_STATUS           ] 
+00:00:13.21 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:13.21 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:13.32 [T->] CUv3Client::DBG_STATUS()
+00:00:13.32 [-->] [DBG_STATUS           ] 
+00:00:13.34 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:13.34 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:13.45 [T->] CUv3Client::DBG_STATUS()
+00:00:13.45 [-->] [DBG_STATUS           ] 
+00:00:13.46 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:13.46 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:13.56 [T->] CUv3Client::DBG_STATUS()
+00:00:13.57 [-->] [DBG_STATUS           ] 
+00:00:13.59 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:13.59 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:13.68 [T->] CUv3Client::DBG_STATUS()
+00:00:13.68 [-->] [DBG_STATUS           ] 
+00:00:13.70 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:13.70 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:13.81 [T->] CUv3Client::DBG_STATUS()
+00:00:13.81 [-->] [DBG_STATUS           ] 
+00:00:13.82 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:13.82 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:13.93 [T->] CUv3Client::DBG_STATUS()
+00:00:13.93 [-->] [DBG_STATUS           ] 
+00:00:13.95 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:13.95 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:14.06 [T->] CUv3Client::DBG_STATUS()
+00:00:14.06 [-->] [DBG_STATUS           ] 
+00:00:14.07 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:14.07 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:14.18 [T->] CUv3Client::DBG_STATUS()
+00:00:14.18 [-->] [DBG_STATUS           ] 
+00:00:14.20 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:14.20 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:14.29 [T->] CUv3Client::DBG_STATUS()
+00:00:14.29 [-->] [DBG_STATUS           ] 
+00:00:14.31 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:14.31 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:14.42 [T->] CUv3Client::DBG_STATUS()
+00:00:14.42 [-->] [DBG_STATUS           ] 
+00:00:14.43 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:14.43 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:14.54 [T->] CUv3Client::DBG_STATUS()
+00:00:14.54 [-->] [DBG_STATUS           ] 
+00:00:14.56 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:14.56 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:14.67 [T->] CUv3Client::DBG_STATUS()
+00:00:14.67 [-->] [DBG_STATUS           ] 
+00:00:14.68 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:14.68 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:14.79 [T->] CUv3Client::DBG_STATUS()
+00:00:14.79 [-->] [DBG_STATUS           ] 
+00:00:14.81 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:14.81 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:14.90 [T->] CUv3Client::DBG_STATUS()
+00:00:14.90 [-->] [DBG_STATUS           ] 
+00:00:14.93 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:14.93 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:15.03 [T->] CUv3Client::DBG_STATUS()
+00:00:15.03 [-->] [DBG_STATUS           ] 
+00:00:15.04 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:15.04 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:15.15 [T->] CUv3Client::DBG_STATUS()
+00:00:15.15 [-->] [DBG_STATUS           ] 
+00:00:15.17 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:15.17 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:15.28 [T->] CUv3Client::DBG_STATUS()
+00:00:15.28 [-->] [DBG_STATUS           ] 
+00:00:15.29 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:15.29 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:15.40 [T->] CUv3Client::DBG_STATUS()
+00:00:15.40 [-->] [DBG_STATUS           ] 
+00:00:15.42 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:15.42 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:15.51 [T->] CUv3Client::DBG_STATUS()
+00:00:15.51 [-->] [DBG_STATUS           ] 
+00:00:15.54 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:15.54 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:15.64 [T->] CUv3Client::DBG_STATUS()
+00:00:15.64 [-->] [DBG_STATUS           ] 
+00:00:15.65 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:15.65 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:15.76 [T->] CUv3Client::DBG_STATUS()
+00:00:15.76 [-->] [DBG_STATUS           ] 
+00:00:15.78 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:15.78 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:15.86 [<==] [UV_DBG_SERIAL_OUTPUT ] [(SERIO) Channel:3 Count:1 Data: 0A  String:"
+"]
+00:00:15.86 [<==] [UV_DBG_SERIAL_OUTPUT ] [(SERIO) Channel:3 Count:14 Data: 66 75 6E 63 74 69 6F 6E 20 6D 6F 64 65 0A  String:"function mode
+"]
+00:00:15.86 [<==] [UV_DBG_SERIAL_OUTPUT ] [(SERIO) Channel:3 Count:18 Data: 41 64 64 72 3A 20 30 78 30 30 30 30 30 30 30 31 20 0A  String:"Addr: 0x00000001 
+"]
+00:00:15.86 [<==] [UV_DBG_SERIAL_OUTPUT ] [(SERIO) Channel:3 Count:18 Data: 41 64 64 72 3A 20 30 78 30 31 30 30 30 30 30 31 20 0A  String:"Addr: 0x01000001 
+"]
+00:00:15.86 [<==] [UV_DBG_SERIAL_OUTPUT ] [(SERIO) Channel:3 Count:18 Data: 41 64 64 72 3A 20 30 78 30 30 30 30 30 30 30 31 20 0A  String:"Addr: 0x00000001 
+"]
+00:00:15.86 [<==] [DBG_CMD_OUTPUT       ] [(SSTR) SNAP states=20014175 P1.28=0 P1.27=1 P2.2=0]
+00:00:15.87 [<==] [DBG_STOP_EXECUTION   ] [(BPREASON) eReason:EXEC nPC:0x000007B6 nAdr:0x000007B6 nBpNum:0 nTickMark:0x00000001 ]
+00:00:15.89 [T->] CUv3Client::DBG_STATUS()
+00:00:15.89 [-->] [DBG_STATUS           ] 
+00:00:15.90 [<--] [DBG_STATUS           ] [(nVal) Stopped]
+00:00:15.90 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:15.90 [T->] CUv3Client::DBG_RUN_TO_ADDRESS()
+00:00:15.90 [-->] [DBG_RUN_TO_ADDRESS   ] [???]
+00:00:15.93 [<--] [DBG_RUN_TO_ADDRESS   ] [???]
+00:00:15.93 [<==] [DBG_START_EXECUTION  ] [OK]
+00:00:15.93 [-->] [GEN_CPLX_COMPLETE    ] 
+00:00:15.96 [<--] [GEN_CPLX_COMPLETE    ] [OK]
+00:00:15.96 [<-T] CUv3Client::DBG_RUN_TO_ADDRESS() = UVSC_STATUS_SUCCESS         
+00:00:15.96 [T->] CUv3Client::DBG_STATUS()
+00:00:15.96 [-->] [DBG_STATUS           ] 
+00:00:16.00 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:16.00 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:16.11 [T->] CUv3Client::DBG_STATUS()
+00:00:16.11 [-->] [DBG_STATUS           ] 
+00:00:16.11 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:16.12 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:16.21 [T->] CUv3Client::DBG_STATUS()
+00:00:16.21 [-->] [DBG_STATUS           ] 
+00:00:16.23 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:16.23 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:16.34 [T->] CUv3Client::DBG_STATUS()
+00:00:16.34 [-->] [DBG_STATUS           ] 
+00:00:16.36 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:16.36 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:16.46 [T->] CUv3Client::DBG_STATUS()
+00:00:16.46 [-->] [DBG_STATUS           ] 
+00:00:16.48 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:16.48 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:16.59 [T->] CUv3Client::DBG_STATUS()
+00:00:16.59 [-->] [DBG_STATUS           ] 
+00:00:16.61 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:16.61 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:16.70 [T->] CUv3Client::DBG_STATUS()
+00:00:16.70 [-->] [DBG_STATUS           ] 
+00:00:16.71 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:16.73 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:16.82 [T->] CUv3Client::DBG_STATUS()
+00:00:16.82 [-->] [DBG_STATUS           ] 
+00:00:16.84 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:16.84 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:16.95 [T->] CUv3Client::DBG_STATUS()
+00:00:16.95 [-->] [DBG_STATUS           ] 
+00:00:16.96 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:16.96 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:17.07 [T->] CUv3Client::DBG_STATUS()
+00:00:17.07 [-->] [DBG_STATUS           ] 
+00:00:17.09 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:17.09 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:17.20 [T->] CUv3Client::DBG_STATUS()
+00:00:17.20 [-->] [DBG_STATUS           ] 
+00:00:17.21 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:17.21 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:17.32 [T->] CUv3Client::DBG_STATUS()
+00:00:17.32 [-->] [DBG_STATUS           ] 
+00:00:17.34 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:17.34 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:17.43 [T->] CUv3Client::DBG_STATUS()
+00:00:17.43 [-->] [DBG_STATUS           ] 
+00:00:17.45 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:17.45 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:17.56 [T->] CUv3Client::DBG_STATUS()
+00:00:17.56 [-->] [DBG_STATUS           ] 
+00:00:17.57 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:17.57 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:17.68 [T->] CUv3Client::DBG_STATUS()
+00:00:17.68 [-->] [DBG_STATUS           ] 
+00:00:17.70 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:17.70 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:17.81 [T->] CUv3Client::DBG_STATUS()
+00:00:17.81 [-->] [DBG_STATUS           ] 
+00:00:17.82 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:17.82 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:17.92 [T->] CUv3Client::DBG_STATUS()
+00:00:17.92 [-->] [DBG_STATUS           ] 
+00:00:17.93 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:17.93 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:18.04 [T->] CUv3Client::DBG_STATUS()
+00:00:18.04 [-->] [DBG_STATUS           ] 
+00:00:18.06 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:18.06 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:18.17 [T->] CUv3Client::DBG_STATUS()
+00:00:18.17 [-->] [DBG_STATUS           ] 
+00:00:18.18 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:18.18 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:18.29 [T->] CUv3Client::DBG_STATUS()
+00:00:18.29 [-->] [DBG_STATUS           ] 
+00:00:18.31 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:18.31 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:18.40 [T->] CUv3Client::DBG_STATUS()
+00:00:18.40 [-->] [DBG_STATUS           ] 
+00:00:18.42 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:18.42 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:18.53 [T->] CUv3Client::DBG_STATUS()
+00:00:18.53 [-->] [DBG_STATUS           ] 
+00:00:18.54 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:18.54 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:18.65 [T->] CUv3Client::DBG_STATUS()
+00:00:18.65 [-->] [DBG_STATUS           ] 
+00:00:18.67 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:18.67 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:18.78 [T->] CUv3Client::DBG_STATUS()
+00:00:18.78 [-->] [DBG_STATUS           ] 
+00:00:18.79 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:18.79 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:18.90 [T->] CUv3Client::DBG_STATUS()
+00:00:18.90 [-->] [DBG_STATUS           ] 
+00:00:18.92 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:18.92 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:19.01 [T->] CUv3Client::DBG_STATUS()
+00:00:19.01 [-->] [DBG_STATUS           ] 
+00:00:19.03 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:19.03 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:19.14 [T->] CUv3Client::DBG_STATUS()
+00:00:19.14 [-->] [DBG_STATUS           ] 
+00:00:19.15 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:19.15 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:19.26 [T->] CUv3Client::DBG_STATUS()
+00:00:19.26 [-->] [DBG_STATUS           ] 
+00:00:19.28 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:19.28 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:19.39 [T->] CUv3Client::DBG_STATUS()
+00:00:19.39 [-->] [DBG_STATUS           ] 
+00:00:19.40 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:19.40 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:19.51 [T->] CUv3Client::DBG_STATUS()
+00:00:19.51 [-->] [DBG_STATUS           ] 
+00:00:19.53 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:19.53 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:19.62 [T->] CUv3Client::DBG_STATUS()
+00:00:19.62 [-->] [DBG_STATUS           ] 
+00:00:19.64 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:19.64 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:19.75 [T->] CUv3Client::DBG_STATUS()
+00:00:19.75 [-->] [DBG_STATUS           ] 
+00:00:19.76 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:19.76 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:19.87 [T->] CUv3Client::DBG_STATUS()
+00:00:19.87 [-->] [DBG_STATUS           ] 
+00:00:19.89 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:19.89 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:20.00 [T->] CUv3Client::DBG_STATUS()
+00:00:20.00 [-->] [DBG_STATUS           ] 
+00:00:20.01 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:20.01 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:20.12 [T->] CUv3Client::DBG_STATUS()
+00:00:20.12 [-->] [DBG_STATUS           ] 
+00:00:20.14 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:20.14 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:20.17 [<==] [DBG_CMD_OUTPUT       ] [(SSTR) SNAP states=30014237 P1.28=1 P1.27=1 P2.2=1]
+00:00:20.17 [<==] [DBG_STOP_EXECUTION   ] [(BPREASON) eReason:EXEC nPC:0x000007B6 nAdr:0x000007B6 nBpNum:0 nTickMark:0x00000001 ]
+00:00:20.23 [T->] CUv3Client::DBG_STATUS()
+00:00:20.23 [-->] [DBG_STATUS           ] 
+00:00:20.25 [<--] [DBG_STATUS           ] [(nVal) Stopped]
+00:00:20.25 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:20.25 [T->] CUv3Client::DBG_RUN_TO_ADDRESS()
+00:00:20.25 [-->] [DBG_RUN_TO_ADDRESS   ] [???]
+00:00:20.28 [<--] [DBG_RUN_TO_ADDRESS   ] [???]
+00:00:20.28 [<==] [DBG_START_EXECUTION  ] [OK]
+00:00:20.28 [-->] [GEN_CPLX_COMPLETE    ] 
+00:00:20.31 [<--] [GEN_CPLX_COMPLETE    ] [OK]
+00:00:20.31 [<-T] CUv3Client::DBG_RUN_TO_ADDRESS() = UVSC_STATUS_SUCCESS         
+00:00:20.31 [T->] CUv3Client::DBG_STATUS()
+00:00:20.31 [-->] [DBG_STATUS           ] 
+00:00:20.34 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:20.34 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:20.45 [T->] CUv3Client::DBG_STATUS()
+00:00:20.45 [-->] [DBG_STATUS           ] 
+00:00:20.46 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:20.46 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:20.57 [T->] CUv3Client::DBG_STATUS()
+00:00:20.57 [-->] [DBG_STATUS           ] 
+00:00:20.59 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:20.59 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:20.70 [T->] CUv3Client::DBG_STATUS()
+00:00:20.70 [-->] [DBG_STATUS           ] 
+00:00:20.71 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:20.71 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:20.81 [T->] CUv3Client::DBG_STATUS()
+00:00:20.81 [-->] [DBG_STATUS           ] 
+00:00:20.82 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:20.82 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:20.93 [T->] CUv3Client::DBG_STATUS()
+00:00:20.93 [-->] [DBG_STATUS           ] 
+00:00:20.95 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:20.95 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:21.06 [T->] CUv3Client::DBG_STATUS()
+00:00:21.06 [-->] [DBG_STATUS           ] 
+00:00:21.07 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:21.07 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:21.18 [T->] CUv3Client::DBG_STATUS()
+00:00:21.18 [-->] [DBG_STATUS           ] 
+00:00:21.20 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:21.20 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:21.29 [T->] CUv3Client::DBG_STATUS()
+00:00:21.29 [-->] [DBG_STATUS           ] 
+00:00:21.31 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:21.31 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:21.42 [T->] CUv3Client::DBG_STATUS()
+00:00:21.42 [-->] [DBG_STATUS           ] 
+00:00:21.43 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:21.43 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:21.54 [T->] CUv3Client::DBG_STATUS()
+00:00:21.54 [-->] [DBG_STATUS           ] 
+00:00:21.56 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:21.56 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:21.67 [T->] CUv3Client::DBG_STATUS()
+00:00:21.67 [-->] [DBG_STATUS           ] 
+00:00:21.68 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:21.68 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:21.79 [T->] CUv3Client::DBG_STATUS()
+00:00:21.79 [-->] [DBG_STATUS           ] 
+00:00:21.81 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:21.81 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:21.90 [T->] CUv3Client::DBG_STATUS()
+00:00:21.90 [-->] [DBG_STATUS           ] 
+00:00:21.92 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:21.92 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:22.03 [T->] CUv3Client::DBG_STATUS()
+00:00:22.03 [-->] [DBG_STATUS           ] 
+00:00:22.04 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:22.04 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:22.15 [T->] CUv3Client::DBG_STATUS()
+00:00:22.15 [-->] [DBG_STATUS           ] 
+00:00:22.17 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:22.17 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:22.28 [T->] CUv3Client::DBG_STATUS()
+00:00:22.28 [-->] [DBG_STATUS           ] 
+00:00:22.29 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:22.29 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:22.40 [T->] CUv3Client::DBG_STATUS()
+00:00:22.40 [-->] [DBG_STATUS           ] 
+00:00:22.42 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:22.42 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:22.53 [T->] CUv3Client::DBG_STATUS()
+00:00:22.53 [-->] [DBG_STATUS           ] 
+00:00:22.54 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:22.54 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:22.64 [T->] CUv3Client::DBG_STATUS()
+00:00:22.64 [-->] [DBG_STATUS           ] 
+00:00:22.65 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:22.65 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:22.76 [T->] CUv3Client::DBG_STATUS()
+00:00:22.76 [-->] [DBG_STATUS           ] 
+00:00:22.78 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:22.78 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:22.89 [T->] CUv3Client::DBG_STATUS()
+00:00:22.89 [-->] [DBG_STATUS           ] 
+00:00:22.90 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:22.90 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:23.01 [T->] CUv3Client::DBG_STATUS()
+00:00:23.01 [-->] [DBG_STATUS           ] 
+00:00:23.03 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:23.03 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:23.14 [T->] CUv3Client::DBG_STATUS()
+00:00:23.14 [-->] [DBG_STATUS           ] 
+00:00:23.15 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:23.15 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:23.25 [T->] CUv3Client::DBG_STATUS()
+00:00:23.25 [-->] [DBG_STATUS           ] 
+00:00:23.26 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:23.26 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:23.37 [T->] CUv3Client::DBG_STATUS()
+00:00:23.37 [-->] [DBG_STATUS           ] 
+00:00:23.39 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:23.39 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:23.50 [T->] CUv3Client::DBG_STATUS()
+00:00:23.50 [-->] [DBG_STATUS           ] 
+00:00:23.51 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:23.51 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:23.62 [T->] CUv3Client::DBG_STATUS()
+00:00:23.62 [-->] [DBG_STATUS           ] 
+00:00:23.64 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:23.64 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:23.75 [T->] CUv3Client::DBG_STATUS()
+00:00:23.75 [-->] [DBG_STATUS           ] 
+00:00:23.76 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:23.76 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:23.87 [T->] CUv3Client::DBG_STATUS()
+00:00:23.87 [-->] [DBG_STATUS           ] 
+00:00:23.89 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:23.89 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:23.98 [T->] CUv3Client::DBG_STATUS()
+00:00:23.98 [-->] [DBG_STATUS           ] 
+00:00:24.00 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:24.00 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:24.11 [T->] CUv3Client::DBG_STATUS()
+00:00:24.11 [-->] [DBG_STATUS           ] 
+00:00:24.12 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:24.12 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:24.23 [T->] CUv3Client::DBG_STATUS()
+00:00:24.23 [-->] [DBG_STATUS           ] 
+00:00:24.25 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:24.25 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:24.36 [T->] CUv3Client::DBG_STATUS()
+00:00:24.36 [-->] [DBG_STATUS           ] 
+00:00:24.37 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:24.37 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:24.46 [<==] [UV_DBG_SERIAL_OUTPUT ] [(SERIO) Channel:3 Count:1 Data: 0A  String:"
+"]
+00:00:24.46 [<==] [UV_DBG_SERIAL_OUTPUT ] [(SERIO) Channel:3 Count:17 Data: 42 69 74 20 4D 61 73 6B 69 6E 67 20 6D 6F 64 65 0A  String:"Bit Masking mode
+"]
+00:00:24.46 [<==] [UV_DBG_SERIAL_OUTPUT ] [(SERIO) Channel:3 Count:18 Data: 41 64 64 72 3A 20 30 78 30 31 30 30 30 30 30 31 20 0A  String:"Addr: 0x01000001 
+"]
+00:00:24.46 [<==] [UV_DBG_SERIAL_OUTPUT ] [(SERIO) Channel:3 Count:18 Data: 41 64 64 72 3A 20 30 78 30 30 30 30 30 30 30 31 20 0A  String:"Addr: 0x00000001 
+"]
+00:00:24.46 [<==] [DBG_CMD_OUTPUT       ] [(SSTR) SNAP states=40018080 P1.28=1 P1.27=1 P2.2=0]
+00:00:24.46 [<==] [DBG_STOP_EXECUTION   ] [(BPREASON) eReason:EXEC nPC:0x000007B6 nAdr:0x000007B6 nBpNum:0 nTickMark:0x00000001 ]
+00:00:24.48 [T->] CUv3Client::DBG_STATUS()
+00:00:24.48 [-->] [DBG_STATUS           ] 
+00:00:24.50 [<--] [DBG_STATUS           ] [(nVal) Stopped]
+00:00:24.50 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:24.50 [T->] CUv3Client::DBG_RUN_TO_ADDRESS()
+00:00:24.50 [-->] [DBG_RUN_TO_ADDRESS   ] [???]
+00:00:24.53 [<--] [DBG_RUN_TO_ADDRESS   ] [???]
+00:00:24.53 [<==] [DBG_START_EXECUTION  ] [OK]
+00:00:24.53 [-->] [GEN_CPLX_COMPLETE    ] 
+00:00:24.56 [<--] [GEN_CPLX_COMPLETE    ] [OK]
+00:00:24.56 [<-T] CUv3Client::DBG_RUN_TO_ADDRESS() = UVSC_STATUS_SUCCESS         
+00:00:24.56 [T->] CUv3Client::DBG_STATUS()
+00:00:24.56 [-->] [DBG_STATUS           ] 
+00:00:24.57 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:24.57 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:24.68 [T->] CUv3Client::DBG_STATUS()
+00:00:24.68 [-->] [DBG_STATUS           ] 
+00:00:24.70 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:24.70 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:24.81 [T->] CUv3Client::DBG_STATUS()
+00:00:24.81 [-->] [DBG_STATUS           ] 
+00:00:24.82 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:24.82 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:24.93 [T->] CUv3Client::DBG_STATUS()
+00:00:24.93 [-->] [DBG_STATUS           ] 
+00:00:24.95 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:24.95 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:25.06 [T->] CUv3Client::DBG_STATUS()
+00:00:25.06 [-->] [DBG_STATUS           ] 
+00:00:25.07 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:25.07 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:25.17 [T->] CUv3Client::DBG_STATUS()
+00:00:25.17 [-->] [DBG_STATUS           ] 
+00:00:25.20 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:25.20 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:25.29 [T->] CUv3Client::DBG_STATUS()
+00:00:25.29 [-->] [DBG_STATUS           ] 
+00:00:25.31 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:25.31 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:25.42 [T->] CUv3Client::DBG_STATUS()
+00:00:25.42 [-->] [DBG_STATUS           ] 
+00:00:25.43 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:25.43 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:25.54 [T->] CUv3Client::DBG_STATUS()
+00:00:25.54 [-->] [DBG_STATUS           ] 
+00:00:25.56 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:25.56 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:25.67 [T->] CUv3Client::DBG_STATUS()
+00:00:25.67 [-->] [DBG_STATUS           ] 
+00:00:25.68 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:25.68 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:25.79 [T->] CUv3Client::DBG_STATUS()
+00:00:25.79 [-->] [DBG_STATUS           ] 
+00:00:25.81 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:25.81 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:25.90 [T->] CUv3Client::DBG_STATUS()
+00:00:25.90 [-->] [DBG_STATUS           ] 
+00:00:25.92 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:25.92 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:26.03 [T->] CUv3Client::DBG_STATUS()
+00:00:26.03 [-->] [DBG_STATUS           ] 
+00:00:26.04 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:26.04 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:26.15 [T->] CUv3Client::DBG_STATUS()
+00:00:26.15 [-->] [DBG_STATUS           ] 
+00:00:26.17 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:26.17 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:26.28 [T->] CUv3Client::DBG_STATUS()
+00:00:26.28 [-->] [DBG_STATUS           ] 
+00:00:26.29 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:26.29 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:26.40 [T->] CUv3Client::DBG_STATUS()
+00:00:26.40 [-->] [DBG_STATUS           ] 
+00:00:26.42 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:26.42 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:26.51 [T->] CUv3Client::DBG_STATUS()
+00:00:26.51 [-->] [DBG_STATUS           ] 
+00:00:26.53 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:26.53 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:26.64 [T->] CUv3Client::DBG_STATUS()
+00:00:26.64 [-->] [DBG_STATUS           ] 
+00:00:26.65 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:26.65 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:26.76 [T->] CUv3Client::DBG_STATUS()
+00:00:26.76 [-->] [DBG_STATUS           ] 
+00:00:26.78 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:26.78 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:26.89 [T->] CUv3Client::DBG_STATUS()
+00:00:26.89 [-->] [DBG_STATUS           ] 
+00:00:26.90 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:26.90 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:27.01 [T->] CUv3Client::DBG_STATUS()
+00:00:27.01 [-->] [DBG_STATUS           ] 
+00:00:27.03 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:27.03 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:27.12 [T->] CUv3Client::DBG_STATUS()
+00:00:27.12 [-->] [DBG_STATUS           ] 
+00:00:27.14 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:27.14 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:27.25 [T->] CUv3Client::DBG_STATUS()
+00:00:27.25 [-->] [DBG_STATUS           ] 
+00:00:27.26 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:27.26 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:27.37 [T->] CUv3Client::DBG_STATUS()
+00:00:27.37 [-->] [DBG_STATUS           ] 
+00:00:27.39 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:27.39 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:27.50 [T->] CUv3Client::DBG_STATUS()
+00:00:27.50 [-->] [DBG_STATUS           ] 
+00:00:27.51 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:27.51 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:27.62 [T->] CUv3Client::DBG_STATUS()
+00:00:27.62 [-->] [DBG_STATUS           ] 
+00:00:27.64 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:27.64 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:27.75 [T->] CUv3Client::DBG_STATUS()
+00:00:27.75 [-->] [DBG_STATUS           ] 
+00:00:27.76 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:27.76 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:27.86 [T->] CUv3Client::DBG_STATUS()
+00:00:27.86 [-->] [DBG_STATUS           ] 
+00:00:27.87 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:27.87 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:27.98 [T->] CUv3Client::DBG_STATUS()
+00:00:27.98 [-->] [DBG_STATUS           ] 
+00:00:28.00 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:28.00 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:28.11 [T->] CUv3Client::DBG_STATUS()
+00:00:28.11 [-->] [DBG_STATUS           ] 
+00:00:28.12 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:28.12 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:28.23 [T->] CUv3Client::DBG_STATUS()
+00:00:28.23 [-->] [DBG_STATUS           ] 
+00:00:28.25 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:28.25 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:28.36 [T->] CUv3Client::DBG_STATUS()
+00:00:28.36 [-->] [DBG_STATUS           ] 
+00:00:28.37 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:28.37 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:28.48 [T->] CUv3Client::DBG_STATUS()
+00:00:28.48 [-->] [DBG_STATUS           ] 
+00:00:28.50 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:28.50 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:28.59 [T->] CUv3Client::DBG_STATUS()
+00:00:28.59 [-->] [DBG_STATUS           ] 
+00:00:28.61 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:28.61 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:28.71 [<==] [DBG_CMD_OUTPUT       ] [(SSTR) SNAP states=50018122 P1.28=1 P1.27=1 P2.2=1]
+00:00:28.71 [T->] CUv3Client::DBG_STATUS()
+00:00:28.71 [-->] [DBG_STATUS           ] 
+00:00:28.73 [<==] [DBG_STOP_EXECUTION   ] [(BPREASON) eReason:EXEC nPC:0x000007B6 nAdr:0x000007B6 nBpNum:0 nTickMark:0x00000001 ]
+00:00:28.73 [<--] [DBG_STATUS           ] [(nVal) Stopped]
+00:00:28.73 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:28.73 [T->] CUv3Client::DBG_START_EXECUTION()
+00:00:28.73 [-->] [DBG_START_EXECUTION  ] 
+00:00:28.76 [<--] [DBG_START_EXECUTION  ] [OK]
+00:00:28.76 [<==] [DBG_START_EXECUTION  ] [OK]
+00:00:28.76 [-->] [GEN_CPLX_COMPLETE    ] 
+00:00:28.79 [<--] [GEN_CPLX_COMPLETE    ] [OK]
+00:00:28.79 [<-T] CUv3Client::DBG_START_EXECUTION() = UVSC_STATUS_SUCCESS         
+00:00:29.29 [T->] CUv3Client::DBG_STATUS()
+00:00:29.29 [-->] [DBG_STATUS           ] 
+00:00:29.31 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:29.31 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:29.31 [T->] CUv3Client::DBG_STOP_EXECUTION()
+00:00:29.31 [-->] [DBG_STOP_EXECUTION   ] 
+00:00:29.34 [<--] [DBG_STOP_EXECUTION   ] [OK]
+00:00:29.36 [<==] [DBG_STOP_EXECUTION   ] [(BPREASON) eReason:HIT_ESC nPC:0x000007BE nAdr:0x000007BE nBpNum:-1 nTickMark:0x00000000 ]
+00:00:29.36 [-->] [GEN_CPLX_COMPLETE    ] 
+00:00:29.37 [<--] [GEN_CPLX_COMPLETE    ] [OK]
+00:00:29.37 [<-T] CUv3Client::DBG_STOP_EXECUTION() = UVSC_STATUS_SUCCESS         
+00:00:29.37 [T->] CUv3Client::DBG_STATUS()
+00:00:29.37 [-->] [DBG_STATUS           ] 
+00:00:29.40 [<--] [DBG_STATUS           ] [(nVal) Stopped]
+00:00:29.40 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:29.40 [T->] CUv3Client::DBG_RUN_TO_ADDRESS()
+00:00:29.40 [-->] [DBG_RUN_TO_ADDRESS   ] [???]
+00:00:29.43 [<--] [DBG_RUN_TO_ADDRESS   ] [???]
+00:00:29.43 [<==] [DBG_START_EXECUTION  ] [OK]
+00:00:29.43 [-->] [GEN_CPLX_COMPLETE    ] 
+00:00:29.46 [<--] [GEN_CPLX_COMPLETE    ] [OK]
+00:00:29.46 [<-T] CUv3Client::DBG_RUN_TO_ADDRESS() = UVSC_STATUS_SUCCESS         
+00:00:29.46 [T->] CUv3Client::DBG_STATUS()
+00:00:29.46 [-->] [DBG_STATUS           ] 
+00:00:29.50 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:29.50 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:29.61 [T->] CUv3Client::DBG_STATUS()
+00:00:29.61 [-->] [DBG_STATUS           ] 
+00:00:29.62 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:29.62 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:29.73 [T->] CUv3Client::DBG_STATUS()
+00:00:29.73 [-->] [DBG_STATUS           ] 
+00:00:29.75 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:29.75 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:29.84 [T->] CUv3Client::DBG_STATUS()
+00:00:29.84 [-->] [DBG_STATUS           ] 
+00:00:29.86 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:29.86 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:29.96 [T->] CUv3Client::DBG_STATUS()
+00:00:29.96 [-->] [DBG_STATUS           ] 
+00:00:29.98 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:29.98 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:30.09 [T->] CUv3Client::DBG_STATUS()
+00:00:30.09 [-->] [DBG_STATUS           ] 
+00:00:30.11 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:30.11 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:30.21 [T->] CUv3Client::DBG_STATUS()
+00:00:30.21 [-->] [DBG_STATUS           ] 
+00:00:30.23 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:30.23 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:30.32 [T->] CUv3Client::DBG_STATUS()
+00:00:30.32 [-->] [DBG_STATUS           ] 
+00:00:30.34 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:30.34 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:30.45 [T->] CUv3Client::DBG_STATUS()
+00:00:30.45 [-->] [DBG_STATUS           ] 
+00:00:30.46 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:30.46 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:30.57 [T->] CUv3Client::DBG_STATUS()
+00:00:30.57 [-->] [DBG_STATUS           ] 
+00:00:30.59 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:30.59 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:30.70 [T->] CUv3Client::DBG_STATUS()
+00:00:30.70 [-->] [DBG_STATUS           ] 
+00:00:30.71 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:30.71 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:30.81 [T->] CUv3Client::DBG_STATUS()
+00:00:30.81 [-->] [DBG_STATUS           ] 
+00:00:30.82 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:30.82 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:30.93 [T->] CUv3Client::DBG_STATUS()
+00:00:30.93 [-->] [DBG_STATUS           ] 
+00:00:30.95 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:30.95 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:31.06 [T->] CUv3Client::DBG_STATUS()
+00:00:31.06 [-->] [DBG_STATUS           ] 
+00:00:31.07 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:31.07 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:31.18 [T->] CUv3Client::DBG_STATUS()
+00:00:31.18 [-->] [DBG_STATUS           ] 
+00:00:31.20 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:31.20 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:31.31 [T->] CUv3Client::DBG_STATUS()
+00:00:31.31 [-->] [DBG_STATUS           ] 
+00:00:31.32 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:31.32 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:31.42 [T->] CUv3Client::DBG_STATUS()
+00:00:31.42 [-->] [DBG_STATUS           ] 
+00:00:31.43 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:31.43 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:31.54 [T->] CUv3Client::DBG_STATUS()
+00:00:31.54 [-->] [DBG_STATUS           ] 
+00:00:31.56 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:31.56 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:31.67 [T->] CUv3Client::DBG_STATUS()
+00:00:31.67 [-->] [DBG_STATUS           ] 
+00:00:31.68 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:31.68 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:31.79 [T->] CUv3Client::DBG_STATUS()
+00:00:31.79 [-->] [DBG_STATUS           ] 
+00:00:31.81 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:31.81 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:31.90 [T->] CUv3Client::DBG_STATUS()
+00:00:31.90 [-->] [DBG_STATUS           ] 
+00:00:31.92 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:31.92 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:32.03 [T->] CUv3Client::DBG_STATUS()
+00:00:32.03 [-->] [DBG_STATUS           ] 
+00:00:32.04 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:32.04 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:32.15 [T->] CUv3Client::DBG_STATUS()
+00:00:32.15 [-->] [DBG_STATUS           ] 
+00:00:32.17 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:32.17 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:32.28 [T->] CUv3Client::DBG_STATUS()
+00:00:32.28 [-->] [DBG_STATUS           ] 
+00:00:32.29 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:32.29 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:32.40 [T->] CUv3Client::DBG_STATUS()
+00:00:32.40 [-->] [DBG_STATUS           ] 
+00:00:32.42 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:32.42 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:32.51 [T->] CUv3Client::DBG_STATUS()
+00:00:32.51 [-->] [DBG_STATUS           ] 
+00:00:32.54 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:32.54 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:32.64 [T->] CUv3Client::DBG_STATUS()
+00:00:32.64 [-->] [DBG_STATUS           ] 
+00:00:32.65 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:32.65 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:32.76 [T->] CUv3Client::DBG_STATUS()
+00:00:32.76 [-->] [DBG_STATUS           ] 
+00:00:32.78 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:32.78 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:32.89 [T->] CUv3Client::DBG_STATUS()
+00:00:32.89 [-->] [DBG_STATUS           ] 
+00:00:32.90 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:32.90 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:33.01 [T->] CUv3Client::DBG_STATUS()
+00:00:33.01 [-->] [DBG_STATUS           ] 
+00:00:33.03 [<--] [DBG_STATUS           ] [(nVal) Running]
+00:00:33.03 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:33.07 [<==] [UV_DBG_SERIAL_OUTPUT ] [(SERIO) Channel:3 Count:1 Data: 0A  String:"
+"]
+00:00:33.07 [<==] [UV_DBG_SERIAL_OUTPUT ] [(SERIO) Channel:3 Count:16 Data: 42 61 72 72 65 6C 20 53 68 69 66 74 69 6E 67 0A  String:"Barrel Shifting
+"]
+00:00:33.07 [<==] [DBG_CMD_OUTPUT       ] [(SSTR) SNAP states=60019170 P1.28=1 P1.27=1 P2.2=1]
+00:00:33.09 [<==] [DBG_STOP_EXECUTION   ] [(BPREASON) eReason:EXEC nPC:0x000005B0 nAdr:0x000005B0 nBpNum:1 nTickMark:0x00000002 ]
+00:00:33.14 [T->] CUv3Client::DBG_STATUS()
+00:00:33.14 [-->] [DBG_STATUS           ] 
+00:00:33.15 [<--] [DBG_STATUS           ] [(nVal) Stopped]
+00:00:33.15 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:33.15 [T->] CUv3Client::DBG_RESET()
+00:00:33.15 [-->] [DBG_RESET            ] 
+00:00:33.17 [<--] [DBG_RESET            ] [OK]
+00:00:33.17 [<-T] CUv3Client::DBG_RESET() = UVSC_STATUS_SUCCESS         
+00:00:33.20 [<==] [DBG_RESET            ] [OK]
+00:00:36.18 [T->] CUv3Client::DBG_STATUS()
+00:00:36.18 [-->] [DBG_STATUS           ] 
+00:00:36.21 [<--] [DBG_STATUS           ] [(nVal) Stopped]
+00:00:36.21 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:36.21 [T->] CUv3Client::DBG_RUN_TO_ADDRESS()
+00:00:36.21 [-->] [DBG_RUN_TO_ADDRESS   ] [???]
+00:00:36.25 [<--] [DBG_RUN_TO_ADDRESS   ] [???]
+00:00:36.25 [<==] [DBG_START_EXECUTION  ] [OK]
+00:00:36.25 [-->] [GEN_CPLX_COMPLETE    ] 
+00:00:36.25 [<==] [UV_DBG_SERIAL_OUTPUT ] [(SERIO) Channel:3 Count:1 Data: 0A  String:"
+"]
+00:00:36.25 [<==] [UV_DBG_SERIAL_OUTPUT ] [(SERIO) Channel:3 Count:10 Data: 4D 61 73 6B 20 6D 6F 64 65 0A  String:"Mask mode
+"]
+00:00:36.25 [<==] [UV_DBG_SERIAL_OUTPUT ] [(SERIO) Channel:3 Count:18 Data: 41 64 64 72 3A 20 30 78 30 31 30 30 30 30 30 31 20 0A  String:"Addr: 0x01000001 
+"]
+00:00:36.25 [<==] [UV_DBG_SERIAL_OUTPUT ] [(SERIO) Channel:3 Count:18 Data: 41 64 64 72 3A 20 30 78 30 30 30 30 30 30 30 31 20 0A  String:"Addr: 0x00000001 
+"]
+00:00:36.25 [<==] [DBG_CMD_OUTPUT       ] [(SSTR) SNAP states=9101 P1.28=0 P1.27=1 P2.2=0]
+00:00:36.26 [<==] [DBG_STOP_EXECUTION   ] [(BPREASON) eReason:EXEC nPC:0x000007B6 nAdr:0x000007B6 nBpNum:0 nTickMark:0x00000001 ]
+00:00:36.28 [<--] [GEN_CPLX_COMPLETE    ] [OK]
+00:00:36.28 [<-T] CUv3Client::DBG_RUN_TO_ADDRESS() = UVSC_STATUS_SUCCESS         
+00:00:36.28 [T->] CUv3Client::DBG_STATUS()
+00:00:36.28 [-->] [DBG_STATUS           ] 
+00:00:36.31 [<--] [DBG_STATUS           ] [(nVal) Stopped]
+00:00:36.31 [<-T] CUv3Client::DBG_STATUS() = UVSC_STATUS_SUCCESS         
+00:00:36.31 [T->] CUv3Client::DBG_EXIT()
+00:00:36.31 [T->] CUv3Client::DBG_STOP_EXECUTION()
+00:00:36.31 [-->] [DBG_STOP_EXECUTION   ] 
+00:00:36.34 [<--] [DBG_STOP_EXECUTION   ] [UV_STATUS_TARGET_STOPPED  (Target stopped)]
+00:00:36.34 [-->] [GEN_CPLX_COMPLETE    ] 
+00:00:36.36 [<--] [GEN_CPLX_COMPLETE    ] [OK]
+00:00:36.36 [<-T] CUv3Client::DBG_STOP_EXECUTION() = UVSC_STATUS_COMMAND_ERROR   
+00:00:36.36 [-->] [DBG_EXIT             ] 
+00:00:36.39 [<--] [DBG_EXIT             ] [OK]
+00:00:37.14 [<==] [DBG_EXIT             ] [OK]
+00:00:38.14 [-->] [GEN_CPLX_COMPLETE    ] 
+00:00:38.34 [<--] [GEN_CPLX_COMPLETE    ] [OK]
+00:00:38.34 [<-T] CUv3Client::DBG_EXIT() = UVSC_STATUS_SUCCESS         
+00:00:38.34 [T->] CUv3Client::GEN_EXIT()
+00:00:38.34 [T->] CUv3Client::DBG_EXIT()
+00:00:38.34 [T->] CUv3Client::DBG_STOP_EXECUTION()
+00:00:38.34 [-->] [DBG_STOP_EXECUTION   ] 
+00:00:38.37 [<--] [DBG_STOP_EXECUTION   ] [UV_STATUS_NOT_DEBUGGING   (Target is not in debug mode)]
+00:00:38.37 [-->] [GEN_CPLX_COMPLETE    ] 
+00:00:38.40 [<--] [GEN_CPLX_COMPLETE    ] [OK]
+00:00:38.40 [<-T] CUv3Client::DBG_STOP_EXECUTION() = UVSC_STATUS_COMMAND_ERROR   
+00:00:38.40 [-->] [DBG_EXIT             ] 
+00:00:38.43 [<--] [DBG_EXIT             ] [UV_STATUS_NOT_DEBUGGING   (Target is not in debug mode)]
+00:00:38.43 [-->] [GEN_CPLX_COMPLETE    ] 
+00:00:38.46 [<--] [GEN_CPLX_COMPLETE    ] [OK]
+00:00:38.46 [<-T] CUv3Client::DBG_EXIT() = UVSC_STATUS_COMMAND_ERROR   
+00:00:38.46 [-->] [GEN_EXIT             ] 
+00:00:38.50 [<--] [GEN_EXIT             ] [OK]
+00:00:38.50 [<-T] CUv3Client::GEN_EXIT() = UVSC_STATUS_SUCCESS         
+00:00:38.84 [<==] [PRJ_CLOSE            ] [OK                        (Closed project '%USERPROFILE%\Projects\Developer Tools\Virtual Workbench\reference\bitband-test\Bitband.uvprojx')]

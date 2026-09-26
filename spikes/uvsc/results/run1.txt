@@ -1,0 +1,51 @@
+ninja: no work to do.
+uvsc_spike %USERPROFILE%\Projects\Developer Tools\Virtual Workbench\reference\bitband-test\Bitband.uvprojx 7B6 6 5B0
+[INFO] UVSC library 229, UVSOCK interface 229
+[PASS] UVSC_Init                    status=0  (t=0.0s)
+[PASS] Launch UV4 -j0 -s            pid=117724 (t=0.1s)
+[PASS] UVSOCK port listening        after 5.8s
+[PASS] OpenConnection (existing)    status=0  (t=7.9s)
+[INFO] handle=0 port=4830
+[PASS] GEN_UVSOCK_VERSION           status=0  (t=7.9s)
+[INFO] UVSOCK version reported by uVision: 2.29
+[PASS] DBG_ENTER (simulator)        status=0  (t=10.2s)
+[PASS] DBG_ENTER run-to-main settle stopped after 0.0s wall, 1 polls
+[PASS] RUN_TO 0x7B6 #1              status=0  (t=13.3s)
+[PASS] RUN_TO 0x7B6 #1              stopped after 0.0s wall, 1 polls
+[PASS] RUN_TO 0x7B6 #2              status=0  (t=13.4s)
+[PASS] RUN_TO 0x7B6 #2              stopped after 4.5s wall, 38 polls
+[PASS] RUN_TO 0x7B6 #3              status=0  (t=18.0s)
+[PASS] RUN_TO 0x7B6 #3              stopped after 4.6s wall, 38 polls
+[PASS] RUN_TO 0x7B6 #4              status=0  (t=22.6s)
+[PASS] RUN_TO 0x7B6 #4              stopped after 4.5s wall, 38 polls
+[PASS] RUN_TO 0x7B6 #5              status=0  (t=27.2s)
+[PASS] RUN_TO 0x7B6 #5              stopped after 4.7s wall, 39 polls
+[PASS] RUN_TO 0x7B6 #6              status=0  (t=31.9s)
+[PASS] RUN_TO 0x7B6 #6              stopped after 4.5s wall, 38 polls
+[PASS] DBG_START_EXECUTION          status=0  (t=36.5s)
+[PASS] DBG_STATUS while running     status=0  (t=37.1s)
+[INFO] running=1 (expect 1)
+[PASS] DBG_STOP_EXECUTION           status=0  (t=37.1s)
+[PASS] stop                         stopped after 0.0s wall, 1 polls
+[PASS] RUN_TO final 0x5B0           status=0  (t=37.2s)
+[PASS] RUN_TO final 0x5B0           stopped after 3.9s wall, 33 polls
+[PASS] DBG_RESET                    status=0  (t=41.2s)
+[PASS] DBG_RESET settle             stopped after 0.0s wall, 1 polls
+[PASS] RUN_TO after reset           status=0  (t=44.3s)
+[PASS] RUN_TO after reset           stopped after 0.0s wall, 1 polls
+[PASS] DBG_EXIT                     status=0  (t=46.5s)
+[PASS] CloseConnection              status=0  (t=48.2s)
+[PASS] UVSC_UnInit                  status=0  (t=48.2s)
+[INFO] disconnect callback seen=0
+[PASS] UV4 exit                     UV4 exited after CloseConnection(terminate)
+[PASS] CleanShutdown                orphan_uv4=0
+[INFO] failures=0
+--- INI log
+
+SNAP states=9101 P1.28=0 P1.27=1 P2.2=0
+SNAP states=10009142 P1.28=1 P1.27=1 P2.2=1
+SNAP states=20014175 P1.28=0 P1.27=1 P2.2=0
+SNAP states=30014237 P1.28=1 P1.27=1 P2.2=1
+SNAP states=40018080 P1.28=1 P1.27=1 P2.2=0
+SNAP states=50018122 P1.28=1 P1.27=1 P2.2=1
+SNAP states=60019170 P1.28=1 P1.27=1 P2.2=1
