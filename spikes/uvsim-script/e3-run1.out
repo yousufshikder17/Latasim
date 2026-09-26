@@ -1,0 +1,14 @@
+uv4 exited_by_itself=True exit=0 wall=18s
+orphan_uv4=0
+MAP 0xE0001000, 0xE0001FFF READ WRITE
+SIGNAL void stop_at (float secs) {
+  swatch (secs);
+  _break_ = 1;
+}
+printf("BEFORE states=%u CCLK=%u\n", states, CCLK)
+BEFORE states=0 CCLK=12000000
+stop_at (0.25)
+G
+printf("AFTER states=%u CCLK=%u FIO1PIN=%08X\n", states, CCLK, _RDWORD(0x2009C034))
+AFTER states=24968655 CCLK=100000000 FIO1PIN=5FFFC713
+LOG OFF
