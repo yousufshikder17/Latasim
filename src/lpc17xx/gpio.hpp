@@ -36,9 +36,12 @@ public:
 
     Gpio();
 
-    // What a firmware load or store of LPC_GPIOn->FIOxxx does.
+    // What a firmware load or store of LPC_GPIOn->FIOxxx does. `lanes` restricts a
+    // store to some byte lanes: the byte and halfword views in LPC17xx.h
+    // (FIO1PIN0, FIO1SETH, ...) are separate registers, so a narrow store changes only
+    // its own lanes, with the usual rules inside them. 0xFFFFFFFF is a full word.
     std::uint32_t read(unsigned port, GpioReg reg) const;
-    void write(unsigned port, GpioReg reg, std::uint32_t value);
+    void write(unsigned port, GpioReg reg, std::uint32_t value, std::uint32_t lanes = 0xFFFFFFFF);
 
     // Board side: the level driven onto a pin from outside the MCU. It is only
     // visible while the pin is an input. Default: high (PINMODE resets to

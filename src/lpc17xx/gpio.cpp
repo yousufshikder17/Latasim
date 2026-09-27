@@ -38,15 +38,15 @@ std::uint32_t Gpio::read(unsigned port, GpioReg reg) const {
     throw std::invalid_argument("unknown GPIO register");
 }
 
-void Gpio::write(unsigned port, GpioReg reg, std::uint32_t value) {
+void Gpio::write(unsigned port, GpioReg reg, std::uint32_t value, std::uint32_t lanes) {
     Port& p = port_at(port);
-    const std::uint32_t writable = value & ~p.mask;
+    const std::uint32_t affected = lanes & ~p.mask;  // bits a SET/CLR/PIN write may change
     switch (reg) {
-    case GpioReg::Dir: p.dir = value; return;
-    case GpioReg::Mask: p.mask = value; return;
-    case GpioReg::Pin: p.latch = (p.latch & p.mask) | writable; return;
-    case GpioReg::Set: p.latch |= writable; return;
-    case GpioReg::Clr: p.latch &= ~writable; return;
+    case GpioReg::Dir: p.dir = (p.dir & ~lanes) | (value & lanes); return;
+    case GpioReg::Mask: p.mask = (p.mask & ~lanes) | (value & lanes); return;
+    case GpioReg::Pin: p.latch = (p.latch & ~affected) | (value & affected); return;
+    case GpioReg::Set: p.latch |= value & affected; return;
+    case GpioReg::Clr: p.latch &= ~(value & affected); return;
     }
     throw std::invalid_argument("unknown GPIO register");
 }

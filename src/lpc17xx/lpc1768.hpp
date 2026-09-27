@@ -1,5 +1,5 @@
 #pragma once
-// The LPC1768 as firmware sees it: 32-bit loads and stores to its memory map.
+// The LPC1768 as firmware sees it: 8/16/32-bit loads and stores to its memory map.
 // This is the seam a future MMIO adapter (host-compiled firmware, emulator)
 // plugs into. Only the GPIO block and its bit-band alias are mapped so far;
 // anything else raises BusFault, as an unmapped access would on the chip.
@@ -41,10 +41,17 @@ private:
 
 class Lpc1768 {
 public:
-    std::uint32_t read32(std::uint32_t address) const;
+    // Loads and stores of 8, 16 and 32 bits. Narrow GPIO accesses address the byte
+    // and halfword registers of LPC17xx.h (FIO1PIN0, FIO1SETH, ...) and must be
+    // naturally aligned. Bit-band aliases accept 32-bit accesses only.
+    std::uint8_t read8(std::uint32_t address) const { return static_cast<std::uint8_t>(read(address, 1)); }
+    std::uint16_t read16(std::uint32_t address) const { return static_cast<std::uint16_t>(read(address, 2)); }
+    std::uint32_t read32(std::uint32_t address) const { return read(address, 4); }
+    void write8(std::uint32_t address, std::uint8_t value) { write(address, 1, value); }
+    void write16(std::uint32_t address, std::uint16_t value) { write(address, 2, value); }
     // Bit-band alias writes are a read-modify-write of the whole target word, as
     // on the Cortex-M3. For FIOPIN that copies input pin levels into the latch.
-    void write32(std::uint32_t address, std::uint32_t value);
+    void write32(std::uint32_t address, std::uint32_t value) { write(address, 4, value); }
 
     Gpio& gpio() { return gpio_; }
     const Gpio& gpio() const { return gpio_; }
@@ -53,8 +60,12 @@ private:
     struct GpioTarget {
         unsigned port;
         GpioReg reg;
+        unsigned shift;       // bit position of the accessed lane(s)
+        std::uint32_t lanes;  // the bits the access covers
     };
-    static GpioTarget decode_gpio(std::uint32_t address);
+    static GpioTarget decode_gpio(std::uint32_t address, unsigned size);
+    std::uint32_t read(std::uint32_t address, unsigned size) const;
+    void write(std::uint32_t address, unsigned size, std::uint32_t value);
     std::uint32_t read_target(std::uint32_t alias, std::uint32_t word_address) const;
 
     Gpio gpio_;

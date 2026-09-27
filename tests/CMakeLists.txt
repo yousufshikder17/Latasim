@@ -10,6 +10,7 @@ FetchContent_MakeAvailable(googletest)
 add_executable(latasim_tests
     gpio_test.cpp
     lpc1768_test.cpp
+    lpc1768_narrow_test.cpp
     mcb1700_test.cpp
     keil_board_led_test.cpp
     convergence_test.cpp

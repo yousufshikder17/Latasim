@@ -41,44 +41,50 @@ std::uint32_t Lpc1768::read_target(std::uint32_t alias, std::uint32_t word_addre
 
 BusFault::BusFault(std::uint32_t address) : std::runtime_error(fault_message(address)), address_(address) {}
 
-Lpc1768::GpioTarget Lpc1768::decode_gpio(std::uint32_t address) {
-    if (address < kGpioBase || (address & 3u) != 0) throw BusFault(address);
+// Maps a GPIO address and access size (1, 2 or 4 bytes) to a register and the byte
+// lanes it covers. Narrow accesses must be naturally aligned inside one register.
+Lpc1768::GpioTarget Lpc1768::decode_gpio(std::uint32_t address, unsigned size) {
+    if (address < kGpioBase || address % size != 0) throw BusFault(address);
     const std::uint32_t offset = address - kGpioBase;
     const unsigned port = offset / kGpioPortStride;
     if (port >= Gpio::kPortCount) throw BusFault(address);
-    const auto reg = static_cast<GpioReg>(offset % kGpioPortStride);
+    const std::uint32_t in_port = offset % kGpioPortStride;
+    const auto reg = static_cast<GpioReg>(in_port & ~3u);
+    const unsigned shift = (in_port & 3u) * 8;
+    const std::uint32_t lanes = size == 4 ? 0xFFFFFFFFu : ((std::uint32_t{1} << (size * 8)) - 1) << shift;
     switch (reg) {
     case GpioReg::Dir:
     case GpioReg::Mask:
     case GpioReg::Pin:
     case GpioReg::Set:
     case GpioReg::Clr:
-        return {port, reg};
+        return {port, reg, shift, lanes};
     }
-    throw BusFault(address);  // reserved offsets 0x04-0x0C
+    throw BusFault(address);  // reserved offsets 0x04-0x0F
 }
 
-std::uint32_t Lpc1768::read32(std::uint32_t address) const {
+std::uint32_t Lpc1768::read(std::uint32_t address, unsigned size) const {
     if (is_alias(address)) {
-        if ((address & 3u) != 0) throw BusFault(address);
+        // Bit-band aliases are word accesses only here; narrow alias access is not modeled.
+        if (size != 4 || (address & 3u) != 0) throw BusFault(address);
         const AliasTarget t = alias_target(address);
         return (read_target(address, t.word_address) >> t.bit) & 1u;
     }
-    const GpioTarget t = decode_gpio(address);
-    return gpio_.read(t.port, t.reg);
+    const GpioTarget t = decode_gpio(address, size);
+    return (gpio_.read(t.port, t.reg) & t.lanes) >> t.shift;
 }
 
-void Lpc1768::write32(std::uint32_t address, std::uint32_t value) {
+void Lpc1768::write(std::uint32_t address, unsigned size, std::uint32_t value) {
     if (is_alias(address)) {
-        if ((address & 3u) != 0) throw BusFault(address);
+        if (size != 4 || (address & 3u) != 0) throw BusFault(address);
         const AliasTarget t = alias_target(address);
         const std::uint32_t word = read_target(address, t.word_address);
         const std::uint32_t mask = std::uint32_t{1} << t.bit;
         write32(t.word_address, (value & 1u) ? (word | mask) : (word & ~mask));
         return;
     }
-    const GpioTarget t = decode_gpio(address);
-    gpio_.write(t.port, t.reg, value);
+    const GpioTarget t = decode_gpio(address, size);
+    gpio_.write(t.port, t.reg, (value << t.shift) & t.lanes, t.lanes);
 }
 
 }  // namespace latasim::lpc17xx
