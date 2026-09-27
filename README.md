@@ -2,7 +2,7 @@
 
 Latasim is a virtual lab bench for embedded firmware. It runs real Keil MCB1700 (NXP LPC1768, Cortex-M3) firmware against a simulated board, so LEDs, buttons, the joystick and the LCD can be driven, observed and asserted on in **deterministic, repeatable tests**, with no hardware on the desk.
 
-**Status:** Phase 1 is complete: a production C++20 model of LPC1768 GPIO and the MCB1700 LEDs, with 51 tests and a CLI demo. Phase 0 (feasibility) experiments and evidence are kept alongside. Planned stack: C++20 and CMake, CLI first, Qt desktop UI later.
+**Status:** Phase 1 is complete (a production C++20 model of LPC1768 GPIO and the MCB1700 LEDs, with a CLI demo). Phase 2 is in progress: 8/16/32-bit MMIO access and the joystick and INT0 inputs are done ([progress](docs/phase2/mmio-and-inputs.md)); 79 tests. Phase 0 (feasibility) experiments and evidence are kept alongside. Planned stack: C++20 and CMake, CLI first, Qt desktop UI later.
 
 ## Why
 
@@ -67,7 +67,7 @@ Each finding was diagnosed and worked around, and all are documented in [finding
 - **Cross-checked.** The tests replay recorded simulator runs (E2, E5, E7) and match every register value, including the wrong-pin bit-band alias.
 
 ```powershell
-scripts\build.ps1          # configure + build + run the 51 tests (MSVC, Ninja, GoogleTest)
+scripts\build.ps1          # configure + build + run the tests (MSVC, Ninja, GoogleTest)
 build\latasim gpio-demo    # deterministic LED demo through both paths
 ```
 
@@ -85,12 +85,13 @@ Details, exact semantics, limitations and the Phase 2 list: [docs/phase1/product
 | Path | What |
 |---|---|
 | `src/lpc17xx/` | GPIO model, memory map and bit-band (`Lpc1768`), Keil GPIO driver (B1) |
-| `src/boards/mcb1700/` | Board model (LED pins, polarity, LED state), Keil LED board API (B1) |
+| `src/boards/mcb1700/` | Board model (LEDs; joystick and INT0 inputs), Keil LED board API (B1) |
 | `src/cli/` | The `latasim` command-line tool |
 | `tests/` | GoogleTest suite, including replays of recorded simulator runs |
+| `docs/phase2/` | Phase 2 progress: MMIO access widths, board inputs, open questions |
 | `docs/phase1/` | The production model |
 | `docs/phase0/` | Findings, pin map, UVSC results, backend decisions |
-| `spikes/uvsim-script/` | µVision debug-script experiments E1–E7 (`*.ini`) and their recorded output (`*-run*.out`) |
+| `spikes/uvsim-script/` | µVision debug-script experiments E1–E8 (`*.ini`) and their recorded output (`*-run*.out`) |
 | `spikes/uvsc/` | Throwaway native C++ UVSC spike and its recorded results |
 | `scripts/` | Reproduce everything (PowerShell) |
 | `reference/` | Generated copies of the reference firmware (gitignored; recreate with `scripts/`) |
