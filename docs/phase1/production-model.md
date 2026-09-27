@@ -4,7 +4,7 @@ Phase 1 builds the smallest production foundation that models LPC1768 GPIO corre
 
 ```
 board API call (B1) ─┐
-                     ├─► Lpc1768::read32/write32 ─► lpc17xx::Gpio ─► mcb1700::Board ─► LED state ─► tests / vwb CLI
+                     ├─► Lpc1768::read32/write32 ─► lpc17xx::Gpio ─► mcb1700::Board ─► LED state ─► tests / latasim CLI
 register store (B2) ─┘      (memory map, bit-band)     (one latch       (pin map,
                                                         per port)        polarity)
 ```
@@ -20,11 +20,11 @@ There is exactly one authoritative state: `lpc17xx::Gpio`. Everything else deriv
 | `src/lpc17xx/keil_gpio_driver.*` | `KeilGpioDriver`: host version of Keil's `GPIO_LPC17xx.c` (B1) |
 | `src/boards/mcb1700/board.*` | `Board`: owns the `Lpc1768`; LED pin map, polarity, `LedState` |
 | `src/boards/mcb1700/keil_board_led.*` | `KeilBoardLed`: host version of Keil's `LED_MCB1700.c` (B1) |
-| `src/cli/` | `vwb` executable; `gpio-demo` |
+| `src/cli/` | `latasim` executable; `gpio-demo` |
 | `tests/` | GoogleTest suite (51 tests) |
 | `spikes/`, `docs/phase0/` | Phase 0 experiments and evidence, unchanged apart from the new E7 |
 
-Build and test with `scripts\build.ps1`, then run `build\vwb gpio-demo`.
+Build and test with `scripts\build.ps1`, then run `build\latasim gpio-demo`.
 
 ## GPIO semantics
 

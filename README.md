@@ -1,12 +1,12 @@
-# Virtual Workbench
+# Latasim — Virtual Embedded Systems Workbench
 
-A virtual lab bench for embedded firmware. It runs real Keil MCB1700 (NXP LPC1768, Cortex-M3) firmware against a simulated board, so LEDs, buttons, the joystick and the LCD can be driven, observed and asserted on in **deterministic, repeatable tests**, with no hardware on the desk.
+Latasim is a virtual lab bench for embedded firmware. It runs real Keil MCB1700 (NXP LPC1768, Cortex-M3) firmware against a simulated board, so LEDs, buttons, the joystick and the LCD can be driven, observed and asserted on in **deterministic, repeatable tests**, with no hardware on the desk.
 
 **Status:** Phase 1 is complete: a production C++20 model of LPC1768 GPIO and the MCB1700 LEDs, with 51 tests and a CLI demo. Phase 0 (feasibility) experiments and evidence are kept alongside. Planned stack: C++20 and CMake, CLI first, Qt desktop UI later.
 
 ## Why
 
-Embedded firmware is usually tested by hand on a physical board: flash it, press a button, watch an LED. That loop is slow, hard to repeat, and impossible to run in CI. Virtual Workbench aims to turn it into a real, repeatable test:
+Embedded firmware is usually tested by hand on a physical board: flash it, press a button, watch an LED. That loop is slow, hard to repeat, and impossible to run in CI. Latasim aims to turn it into a real, repeatable test:
 
 ```
 reset → run until address X (or simulated time T) → expect P1.28 == 1
@@ -68,7 +68,7 @@ Each finding was diagnosed and worked around, and all are documented in [finding
 
 ```powershell
 scripts\build.ps1          # configure + build + run the 51 tests (MSVC, Ninja, GoogleTest)
-build\vwb gpio-demo        # deterministic LED demo through both paths
+build\latasim gpio-demo    # deterministic LED demo through both paths
 ```
 
 ```
@@ -86,7 +86,7 @@ Details, exact semantics, limitations and the Phase 2 list: [docs/phase1/product
 |---|---|
 | `src/lpc17xx/` | GPIO model, memory map and bit-band (`Lpc1768`), Keil GPIO driver (B1) |
 | `src/boards/mcb1700/` | Board model (LED pins, polarity, LED state), Keil LED board API (B1) |
-| `src/cli/` | The `vwb` command-line tool |
+| `src/cli/` | The `latasim` command-line tool |
 | `tests/` | GoogleTest suite, including replays of recorded simulator runs |
 | `docs/phase1/` | The production model |
 | `docs/phase0/` | Findings, pin map, UVSC results, backend decisions |

@@ -25,7 +25,7 @@ The header states it "may only be used under the terms of a valid, current, end 
 
 ## Setup for a new clone
 
-Only needed for the Phase 0 UVSC spike, which builds only with `-DVWB_BUILD_UVSC_SPIKE=ON` (`scripts/run-uvsc-spike.ps1` sets it). The production build does not use this package.
+Only needed for the Phase 0 UVSC spike, which builds only with `-DLATASIM_BUILD_UVSC_SPIKE=ON` (`scripts/run-uvsc-spike.ps1` sets it). The production build does not use this package.
 
 1. Download `apnt_198.zip` from the URL above and check its sha256.
 2. Put it at `third_party/uvsc/apnt_198.zip`, or pass `-DUVSC_SOURCE=<path to the zip or UVSC_C.h>` to CMake.
