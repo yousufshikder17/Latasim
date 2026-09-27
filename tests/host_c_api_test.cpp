@@ -107,3 +107,26 @@ TEST(HostCApiDeathTest, InvalidPinFromCAborts) {
     EXPECT_DEATH(c_pin_read(1, 32), "GPIO_PinRead: GPIO pin 32 out of range");
     EXPECT_DEATH(c_pin_write(5, 0, 1), "GPIO_PinWrite: bus fault");
 }
+
+// The C layer adds no accesses of its own: firmware calls trace exactly the
+// register traffic of the Phase 1 C++ driver emulation.
+TEST(HostCApi, CAndCppPathsRecordIdenticalTraces) {
+    Board via_c;
+    {
+        FirmwareBinding bind(via_c);
+        c_led_pin_init(1, 28);
+        c_pin_write(1, 28, 1);
+        c_input_pin_init(1, 23);
+        c_pin_read(1, 23);
+    }
+    Board via_cpp;
+    KeilGpioDriver gpio(via_cpp.mcu());
+    gpio.port_clock(true);
+    gpio.set_dir(1, 28, true);
+    gpio.pin_write(1, 28, 0);
+    gpio.pin_write(1, 28, 1);
+    gpio.port_clock(true);
+    gpio.set_dir(1, 23, false);
+    gpio.pin_read(1, 23);
+    EXPECT_EQ(via_c.mcu().trace().events(), via_cpp.mcu().trace().events());
+}

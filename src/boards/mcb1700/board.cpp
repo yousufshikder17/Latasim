@@ -26,39 +26,50 @@ const char* to_string(JoystickDirection direction) {
 }
 
 Board::Board() {
+    // The released state is the initial condition, not an input event.
     for (const PinRef& p : kJoystickPins) drive_active_low(p, false);
     drive_active_low(kInt0Pin, false);
+    for (unsigned i = 0; i < kLedCount; ++i) leds_shown_[i] = led(i);
+    mcu_.on_store([this] { trace_led_changes(); });
 }
 
 void Board::drive_active_low(PinRef pin, bool pressed) {
     mcu_.gpio().set_external_level(pin.port, pin.pin, !pressed);
 }
 
+void Board::set_input(PinRef pin, bool& pressed, bool press) {
+    if (pressed == press) return;
+    pressed = press;
+    drive_active_low(pin, press);
+    mcu_.trace().record({.kind = TraceKind::Input, .value = press ? 0u : 1u, .port = pin.port, .pin = pin.pin});
+}
+
+void Board::trace_led_changes() {
+    for (unsigned i = 0; i < kLedCount; ++i) {
+        const LedState now = led(i);
+        if (now == leds_shown_[i]) continue;
+        leds_shown_[i] = now;
+        mcu_.trace().record({.kind = TraceKind::Led, .value = static_cast<std::uint32_t>(now), .led = i});
+    }
+}
+
 void Board::press(JoystickDirection direction) {
     const auto i = static_cast<unsigned>(direction);
-    joystick_pressed_[i] = true;
-    drive_active_low(kJoystickPins[i], true);
+    set_input(kJoystickPins[i], joystick_pressed_[i], true);
 }
 
 void Board::release(JoystickDirection direction) {
     const auto i = static_cast<unsigned>(direction);
-    joystick_pressed_[i] = false;
-    drive_active_low(kJoystickPins[i], false);
+    set_input(kJoystickPins[i], joystick_pressed_[i], false);
 }
 
 bool Board::is_pressed(JoystickDirection direction) const {
     return joystick_pressed_[static_cast<unsigned>(direction)];
 }
 
-void Board::press_int0() {
-    int0_pressed_ = true;
-    drive_active_low(kInt0Pin, true);
-}
+void Board::press_int0() { set_input(kInt0Pin, int0_pressed_, true); }
 
-void Board::release_int0() {
-    int0_pressed_ = false;
-    drive_active_low(kInt0Pin, false);
-}
+void Board::release_int0() { set_input(kInt0Pin, int0_pressed_, false); }
 
 LedState Board::led(unsigned index) const {
     if (index >= kLedCount) throw std::out_of_range("LED " + std::to_string(index) + " out of range");

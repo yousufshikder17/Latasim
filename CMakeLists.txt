@@ -22,7 +22,8 @@ add_library(latasim_model STATIC
     src/lpc17xx/lpc1768.cpp
     src/lpc17xx/keil_gpio_driver.cpp
     src/boards/mcb1700/board.cpp
-    src/boards/mcb1700/keil_board_led.cpp)
+    src/boards/mcb1700/keil_board_led.cpp
+    src/trace/trace.cpp)
 target_include_directories(latasim_model PUBLIC src)
 latasim_warnings(latasim_model)
 

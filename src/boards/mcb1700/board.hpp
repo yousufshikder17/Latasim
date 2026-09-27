@@ -56,9 +56,13 @@ const char* to_string(JoystickDirection direction);
 // docs/phase2/open-questions.md, question 2).
 inline constexpr PinRef kInt0Pin{2, 10};
 
+// Traces (into mcu().trace()): each input that actually changes, and each LED
+// whose visible state changes after an MMIO store.
 class Board {
 public:
     Board();  // every input starts released
+    Board(const Board&) = delete;  // the MCU's store hook refers to this board
+    Board& operator=(const Board&) = delete;
 
     lpc17xx::Lpc1768& mcu() { return mcu_; }
     const lpc17xx::Lpc1768& mcu() const { return mcu_; }
@@ -76,8 +80,11 @@ public:
 
 private:
     void drive_active_low(PinRef pin, bool pressed);
+    void set_input(PinRef pin, bool& pressed, bool press);
+    void trace_led_changes();
 
     lpc17xx::Lpc1768 mcu_;
+    std::array<LedState, kLedCount> leds_shown_{};
     std::array<bool, kJoystickDirectionCount> joystick_pressed_{};
     bool int0_pressed_ = false;
 };

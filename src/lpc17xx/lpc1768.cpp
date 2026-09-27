@@ -33,7 +33,7 @@ AliasTarget alias_target(std::uint32_t alias) {
 // Reads the word an alias points at; a fault names the alias the firmware used.
 std::uint32_t Lpc1768::read_target(std::uint32_t alias, std::uint32_t word_address) const {
     try {
-        return read32(word_address);
+        return load(word_address, 4);
     } catch (const BusFault&) {
         throw BusFault(alias);
     }
@@ -64,6 +64,18 @@ Lpc1768::GpioTarget Lpc1768::decode_gpio(std::uint32_t address, unsigned size) {
 }
 
 std::uint32_t Lpc1768::read(std::uint32_t address, unsigned size) const {
+    const std::uint32_t value = load(address, size);
+    trace_.record({.kind = TraceKind::Read, .address = address, .width = size, .value = value});
+    return value;
+}
+
+void Lpc1768::write(std::uint32_t address, unsigned size, std::uint32_t value) {
+    store(address, size, value);
+    trace_.record({.kind = TraceKind::Write, .address = address, .width = size, .value = value});
+    if (on_store_) on_store_();
+}
+
+std::uint32_t Lpc1768::load(std::uint32_t address, unsigned size) const {
     if (is_alias(address)) {
         // Bit-band aliases are word accesses only here; narrow alias access is not modeled.
         if (size != 4 || (address & 3u) != 0) throw BusFault(address);
@@ -78,13 +90,13 @@ std::uint32_t Lpc1768::read(std::uint32_t address, unsigned size) const {
     return (gpio_.read(t.port, t.reg) & t.lanes) >> t.shift;
 }
 
-void Lpc1768::write(std::uint32_t address, unsigned size, std::uint32_t value) {
+void Lpc1768::store(std::uint32_t address, unsigned size, std::uint32_t value) {
     if (is_alias(address)) {
         if (size != 4 || (address & 3u) != 0) throw BusFault(address);
         const AliasTarget t = alias_target(address);
         const std::uint32_t word = read_target(address, t.word_address);
         const std::uint32_t mask = std::uint32_t{1} << t.bit;
-        write32(t.word_address, (value & 1u) ? (word | mask) : (word & ~mask));
+        store(t.word_address, 4, (value & 1u) ? (word | mask) : (word & ~mask));
         return;
     }
     if (address == kPconpAddress) {

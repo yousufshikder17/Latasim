@@ -159,6 +159,24 @@ TEST(HostRegisters, ProxiesHoldNoRegisterState) {
     EXPECT_TRUE(all_zero(latasim_sc));
 }
 
+// A register expression makes the same traced accesses as the driver call that
+// Keil implements with it: GPIO_SetDir is FIODIR |= bit, GPIO_PinWrite is FIOSET = bit.
+TEST(HostRegisters, RegisterAndCPathsRecordIdenticalTraces) {
+    Board via_registers;
+    {
+        FirmwareBinding bind(via_registers);
+        LPC_GPIO1->FIODIR |= 1UL << 28;
+        LPC_GPIO1->FIOSET = 1UL << 28;
+    }
+    Board via_c;
+    {
+        FirmwareBinding bind(via_c);
+        GPIO_SetDir(1, 28, GPIO_DIR_OUTPUT);
+        GPIO_PinWrite(1, 28, 1);
+    }
+    EXPECT_EQ(via_registers.mcu().trace().events(), via_c.mcu().trace().events());
+}
+
 // PCONP was unmapped (an access faulted) until the open-questions review; it is now
 // stored, so the register path and the C GPIO layer agree on GPIO_PortClock.
 TEST(HostRegisters, PconpIsSharedWithTheCGpioLayer) {

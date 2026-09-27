@@ -6,7 +6,10 @@
 #include <cstdint>
 #include <stdexcept>
 
+#include <functional>
+
 #include "lpc17xx/gpio.hpp"
+#include "trace/trace.hpp"
 
 namespace latasim::lpc17xx {
 
@@ -63,6 +66,15 @@ public:
     Gpio& gpio() { return gpio_; }
     const Gpio& gpio() const { return gpio_; }
 
+    // Every successful load and store above is traced, with the address and width
+    // the firmware used; a faulting access records nothing. A bit-band alias access
+    // is one event at the alias address.
+    Trace& trace() { return trace_; }
+    const Trace& trace() const { return trace_; }
+
+    // Called after every successful store, so the board can trace what it shows.
+    void on_store(std::function<void()> hook) { on_store_ = std::move(hook); }
+
     // PCONP is storage only: 32-bit access, and no bit gates anything. GPIO keeps
     // working with PCGPIO clear, as in the simulator (E9) and UM10360 section 9.1
     // ("Power: always enabled"); docs/phase2/open-questions.md.
@@ -76,12 +88,16 @@ private:
         std::uint32_t lanes;  // the bits the access covers
     };
     static GpioTarget decode_gpio(std::uint32_t address, unsigned size);
-    std::uint32_t read(std::uint32_t address, unsigned size) const;
-    void write(std::uint32_t address, unsigned size, std::uint32_t value);
+    std::uint32_t read(std::uint32_t address, unsigned size) const;  // traced
+    void write(std::uint32_t address, unsigned size, std::uint32_t value);  // traced
+    std::uint32_t load(std::uint32_t address, unsigned size) const;
+    void store(std::uint32_t address, unsigned size, std::uint32_t value);
     std::uint32_t read_target(std::uint32_t alias, std::uint32_t word_address) const;
 
     Gpio gpio_;
     std::uint32_t pconp_ = kPconpReset;
+    mutable Trace trace_;  // observation only: recording a load changes no model state
+    std::function<void()> on_store_;
 };
 
 }  // namespace latasim::lpc17xx
