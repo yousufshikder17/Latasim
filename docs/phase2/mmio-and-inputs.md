@@ -1,6 +1,6 @@
 # Phase 2 (in progress): MMIO access widths and board inputs
 
-**Status:** deliverables 4–6 are done. Deliverables 1–3 (the C firmware ABI, compiling real firmware on the host, and the literal-address MMIO spike) and tracing are next.
+**Status:** deliverables 1–6 are done. Deliverables 1–3 (the C firmware boundary, real firmware on the host, register-level firmware) are described in [host-firmware.md](host-firmware.md) and [host-registers.md](host-registers.md). Tracing is next.
 
 ## MMIO: 8-, 16- and 32-bit access
 

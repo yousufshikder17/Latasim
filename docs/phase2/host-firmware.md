@@ -41,7 +41,7 @@ Their public headers (`Board_LED.h` etc.) come from `Keil::MDK-Middleware` 7.13.
 - Keil's own `GPIO_LPC17xx.h`, `PIN_LPC17xx.h` and `Board_*.h` are used.
 
 **Adaptations.**
-- **Only one: a host `LPC17xx.h`** (`src/host/device/LPC17xx.h`), placed ahead of the device pack on the include path. The real header includes `core_cm3.h`, whose ARM compiler intrinsics the host compiler cannot build. These drivers use no registers, so the stand-in needs only `<stdint.h>`.
+- **Only one: a host `LPC17xx.h`** (`src/host/device/LPC17xx.h`), placed ahead of the device pack on the include path. The real header includes `core_cm3.h`, whose ARM compiler intrinsics the host compiler cannot build. These drivers use no registers. In C the stand-in provides only `<stdint.h>` and two MMIO accessor declarations; its register structures are C++ only ([host-registers.md](host-registers.md)).
 - `LPC175x_6x` is defined, as the Keil project does for the LPC1768.
 - Vendor files are compiled without `/WX`. Latasim's warning policy covers Latasim's code.
 
