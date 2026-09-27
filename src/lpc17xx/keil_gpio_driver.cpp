@@ -14,6 +14,11 @@ std::uint32_t pin_bit(unsigned pin) {
 
 }  // namespace
 
+void KeilGpioDriver::port_clock(bool on) {
+    const std::uint32_t pconp = mcu_.read32(kPconpAddress);
+    mcu_.write32(kPconpAddress, on ? (pconp | kPconpGpio) : (pconp & ~kPconpGpio));
+}
+
 void KeilGpioDriver::set_dir(unsigned port, unsigned pin, bool output) {
     const std::uint32_t bit = pin_bit(pin);
     const std::uint32_t dir = gpio_register_address(port, GpioReg::Dir);

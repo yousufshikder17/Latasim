@@ -72,8 +72,8 @@ typedef struct {
 #pragma warning(pop)
 #endif
 
-/* System control: only PCONP is declared (GPIO_PortClock uses it). The model does
- * not implement it, so any access faults. */
+/* System control: only PCONP is declared (GPIO_PortClock and SystemInit use it).
+ * The model stores it but gates nothing; other system control registers fault. */
 typedef struct {
     uint32_t RESERVED0[0xC4 / 4];
     ::latasim::host::Register<uint32_t> PCONP;

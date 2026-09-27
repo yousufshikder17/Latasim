@@ -4,6 +4,7 @@
 #include "boards/mcb1700/keil_board_led.hpp"
 #include "gpio_snapshot.hpp"
 #include "host/binding.hpp"
+#include "host/c/latasim_keil_gpio.h"
 #include "host/gpio_client.h"
 #include "lpc17xx/keil_gpio_driver.hpp"
 #include "lpc17xx/lpc1768.hpp"
@@ -158,11 +159,22 @@ TEST(HostRegisters, ProxiesHoldNoRegisterState) {
     EXPECT_TRUE(all_zero(latasim_sc));
 }
 
+// PCONP was unmapped (an access faulted) until the open-questions review; it is now
+// stored, so the register path and the C GPIO layer agree on GPIO_PortClock.
+TEST(HostRegisters, PconpIsSharedWithTheCGpioLayer) {
+    Board board;
+    FirmwareBinding bind(board);
+    EXPECT_EQ(LPC_SC->PCONP, latasim::lpc17xx::kPconpReset);
+    GPIO_PortClock(0);
+    EXPECT_EQ(LPC_SC->PCONP & (1UL << 15), 0UL);
+    LPC_SC->PCONP |= 1UL << 15;
+    EXPECT_EQ(board.mcu().pconp(), latasim::lpc17xx::kPconpReset);
+}
+
 TEST(HostRegistersDeathTest, UnmappedRegistersFault) {
     Board board;
     FirmwareBinding bind(board);
-    EXPECT_DEATH(LPC_SC->PCONP |= 1UL << 15, "register read: bus fault: no register at 0x400FC0C4");
-    EXPECT_DEATH(LPC_SC->PCONP = 0, "register write: bus fault: no register at 0x400FC0C4");
+    EXPECT_DEATH(LATASIM_REG32(0x400FC0C0) = 0, "register write: bus fault: no register at 0x400FC0C0");  // PCON
     EXPECT_DEATH(LATASIM_REG32(0x2009C004) = 1, "register write: bus fault: no register at 0x2009C004");
     EXPECT_DEATH((void)static_cast<uint32_t>(LATASIM_REG32(0x10000000)),
                  "register read: bus fault: no register at 0x10000000");

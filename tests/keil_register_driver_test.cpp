@@ -70,10 +70,21 @@ TEST(KeilRegisterDriver, MatchesThePhase1DriverEmulation) {
     EXPECT_EQ(snapshot(keil), snapshot(cpp));
 }
 
-// GPIO_PortClock writes PCONP, which the model does not implement. The host GPIO
-// layer accepts the call as a no-op; the register path faults instead.
-TEST(KeilRegisterDriverDeathTest, PortClockFaultsOnUnmodelledPconp) {
-    Board board;
-    FirmwareBinding bind(board);
-    EXPECT_DEATH(GPIO_PortClock(1), "register read: bus fault: no register at 0x400FC0C4");
+// GPIO_PortClock's LPC_SC->PCONP read-modify-write. PCONP was unmapped and this
+// call faulted until the open-questions review (docs/phase2/open-questions.md).
+TEST(KeilRegisterDriver, PortClockMatchesThePhase1DriverEmulation) {
+    Board keil;
+    {
+        FirmwareBinding bind(keil);
+        GPIO_PortClock(0);
+        EXPECT_EQ(keil.mcu().pconp() & latasim::lpc17xx::kPconpGpio, 0u);
+        GPIO_PortClock(1);
+        GPIO_PortClock(0);
+    }
+    Board cpp;
+    KeilGpioDriver gpio(cpp.mcu());
+    gpio.port_clock(false);
+    gpio.port_clock(true);
+    gpio.port_clock(false);
+    EXPECT_EQ(snapshot(keil), snapshot(cpp));
 }

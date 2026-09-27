@@ -1,7 +1,7 @@
 #pragma once
 // The LPC1768 as firmware sees it: 8/16/32-bit loads and stores to its memory map.
 // This is the seam a future MMIO adapter (host-compiled firmware, emulator)
-// plugs into. Only the GPIO block and its bit-band alias are mapped so far;
+// plugs into. Only the GPIO block, its bit-band alias and PCONP are mapped so far;
 // anything else raises BusFault, as an unmapped access would on the chip.
 #include <cstdint>
 #include <stdexcept>
@@ -13,6 +13,13 @@ namespace latasim::lpc17xx {
 // From LPC17xx.h (LPC1700_DFP 2.6.0).
 inline constexpr std::uint32_t kGpioBase = 0x2009C000;  // LPC_GPIO_BASE
 inline constexpr std::uint32_t kGpioPortStride = 0x20;  // LPC_GPIOn_BASE = base + n * 0x20
+
+// PCONP (UM10360 Table 46). Reset value: the sum of Table 46's per-bit reset values,
+// which the LPC1768 simulator also reads at reset (E9) and Keil's SystemInit writes.
+// UM10360 Table 14 and the SVD give 0x03BE instead, which contradicts Table 46.
+inline constexpr std::uint32_t kPconpAddress = 0x400FC0C4;
+inline constexpr std::uint32_t kPconpReset = 0x042887DE;
+inline constexpr std::uint32_t kPconpGpio = std::uint32_t{1} << 15;  // PCGPIO
 
 // Cortex-M3 SRAM bit-band: each bit of 0x20000000-0x200FFFFF has a word alias.
 inline constexpr std::uint32_t kBitBandBase = 0x20000000;
@@ -56,6 +63,11 @@ public:
     Gpio& gpio() { return gpio_; }
     const Gpio& gpio() const { return gpio_; }
 
+    // PCONP is storage only: 32-bit access, and no bit gates anything. GPIO keeps
+    // working with PCGPIO clear, as in the simulator (E9) and UM10360 section 9.1
+    // ("Power: always enabled"); docs/phase2/open-questions.md.
+    std::uint32_t pconp() const { return pconp_; }
+
 private:
     struct GpioTarget {
         unsigned port;
@@ -69,6 +81,7 @@ private:
     std::uint32_t read_target(std::uint32_t alias, std::uint32_t word_address) const;
 
     Gpio gpio_;
+    std::uint32_t pconp_ = kPconpReset;
 };
 
 }  // namespace latasim::lpc17xx

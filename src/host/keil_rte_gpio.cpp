@@ -4,8 +4,9 @@
 //
 // Each call delegates to the Phase 1 lpc17xx::KeilGpioDriver on the bound board,
 // which makes the same register accesses as Keil's driver: nothing is duplicated.
-// Not modeled, so accepted as no-ops: GPIO_PortClock (PCONP clock gating) and
-// PIN_Configure (PINSEL/PINMODE). GPIO_PortWrite/PortRead are not provided.
+// GPIO_PortClock sets or clears PCGPIO in PCONP, which the model stores but which
+// gates nothing. PIN_Configure (PINSEL/PINMODE) is not modeled and is accepted as a
+// no-op. GPIO_PortWrite/PortRead are not provided.
 #include <cstdint>
 #include <exception>
 
@@ -34,8 +35,8 @@ auto with_driver(const char* caller, Op op) {
 
 extern "C" {
 
-void GPIO_PortClock(std::uint32_t /*clock*/) {
-    require_bound_board("GPIO_PortClock");
+void GPIO_PortClock(std::uint32_t clock) {
+    with_driver("GPIO_PortClock", [&](KeilGpioDriver& d) { d.port_clock(clock != 0); });
 }
 
 void GPIO_SetDir(std::uint32_t port_num, std::uint32_t pin_num, std::uint32_t dir) {

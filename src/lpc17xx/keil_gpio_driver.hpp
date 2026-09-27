@@ -4,8 +4,7 @@
 // driver compiles to, through Lpc1768::read32/write32, so the board API path
 // and direct register access share one model.
 //
-// Not modeled: GPIO_PortClock (PCONP bit 15; the GPIO block is always clocked
-// here) and GPIO_PortWrite/GPIO_PortRead (unused so far).
+// Not modeled: GPIO_PortWrite/GPIO_PortRead (unused so far).
 #include <cstdint>
 
 #include "lpc17xx/lpc1768.hpp"
@@ -16,6 +15,8 @@ class KeilGpioDriver {
 public:
     explicit KeilGpioDriver(Lpc1768& mcu) : mcu_(mcu) {}
 
+    // GPIO_PortClock: PCONP |= PCGPIO (on) or PCONP &= ~PCGPIO (off).
+    void port_clock(bool on);
     // GPIO_SetDir: FIODIR |= bit (output) or FIODIR &= ~bit (input).
     void set_dir(unsigned port, unsigned pin, bool output);
     // GPIO_PinWrite: FIOSET = bit for 1, FIOCLR = bit for 0.

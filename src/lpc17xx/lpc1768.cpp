@@ -70,6 +70,10 @@ std::uint32_t Lpc1768::read(std::uint32_t address, unsigned size) const {
         const AliasTarget t = alias_target(address);
         return (read_target(address, t.word_address) >> t.bit) & 1u;
     }
+    if (address == kPconpAddress) {
+        if (size != 4) throw BusFault(address);
+        return pconp_;
+    }
     const GpioTarget t = decode_gpio(address, size);
     return (gpio_.read(t.port, t.reg) & t.lanes) >> t.shift;
 }
@@ -81,6 +85,11 @@ void Lpc1768::write(std::uint32_t address, unsigned size, std::uint32_t value) {
         const std::uint32_t word = read_target(address, t.word_address);
         const std::uint32_t mask = std::uint32_t{1} << t.bit;
         write32(t.word_address, (value & 1u) ? (word | mask) : (word & ~mask));
+        return;
+    }
+    if (address == kPconpAddress) {
+        if (size != 4) throw BusFault(address);
+        pconp_ = value;
         return;
     }
     const GpioTarget t = decode_gpio(address, size);
