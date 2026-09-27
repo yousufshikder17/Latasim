@@ -2,7 +2,7 @@
 
 A virtual lab bench for embedded firmware. It runs real Keil MCB1700 (NXP LPC1768, Cortex-M3) firmware against a simulated board, so LEDs, buttons, the joystick and the LCD can be driven, observed and asserted on in **deterministic, repeatable tests**, with no hardware on the desk.
 
-**Status:** Phase 0 (feasibility) is complete. This repository contains the experiments, evidence and architecture decisions; production code starts in Phase 1. Planned stack: C++20 and CMake, CLI first, Qt desktop UI later.
+**Status:** Phase 1 is complete: a production C++20 model of LPC1768 GPIO and the MCB1700 LEDs, with 51 tests and a CLI demo. Phase 0 (feasibility) experiments and evidence are kept alongside. Planned stack: C++20 and CMake, CLI first, Qt desktop UI later.
 
 ## Why
 
@@ -59,32 +59,53 @@ Each finding was diagnosed and worked around, and all are documented in [finding
 
 **Board facts:** a sourced pin map of the MCB1700's LEDs, joystick, INT0 button, GLCD (SSP1) and potentiometer, cross-checked in the simulator: [mcb1700-pin-map.md](docs/phase0/mcb1700-pin-map.md).
 
-## Next: Phase 1
+## Phase 1: the production model
 
-1. An LPC17xx GPIO register model with bit-band decoding, unit-tested against the Phase 0 numbers.
-2. An MCB1700 board model with one verified LED-polarity constant.
-3. A host harness that compiles firmware against the register model. It starts with a spike on trapping literal-address writes.
-4. A `vwb run` CLI with human-readable and JSON output. The first acceptance test is the bit-band firmware, which must report the P1.28 LED unchanged in direct-alias mode.
+- **One authoritative state.** An LPC17xx GPIO model (FIODIR, FIOMASK, FIOPIN, FIOSET, FIOCLR, bit-band aliases) whose semantics were checked register by register against µVision's LPC1768 simulator.
+- **Board layer.** An MCB1700 board model maps pins to LED0–LED7 and derives each LED's state (On, Off, or Undriven when its pin isn't an output) from that model.
+- **Two paths in, converging.** Direct register stores (B2) and host versions of Keil's GPIO and LED drivers (B1) both go through the same memory-mapped interface. Tests prove they leave identical state.
+- **Cross-checked.** The tests replay recorded simulator runs (E2, E5, E7) and match every register value, including the wrong-pin bit-band alias.
+
+```powershell
+scripts\build.ps1          # configure + build + run the 51 tests (MSVC, Ninja, GoogleTest)
+build\vwb gpio-demo        # deterministic LED demo through both paths
+```
+
+```
+Keil board API (LED_*), same register model
+  LED_Initialize()                             LED0 OFF       FIO1PIN=4FFFC713 FIO2PIN=00003F83
+  LED_On(0)                                    LED0 ON        FIO1PIN=5FFFC713 FIO2PIN=00003F83
+  FIO2CLR <- 00000004 (register store)         LED3 OFF       FIO1PIN=4FFFC713 FIO2PIN=00003F83
+```
+
+Details, exact semantics, limitations and the Phase 2 list: [docs/phase1/production-model.md](docs/phase1/production-model.md).
 
 ## Layout
 
 | Path | What |
 |---|---|
+| `src/lpc17xx/` | GPIO model, memory map and bit-band (`Lpc1768`), Keil GPIO driver (B1) |
+| `src/boards/mcb1700/` | Board model (LED pins, polarity, LED state), Keil LED board API (B1) |
+| `src/cli/` | The `vwb` command-line tool |
+| `tests/` | GoogleTest suite, including replays of recorded simulator runs |
+| `docs/phase1/` | The production model |
 | `docs/phase0/` | Findings, pin map, UVSC results, backend decisions |
-| `spikes/uvsim-script/` | µVision debug-script experiments E1–E6 (`*.ini`) and their recorded output (`*-run*.out`) |
+| `spikes/uvsim-script/` | µVision debug-script experiments E1–E7 (`*.ini`) and their recorded output (`*-run*.out`) |
 | `spikes/uvsc/` | Throwaway native C++ UVSC spike and its recorded results |
 | `scripts/` | Reproduce everything (PowerShell) |
 | `reference/` | Generated copies of the reference firmware (gitignored; recreate with `scripts/`) |
 | `third_party/uvsc/` | Provenance for Keil AN198 (UVSC). The package itself is Keil-licensed and not included; download it as described in `PROVENANCE.md` |
 
-## Reproduce
+## Reproduce the Phase 0 experiments
+
+The production build above needs only VS Build Tools. The experiments need Keil:
 
 ```powershell
 scripts\make-reference.ps1                      # Keil Blinky → reference\blinky (simulator-configured) + build
 scripts\snapshot-project.ps1 -Source <bit-band test project folder> -Project Bitband -Name bitband-test
 scripts\snapshot-project.ps1 -Source <joystick/LED demo project folder> -Project Blinky -Name joystick-led-demo
 scripts\run-sim.ps1 -Ini spikes\uvsim-script\e2-gpio-observe.ini -TimeoutSec 240
-scripts\run-uvsc-spike.ps1                      # builds with MSVC (vcvars64) + runs the UVSC spike
+scripts\run-uvsc-spike.ps1                      # builds the opt-in UVSC spike (build\uvsc-spike) + runs it
 ```
 
 **Requirements:**
