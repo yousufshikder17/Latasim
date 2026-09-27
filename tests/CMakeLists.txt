@@ -30,30 +30,12 @@ latasim_warnings(latasim_tests)
 include(GoogleTest)
 gtest_discover_tests(latasim_tests)
 
-# Keil's MCB1700 board-support drivers, compiled unchanged as C from the installed
-# packs and run against Latasim (docs/phase2/host-firmware.md). Keil sources are
-# never copied into this repository, so this target is built only when the packs
-# are present.
-set(LATASIM_KEIL_PACKS_DIR "$ENV{LOCALAPPDATA}/Arm/Packs" CACHE PATH "Keil/CMSIS pack root")
-set(LATASIM_KEIL_DFP "${LATASIM_KEIL_PACKS_DIR}/Keil/LPC1700_DFP/2.6.0")
-set(LATASIM_KEIL_BOARD_API "${LATASIM_KEIL_PACKS_DIR}/Keil/MDK-Middleware/7.13.0/Board")
-set(LATASIM_KEIL_MCB1700 "${LATASIM_KEIL_DFP}/Boards/Keil/MCB1700/Common")
-if(EXISTS "${LATASIM_KEIL_MCB1700}/LED_MCB1700.c" AND EXISTS "${LATASIM_KEIL_BOARD_API}/Board_LED.h")
-    set(keil_board_drivers
-        "${LATASIM_KEIL_MCB1700}/LED_MCB1700.c"
-        "${LATASIM_KEIL_MCB1700}/Joystick_MCB1700.c"
-        "${LATASIM_KEIL_MCB1700}/Buttons_MCB1700.c")
-    set_source_files_properties(${keil_board_drivers} PROPERTIES LANGUAGE C)
-    add_executable(latasim_keil_firmware_tests keil_firmware_test.cpp ${keil_board_drivers})
-    target_include_directories(latasim_keil_firmware_tests PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        ${PROJECT_SOURCE_DIR}/src/host/device   # host LPC17xx.h, ahead of anything else
-        "${LATASIM_KEIL_DFP}/RTE_Driver"        # Keil's own GPIO_LPC17xx.h, PIN_LPC17xx.h
-        "${LATASIM_KEIL_BOARD_API}")            # Keil's own Board_*.h
-    target_compile_definitions(latasim_keil_firmware_tests PRIVATE LPC175x_6x)
-    target_link_libraries(latasim_keil_firmware_tests PRIVATE latasim_host GTest::gtest_main)
-    # Our warning policy applies to our file, not to the vendor sources.
-    set_source_files_properties(keil_firmware_test.cpp PROPERTIES COMPILE_OPTIONS "/W4;/WX;/permissive-;/utf-8")
+# Tests that run Keil's own sources, built only when the packs are installed.
+if(TARGET latasim_keil_board_drivers)
+    add_executable(latasim_keil_firmware_tests keil_firmware_test.cpp)
+    target_include_directories(latasim_keil_firmware_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    target_link_libraries(latasim_keil_firmware_tests PRIVATE latasim_keil_board_drivers GTest::gtest_main)
+    latasim_warnings(latasim_keil_firmware_tests)
     gtest_discover_tests(latasim_keil_firmware_tests)
 
     # Keil's register-level GPIO driver, compiled unchanged as C++ so its register
@@ -68,6 +50,4 @@ if(EXISTS "${LATASIM_KEIL_MCB1700}/LED_MCB1700.c" AND EXISTS "${LATASIM_KEIL_BOA
     target_link_libraries(latasim_keil_register_tests PRIVATE latasim_host GTest::gtest_main)
     set_source_files_properties(keil_register_driver_test.cpp PROPERTIES COMPILE_OPTIONS "/W4;/WX;/permissive-;/utf-8")
     gtest_discover_tests(latasim_keil_register_tests)
-else()
-    message(STATUS "Keil packs not found under ${LATASIM_KEIL_PACKS_DIR}: Keil firmware tests not built")
 endif()

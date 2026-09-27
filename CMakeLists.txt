@@ -37,6 +37,32 @@ target_link_libraries(latasim_host PUBLIC latasim_model)
 target_include_directories(latasim_host PUBLIC src/host/device)
 latasim_warnings(latasim_host)
 
+# Keil's MCB1700 board-support drivers, compiled unchanged as C from the installed
+# packs (docs/phase2/host-firmware.md). Keil sources are never copied into this
+# repository, so everything that needs them is built only when the packs exist.
+set(LATASIM_KEIL_PACKS_DIR "$ENV{LOCALAPPDATA}/Arm/Packs" CACHE PATH "Keil/CMSIS pack root")
+set(LATASIM_KEIL_DFP "${LATASIM_KEIL_PACKS_DIR}/Keil/LPC1700_DFP/2.6.0")
+set(LATASIM_KEIL_BOARD_API "${LATASIM_KEIL_PACKS_DIR}/Keil/MDK-Middleware/7.13.0/Board")
+set(LATASIM_KEIL_MCB1700 "${LATASIM_KEIL_DFP}/Boards/Keil/MCB1700/Common")
+if(EXISTS "${LATASIM_KEIL_MCB1700}/LED_MCB1700.c" AND EXISTS "${LATASIM_KEIL_BOARD_API}/Board_LED.h")
+    set(keil_board_drivers
+        "${LATASIM_KEIL_MCB1700}/LED_MCB1700.c"
+        "${LATASIM_KEIL_MCB1700}/Joystick_MCB1700.c"
+        "${LATASIM_KEIL_MCB1700}/Buttons_MCB1700.c")
+    set_source_files_properties(${keil_board_drivers} PROPERTIES LANGUAGE C)
+    # Vendor code: Latasim's warning policy is not applied.
+    add_library(latasim_keil_board_drivers STATIC ${keil_board_drivers})
+    target_include_directories(latasim_keil_board_drivers
+        PUBLIC "${LATASIM_KEIL_BOARD_API}"          # Keil's own Board_*.h
+        PRIVATE "${LATASIM_KEIL_DFP}/RTE_Driver")   # Keil's own GPIO_LPC17xx.h, PIN_LPC17xx.h
+    target_compile_definitions(latasim_keil_board_drivers PRIVATE LPC175x_6x)
+    # latasim_host supplies the GPIO_*/PIN_* functions and the host LPC17xx.h.
+    target_link_libraries(latasim_keil_board_drivers PUBLIC latasim_host)
+else()
+    message(STATUS "Keil packs not found under ${LATASIM_KEIL_PACKS_DIR}: "
+                   "Keil firmware tests not built")
+endif()
+
 add_executable(latasim src/cli/main.cpp src/cli/gpio_demo.cpp)
 target_link_libraries(latasim PRIVATE latasim_model)
 latasim_warnings(latasim)

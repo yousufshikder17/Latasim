@@ -14,8 +14,11 @@ extern "C" {  // Keil's headers have no C++ guards; the drivers are compiled as 
 #include "boards/mcb1700/keil_board_led.hpp"
 #include "gpio_snapshot.hpp"
 #include "host/binding.hpp"
+#include "trace/trace.hpp"
 
 #include <gtest/gtest.h>
+
+#include <vector>
 
 using latasim::host::FirmwareBinding;
 using latasim::mcb1700::Board;
@@ -141,4 +144,99 @@ TEST(KeilFirmware, RepeatedRunsReachIdenticalState) {
         return snapshot(board);
     };
     EXPECT_EQ(run(), run());
+}
+
+// The Phase 2 end-to-end scenario: Keil's drivers initialise the board, light an
+// LED, read an injected joystick press and INT0 press, and show both on the LEDs.
+// Every step is checked in the hardware trace, and a repeat run matches exactly.
+namespace {
+
+using latasim::TraceEvent;
+using latasim::TraceKind;
+
+struct ScenarioResult {
+    std::vector<TraceEvent> trace;
+    latasim::test::GpioSnapshot state;
+};
+
+std::vector<TraceEvent> new_events(const Board& board, std::size_t& seen) {
+    const auto& all = board.mcu().trace().events();
+    std::vector<TraceEvent> fresh(all.begin() + static_cast<std::ptrdiff_t>(seen), all.end());
+    seen = all.size();
+    return fresh;
+}
+
+ScenarioResult run_scenario() {
+    Board board;
+    FirmwareBinding bind(board);
+    std::size_t seen = 0;
+
+    LED_Initialize();
+    Joystick_Initialize();
+    Buttons_Initialize();
+    const auto init = new_events(board, seen);
+    // GPIO_PortClock(1) first: Keil's PCONP read-modify-write.
+    EXPECT_EQ(init.at(0).kind, TraceKind::Read);
+    EXPECT_EQ(init.at(0).address, latasim::lpc17xx::kPconpAddress);
+    EXPECT_EQ(init.at(1).kind, TraceKind::Write);
+    for (unsigned i = 0; i < kLedCount; ++i) EXPECT_EQ(board.led(i), LedState::Off);
+
+    LED_On(0);
+    const auto led_on = new_events(board, seen);
+    EXPECT_EQ(led_on.size(), 2u);
+    EXPECT_EQ(led_on.at(0).kind, TraceKind::Write);
+    EXPECT_EQ(led_on.at(0).address, FIO1PIN + 4) << "FIO1SET";
+    EXPECT_EQ(led_on.at(0).value, 1u << 28);
+    EXPECT_EQ(led_on.at(1).kind, TraceKind::Led);
+    EXPECT_EQ(led_on.at(1).led, 0u);
+    EXPECT_EQ(led_on.at(1).value, static_cast<std::uint32_t>(LedState::On));
+
+    board.press(JoystickDirection::Up);
+    const auto press = new_events(board, seen);
+    EXPECT_EQ(press.size(), 1u);
+    EXPECT_EQ(press.at(0).kind, TraceKind::Input);
+    EXPECT_EQ(press.at(0).port, 1u);
+    EXPECT_EQ(press.at(0).pin, 23u);
+    EXPECT_EQ(press.at(0).value, 0u) << "pressed = low";
+
+    const uint32_t joystick = Joystick_GetState();
+    EXPECT_EQ(joystick, static_cast<uint32_t>(JOYSTICK_UP));
+    const auto joystick_reads = new_events(board, seen);
+    EXPECT_EQ(joystick_reads.size(), 5u) << "one FIO1PIN read per direction";
+    for (const auto& e : joystick_reads) {
+        EXPECT_EQ(e.kind, TraceKind::Read);
+        EXPECT_EQ(e.address, FIO1PIN);
+        EXPECT_EQ(e.value & (1u << 23), 0u) << "the firmware saw the press";
+    }
+
+    board.press_int0();
+    const auto int0 = new_events(board, seen);
+    EXPECT_EQ(int0.size(), 1u);
+    EXPECT_EQ(int0.at(0).port, 2u);
+    EXPECT_EQ(int0.at(0).pin, 10u);
+    const uint32_t buttons = Buttons_GetState();
+    EXPECT_EQ(buttons, 1u);
+    const auto button_read = new_events(board, seen);
+    EXPECT_EQ(button_read.size(), 1u);
+    EXPECT_EQ(button_read.at(0).address, FIO2PIN);
+    EXPECT_EQ(button_read.at(0).value & (1u << 10), 0u);
+
+    LED_SetOut(joystick | buttons);  // LED3 for UP, LED0 for INT0
+    board.release(JoystickDirection::Up);
+    board.release_int0();
+    for (unsigned i = 0; i < kLedCount; ++i)
+        EXPECT_EQ(board.led(i), (i == 0 || i == 3) ? LedState::On : LedState::Off) << "LED" << i;
+    EXPECT_EQ(board.mcu().read32(FIO1PIN) & (1u << 23), 1u << 23) << "released";
+
+    return {board.mcu().trace().events(), snapshot(board)};
+}
+
+}  // namespace
+
+TEST(KeilFirmware, EndToEndScenarioIsTracedAndDeterministic) {
+    const ScenarioResult first = run_scenario();
+    const ScenarioResult second = run_scenario();
+    EXPECT_EQ(first.trace, second.trace);
+    EXPECT_EQ(first.state, second.state);
+    for (std::size_t i = 0; i < first.trace.size(); ++i) EXPECT_EQ(first.trace[i].seq, i + 1);
 }
