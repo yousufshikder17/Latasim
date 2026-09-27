@@ -13,6 +13,7 @@ add_executable(latasim_tests
     lpc1768_narrow_test.cpp
     gpio_external_input_test.cpp
     mcb1700_test.cpp
+    board_inputs_test.cpp
     keil_board_led_test.cpp
     convergence_test.cpp
     gpio_demo_test.cpp
