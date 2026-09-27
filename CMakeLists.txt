@@ -1,14 +1,14 @@
 cmake_minimum_required(VERSION 3.25)
-project(virtual_workbench CXX)
+project(latasim CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-option(VWB_BUILD_TESTS "Build the unit tests (fetches GoogleTest)" ON)
-option(VWB_BUILD_UVSC_SPIKE "Build the Phase 0 UVSC spike (needs Keil AN198)" OFF)
+option(LATASIM_BUILD_TESTS "Build the unit tests (fetches GoogleTest)" ON)
+option(LATASIM_BUILD_UVSC_SPIKE "Build the Phase 0 UVSC spike (needs Keil AN198)" OFF)
 
-function(vwb_warnings target)
+function(latasim_warnings target)
     if(MSVC)
         target_compile_options(${target} PRIVATE /W4 /WX /permissive- /utf-8)
     else()
@@ -17,20 +17,20 @@ function(vwb_warnings target)
 endfunction()
 
 # Production model: LPC17xx peripherals and the MCB1700 board. See docs/phase1/.
-add_library(vwb_model STATIC
+add_library(latasim_model STATIC
     src/lpc17xx/gpio.cpp
     src/lpc17xx/lpc1768.cpp
     src/lpc17xx/keil_gpio_driver.cpp
     src/boards/mcb1700/board.cpp
     src/boards/mcb1700/keil_board_led.cpp)
-target_include_directories(vwb_model PUBLIC src)
-vwb_warnings(vwb_model)
+target_include_directories(latasim_model PUBLIC src)
+latasim_warnings(latasim_model)
 
-add_executable(vwb src/cli/main.cpp src/cli/gpio_demo.cpp)
-target_link_libraries(vwb PRIVATE vwb_model)
-vwb_warnings(vwb)
+add_executable(latasim src/cli/main.cpp src/cli/gpio_demo.cpp)
+target_link_libraries(latasim PRIVATE latasim_model)
+latasim_warnings(latasim)
 
-if(VWB_BUILD_TESTS)
+if(LATASIM_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
 endif()
@@ -38,7 +38,7 @@ endif()
 # Phase 0 spike (throwaway; see docs/phase0/). Its UVSC declarations are generated
 # from a local copy of Keil's AN198 (apnt_198.zip or an extracted UVSC_C.h); see
 # third_party/uvsc/PROVENANCE.md.
-if(VWB_BUILD_UVSC_SPIKE)
+if(LATASIM_BUILD_UVSC_SPIKE)
     set(UVSC_SOURCE "${CMAKE_SOURCE_DIR}/third_party/uvsc/apnt_198.zip"
         CACHE FILEPATH "Keil AN198 apnt_198.zip, or an extracted UVSC_C.h")
     if(NOT EXISTS "${UVSC_SOURCE}")

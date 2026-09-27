@@ -7,7 +7,7 @@
 namespace {
 
 int usage() {
-    std::puts("usage: vwb <command>\n"
+    std::puts("usage: latasim <command>\n"
               "\n"
               "commands:\n"
               "  gpio-demo   drive MCB1700 LEDs through registers and the board API\n"

@@ -4,12 +4,12 @@ param([int]$Stops = 6, [switch]$NoBuild)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot
 $fw  = Join-Path $root 'reference\bitband-test'
-$log  = Join-Path $env:TEMP 'vwb-sim.log'   # LOG > rejects paths with spaces
+$log  = Join-Path $env:TEMP 'latasim-sim.log'   # LOG > rejects paths with spaces
 $bin  = Join-Path $root 'build\uvsc-spike'   # separate from the production build tree
 
 if (-not $NoBuild) {
     $vcvars = 'C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\VC\Auxiliary\Build\vcvars64.bat'
-    cmd /c "`"$vcvars`" >nul && cmake -S `"$root`" -B `"$bin`" -G Ninja -DCMAKE_BUILD_TYPE=Release -DVWB_BUILD_UVSC_SPIKE=ON -DVWB_BUILD_TESTS=OFF >nul && cmake --build `"$bin`" --target uvsc_spike"
+    cmd /c "`"$vcvars`" >nul && cmake -S `"$root`" -B `"$bin`" -G Ninja -DCMAKE_BUILD_TYPE=Release -DLATASIM_BUILD_UVSC_SPIKE=ON -DLATASIM_BUILD_TESTS=OFF >nul && cmake --build `"$bin`" --target uvsc_spike"
     if ($LASTEXITCODE) { throw 'build failed' }
 }
 

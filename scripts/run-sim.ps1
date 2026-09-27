@@ -12,7 +12,7 @@ param(
 $ErrorActionPreference = 'Stop'
 if (-not $Project) { $Project = Join-Path (Split-Path $PSScriptRoot) 'reference\blinky\Blinky.uvprojx' }
 $dst = Split-Path $Project
-$log = Join-Path $env:TEMP 'vwb-sim.log'   # LOG > rejects paths with spaces (error 10)
+$log = Join-Path $env:TEMP 'latasim-sim.log'   # LOG > rejects paths with spaces (error 10)
 
 # µVision saves a session's breakpoints into the project's .uvoptx on exit and restores
 # them after the INI runs (so an INI "BK *" can't clear them). Start every run clean,

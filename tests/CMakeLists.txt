@@ -7,7 +7,7 @@ set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
 set(BUILD_GMOCK OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-add_executable(vwb_tests
+add_executable(latasim_tests
     gpio_test.cpp
     lpc1768_test.cpp
     mcb1700_test.cpp
@@ -15,8 +15,8 @@ add_executable(vwb_tests
     convergence_test.cpp
     gpio_demo_test.cpp
     ${PROJECT_SOURCE_DIR}/src/cli/gpio_demo.cpp)
-target_link_libraries(vwb_tests PRIVATE vwb_model GTest::gtest_main)
-vwb_warnings(vwb_tests)
+target_link_libraries(latasim_tests PRIVATE latasim_model GTest::gtest_main)
+latasim_warnings(latasim_tests)
 
 include(GoogleTest)
-gtest_discover_tests(vwb_tests)
+gtest_discover_tests(latasim_tests)
