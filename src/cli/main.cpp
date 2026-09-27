@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
     if (argc != 2) return usage();
     const std::string_view command = argv[1];
     if (command == "gpio-demo") {
-        vwb::cli::run_gpio_demo(std::cout);
+        latasim::cli::run_gpio_demo(std::cout);
         return 0;
     }
     if (command == "help") {

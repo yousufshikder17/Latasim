@@ -2,12 +2,12 @@
 
 #include <gtest/gtest.h>
 
-using vwb::lpc17xx::bit_band_alias;
-using vwb::lpc17xx::BusFault;
-using vwb::lpc17xx::gpio_register_address;
-using vwb::lpc17xx::GpioReg;
-using vwb::lpc17xx::kBondedPins;
-using vwb::lpc17xx::Lpc1768;
+using latasim::lpc17xx::bit_band_alias;
+using latasim::lpc17xx::BusFault;
+using latasim::lpc17xx::gpio_register_address;
+using latasim::lpc17xx::GpioReg;
+using latasim::lpc17xx::kBondedPins;
+using latasim::lpc17xx::Lpc1768;
 
 namespace {
 

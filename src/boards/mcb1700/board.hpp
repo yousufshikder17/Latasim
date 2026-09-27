@@ -6,7 +6,7 @@
 
 #include "lpc17xx/lpc1768.hpp"
 
-namespace vwb::mcb1700 {
+namespace latasim::mcb1700 {
 
 struct PinRef {
     unsigned port;
@@ -46,4 +46,4 @@ private:
     lpc17xx::Lpc1768 mcu_;
 };
 
-}  // namespace vwb::mcb1700
+}  // namespace latasim::mcb1700

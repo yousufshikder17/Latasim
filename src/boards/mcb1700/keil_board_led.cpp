@@ -2,7 +2,7 @@
 
 #include "boards/mcb1700/board.hpp"
 
-namespace vwb::mcb1700 {
+namespace latasim::mcb1700 {
 
 std::int32_t KeilBoardLed::initialize() {
     for (const PinRef& p : kLedPins) {
@@ -34,4 +34,4 @@ std::int32_t KeilBoardLed::set_out(std::uint32_t val) {
 
 std::uint32_t KeilBoardLed::count() const { return kLedCount; }
 
-}  // namespace vwb::mcb1700
+}  // namespace latasim::mcb1700

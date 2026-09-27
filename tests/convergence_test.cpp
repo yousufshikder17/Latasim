@@ -9,16 +9,16 @@
 
 #include <array>
 
-using vwb::lpc17xx::bit_band_alias;
-using vwb::lpc17xx::Gpio;
-using vwb::lpc17xx::gpio_register_address;
-using vwb::lpc17xx::GpioReg;
-using vwb::lpc17xx::KeilGpioDriver;
-using vwb::lpc17xx::Lpc1768;
-using vwb::mcb1700::Board;
-using vwb::mcb1700::KeilBoardLed;
-using vwb::mcb1700::kLedCount;
-using vwb::mcb1700::LedState;
+using latasim::lpc17xx::bit_band_alias;
+using latasim::lpc17xx::Gpio;
+using latasim::lpc17xx::gpio_register_address;
+using latasim::lpc17xx::GpioReg;
+using latasim::lpc17xx::KeilGpioDriver;
+using latasim::lpc17xx::Lpc1768;
+using latasim::mcb1700::Board;
+using latasim::mcb1700::KeilBoardLed;
+using latasim::mcb1700::kLedCount;
+using latasim::mcb1700::LedState;
 
 namespace {
 

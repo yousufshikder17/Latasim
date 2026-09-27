@@ -8,7 +8,7 @@
 // the model's behaviour changed; update this text only on purpose.
 TEST(GpioDemo, OutputIsExactlyAsExpected) {
     std::ostringstream out;
-    vwb::cli::run_gpio_demo(out);
+    latasim::cli::run_gpio_demo(out);
     EXPECT_EQ(out.str(),
         "MCB1700 GPIO demo: LED0 = P1.28, LED3 = P2.2, active-high\n"
         "\n"
@@ -34,7 +34,7 @@ TEST(GpioDemo, OutputIsExactlyAsExpected) {
 
 TEST(GpioDemo, RepeatedRunsAreIdentical) {
     std::ostringstream first, second;
-    vwb::cli::run_gpio_demo(first);
-    vwb::cli::run_gpio_demo(second);
+    latasim::cli::run_gpio_demo(first);
+    latasim::cli::run_gpio_demo(second);
     EXPECT_EQ(first.str(), second.str());
 }

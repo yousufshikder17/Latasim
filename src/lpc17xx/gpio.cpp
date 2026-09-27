@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace vwb::lpc17xx {
+namespace latasim::lpc17xx {
 namespace {
 
 std::uint32_t bit(unsigned pin) {
@@ -64,4 +64,4 @@ bool Gpio::is_output(unsigned port, unsigned pin) const {
     return (port_at(port).dir & bit(pin)) != 0;
 }
 
-}  // namespace vwb::lpc17xx
+}  // namespace latasim::lpc17xx

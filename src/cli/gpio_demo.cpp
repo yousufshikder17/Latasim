@@ -7,7 +7,7 @@
 #include "boards/mcb1700/board.hpp"
 #include "boards/mcb1700/keil_board_led.hpp"
 
-namespace vwb::cli {
+namespace latasim::cli {
 namespace {
 
 using lpc17xx::bit_band_alias;
@@ -72,4 +72,4 @@ void run_gpio_demo(std::ostream& out) {
     out << "\n";
 }
 
-}  // namespace vwb::cli
+}  // namespace latasim::cli

@@ -11,7 +11,7 @@
 #include "lpc17xx/keil_gpio_driver.hpp"
 #include "lpc17xx/lpc1768.hpp"
 
-namespace vwb::mcb1700 {
+namespace latasim::mcb1700 {
 
 class KeilBoardLed {
 public:
@@ -27,4 +27,4 @@ private:
     lpc17xx::KeilGpioDriver gpio_;
 };
 
-}  // namespace vwb::mcb1700
+}  // namespace latasim::mcb1700

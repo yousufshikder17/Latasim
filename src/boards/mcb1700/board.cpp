@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace vwb::mcb1700 {
+namespace latasim::mcb1700 {
 
 const char* to_string(LedState state) {
     switch (state) {
@@ -22,4 +22,4 @@ LedState Board::led(unsigned index) const {
     return gpio.pin_level(p.port, p.pin) == kLedActiveHigh ? LedState::On : LedState::Off;
 }
 
-}  // namespace vwb::mcb1700
+}  // namespace latasim::mcb1700

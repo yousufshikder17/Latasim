@@ -10,7 +10,7 @@
 
 #include "lpc17xx/lpc1768.hpp"
 
-namespace vwb::lpc17xx {
+namespace latasim::lpc17xx {
 
 class KeilGpioDriver {
 public:
@@ -27,4 +27,4 @@ private:
     Lpc1768& mcu_;
 };
 
-}  // namespace vwb::lpc17xx
+}  // namespace latasim::lpc17xx

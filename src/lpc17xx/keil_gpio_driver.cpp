@@ -1,6 +1,6 @@
 #include "lpc17xx/keil_gpio_driver.hpp"
 
-namespace vwb::lpc17xx {
+namespace latasim::lpc17xx {
 
 void KeilGpioDriver::set_dir(unsigned port, unsigned pin, bool output) {
     const std::uint32_t dir = gpio_register_address(port, GpioReg::Dir);
@@ -17,4 +17,4 @@ std::uint32_t KeilGpioDriver::pin_read(unsigned port, unsigned pin) const {
     return (mcu_.read32(gpio_register_address(port, GpioReg::Pin)) >> pin) & 1u;
 }
 
-}  // namespace vwb::lpc17xx
+}  // namespace latasim::lpc17xx

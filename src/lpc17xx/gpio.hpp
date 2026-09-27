@@ -19,7 +19,7 @@
 #include <array>
 #include <cstdint>
 
-namespace vwb::lpc17xx {
+namespace latasim::lpc17xx {
 
 // Register offsets within one port, as in LPC17xx.h (LPC_GPIO_TypeDef).
 enum class GpioReg : std::uint32_t {
@@ -70,4 +70,4 @@ private:
 inline constexpr std::array<std::uint32_t, Gpio::kPortCount> kBondedPins{
     0x7FFF8FFF, 0xFFFFC713, 0x00003FFF, 0x06000000, 0x30000000};
 
-}  // namespace vwb::lpc17xx
+}  // namespace latasim::lpc17xx

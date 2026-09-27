@@ -4,9 +4,9 @@
 
 #include <stdexcept>
 
-using vwb::lpc17xx::Gpio;
-using vwb::lpc17xx::GpioReg;
-using vwb::lpc17xx::kBondedPins;
+using latasim::lpc17xx::Gpio;
+using latasim::lpc17xx::GpioReg;
+using latasim::lpc17xx::kBondedPins;
 
 namespace {
 

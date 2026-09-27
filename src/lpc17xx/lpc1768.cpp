@@ -3,7 +3,7 @@
 #include <cstdio>
 #include <string>
 
-namespace vwb::lpc17xx {
+namespace latasim::lpc17xx {
 namespace {
 
 std::string fault_message(std::uint32_t address) {
@@ -81,4 +81,4 @@ void Lpc1768::write32(std::uint32_t address, std::uint32_t value) {
     gpio_.write(t.port, t.reg, value);
 }
 
-}  // namespace vwb::lpc17xx
+}  // namespace latasim::lpc17xx

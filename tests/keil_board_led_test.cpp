@@ -4,13 +4,13 @@
 
 #include <gtest/gtest.h>
 
-using vwb::lpc17xx::gpio_register_address;
-using vwb::lpc17xx::GpioReg;
-using vwb::lpc17xx::KeilGpioDriver;
-using vwb::mcb1700::Board;
-using vwb::mcb1700::KeilBoardLed;
-using vwb::mcb1700::kLedCount;
-using vwb::mcb1700::LedState;
+using latasim::lpc17xx::gpio_register_address;
+using latasim::lpc17xx::GpioReg;
+using latasim::lpc17xx::KeilGpioDriver;
+using latasim::mcb1700::Board;
+using latasim::mcb1700::KeilBoardLed;
+using latasim::mcb1700::kLedCount;
+using latasim::mcb1700::LedState;
 
 TEST(KeilGpioDriver, SetDirTouchesOnlyItsBit) {
     Board board;

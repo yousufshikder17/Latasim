@@ -8,7 +8,7 @@
 
 #include "lpc17xx/gpio.hpp"
 
-namespace vwb::lpc17xx {
+namespace latasim::lpc17xx {
 
 // From LPC17xx.h (LPC1700_DFP 2.6.0).
 inline constexpr std::uint32_t kGpioBase = 0x2009C000;  // LPC_GPIO_BASE
@@ -60,4 +60,4 @@ private:
     Gpio gpio_;
 };
 
-}  // namespace vwb::lpc17xx
+}  // namespace latasim::lpc17xx
