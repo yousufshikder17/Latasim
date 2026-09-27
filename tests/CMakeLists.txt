@@ -32,7 +32,10 @@ gtest_discover_tests(latasim_tests)
 
 # Tests that run Keil's own sources, built only when the packs are installed.
 if(TARGET latasim_keil_board_drivers)
-    add_executable(latasim_keil_firmware_tests keil_firmware_test.cpp)
+    add_executable(latasim_keil_firmware_tests
+        keil_firmware_test.cpp
+        firmware_demo_test.cpp
+        ${PROJECT_SOURCE_DIR}/src/cli/firmware_demo.cpp)
     target_include_directories(latasim_keil_firmware_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
     target_link_libraries(latasim_keil_firmware_tests PRIVATE latasim_keil_board_drivers GTest::gtest_main)
     latasim_warnings(latasim_keil_firmware_tests)

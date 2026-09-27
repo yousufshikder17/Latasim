@@ -60,11 +60,16 @@ if(EXISTS "${LATASIM_KEIL_MCB1700}/LED_MCB1700.c" AND EXISTS "${LATASIM_KEIL_BOA
     target_link_libraries(latasim_keil_board_drivers PUBLIC latasim_host)
 else()
     message(STATUS "Keil packs not found under ${LATASIM_KEIL_PACKS_DIR}: "
-                   "Keil firmware tests not built")
+                   "Keil firmware tests and `latasim firmware-demo` not built")
 endif()
 
 add_executable(latasim src/cli/main.cpp src/cli/gpio_demo.cpp)
 target_link_libraries(latasim PRIVATE latasim_model)
+if(TARGET latasim_keil_board_drivers)
+    target_sources(latasim PRIVATE src/cli/firmware_demo.cpp)
+    target_link_libraries(latasim PRIVATE latasim_keil_board_drivers)
+    target_compile_definitions(latasim PRIVATE LATASIM_HAVE_KEIL_BOARD_DRIVERS)
+endif()
 latasim_warnings(latasim)
 
 if(LATASIM_BUILD_TESTS)
