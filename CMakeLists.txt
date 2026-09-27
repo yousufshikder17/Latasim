@@ -19,7 +19,8 @@ endfunction()
 # Production model: LPC17xx peripherals and the MCB1700 board. See docs/phase1/.
 add_library(vwb_model STATIC
     src/lpc17xx/gpio.cpp
-    src/lpc17xx/lpc1768.cpp)
+    src/lpc17xx/lpc1768.cpp
+    src/boards/mcb1700/board.cpp)
 target_include_directories(vwb_model PUBLIC src)
 vwb_warnings(vwb_model)
 

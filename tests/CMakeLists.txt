@@ -9,7 +9,8 @@ FetchContent_MakeAvailable(googletest)
 
 add_executable(vwb_tests
     gpio_test.cpp
-    lpc1768_test.cpp)
+    lpc1768_test.cpp
+    mcb1700_test.cpp)
 target_link_libraries(vwb_tests PRIVATE vwb_model GTest::gtest_main)
 vwb_warnings(vwb_tests)
 
