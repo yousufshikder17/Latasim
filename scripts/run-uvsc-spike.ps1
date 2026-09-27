@@ -5,10 +5,11 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot
 $fw  = Join-Path $root 'reference\bitband-test'
 $log  = Join-Path $env:TEMP 'vwb-sim.log'   # LOG > rejects paths with spaces
+$bin  = Join-Path $root 'build\uvsc-spike'   # separate from the production build tree
 
 if (-not $NoBuild) {
     $vcvars = 'C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\VC\Auxiliary\Build\vcvars64.bat'
-    cmd /c "`"$vcvars`" >nul && cmake -S `"$root`" -B `"$root\build`" -G Ninja -DCMAKE_BUILD_TYPE=Release >nul && cmake --build `"$root\build`"" 
+    cmd /c "`"$vcvars`" >nul && cmake -S `"$root`" -B `"$bin`" -G Ninja -DCMAKE_BUILD_TYPE=Release -DVWB_BUILD_UVSC_SPIKE=ON -DVWB_BUILD_TESTS=OFF >nul && cmake --build `"$bin`" --target uvsc_spike"
     if ($LASTEXITCODE) { throw 'build failed' }
 }
 
@@ -27,7 +28,7 @@ $opt = "$fw\Bitband.uvoptx"
 Remove-Item $log -EA SilentlyContinue
 (Get-Content "$root\spikes\uvsc\bitband-observe.ini" -Raw).Replace('%LOG%', $log) | Set-Content "$fw\sim.ini" -Encoding ascii
 "uvsc_spike $fw\Bitband.uvprojx $delay $Stops $final"
-& "$root\build\uvsc_spike.exe" "$fw\Bitband.uvprojx" $delay $Stops $final
+& "$bin\uvsc_spike.exe" "$fw\Bitband.uvprojx" $delay $Stops $final
 $rc = $LASTEXITCODE
 '--- INI log'
 if (Test-Path $log) { Get-Content $log | Select-String '^SNAP|\*\*\*' } else { '(no INI log)' }
