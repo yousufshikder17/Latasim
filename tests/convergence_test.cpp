@@ -5,20 +5,19 @@
 #include "boards/mcb1700/keil_board_led.hpp"
 #include "lpc17xx/keil_gpio_driver.hpp"
 
+#include "gpio_snapshot.hpp"
+
 #include <gtest/gtest.h>
 
-#include <array>
-
 using latasim::lpc17xx::bit_band_alias;
-using latasim::lpc17xx::Gpio;
 using latasim::lpc17xx::gpio_register_address;
 using latasim::lpc17xx::GpioReg;
 using latasim::lpc17xx::KeilGpioDriver;
 using latasim::lpc17xx::Lpc1768;
 using latasim::mcb1700::Board;
 using latasim::mcb1700::KeilBoardLed;
-using latasim::mcb1700::kLedCount;
 using latasim::mcb1700::LedState;
+using latasim::test::snapshot;
 
 namespace {
 
@@ -29,25 +28,6 @@ constexpr std::uint32_t FIO1CLR = 0x2009C03C;
 constexpr std::uint32_t FIO2DIR = 0x2009C040;
 constexpr std::uint32_t FIO2SET = 0x2009C058;
 constexpr std::uint32_t FIO2CLR = 0x2009C05C;
-
-// Everything observable about GPIO: all readable registers of every port, plus
-// what the board shows on its LEDs.
-struct Snapshot {
-    std::array<std::array<std::uint32_t, 4>, Gpio::kPortCount> regs{};
-    std::array<LedState, kLedCount> leds{};
-    bool operator==(const Snapshot&) const = default;
-};
-
-Snapshot snapshot(const Board& board) {
-    Snapshot s;
-    for (unsigned p = 0; p < Gpio::kPortCount; ++p) {
-        const Gpio& g = board.mcu().gpio();
-        s.regs[p] = {g.read(p, GpioReg::Dir), g.read(p, GpioReg::Mask), g.read(p, GpioReg::Pin),
-                     g.read(p, GpioReg::Set)};
-    }
-    for (unsigned i = 0; i < kLedCount; ++i) s.leds[i] = board.led(i);
-    return s;
-}
 
 void set_bits(Lpc1768& mcu, std::uint32_t address, std::uint32_t bits) {
     mcu.write32(address, mcu.read32(address) | bits);

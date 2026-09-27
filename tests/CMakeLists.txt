@@ -16,9 +16,12 @@ add_executable(latasim_tests
     board_inputs_test.cpp
     keil_board_led_test.cpp
     convergence_test.cpp
+    host_c_api_test.cpp
+    host/gpio_client.c
     gpio_demo_test.cpp
     ${PROJECT_SOURCE_DIR}/src/cli/gpio_demo.cpp)
-target_link_libraries(latasim_tests PRIVATE latasim_model GTest::gtest_main)
+target_link_libraries(latasim_tests PRIVATE latasim_host GTest::gtest_main)
+target_include_directories(latasim_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 latasim_warnings(latasim_tests)
 
 include(GoogleTest)

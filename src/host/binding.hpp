@@ -1,0 +1,38 @@
+#pragma once
+// The host-firmware bridge.
+//
+// Firmware C APIs such as Keil's GPIO_SetDir(port, pin, dir) take no context
+// argument, so host-compiled firmware can only reach "the" board. This is that
+// one piece of global state: a scoped binding of exactly one board, owned by C++.
+// It exists for host-compiled firmware only; the model itself has no globals.
+//
+//   mcb1700::Board board;
+//   host::FirmwareBinding bind(board);   // firmware calls now reach `board`
+//   LED_On(0);                           // (C firmware)
+//   // leaving the scope unbinds
+//
+// Misuse is loud: a second concurrent binding throws, and a firmware call with no
+// board bound, or with an invalid pin, aborts with a message (an exception cannot
+// safely unwind through C frames).
+#include "boards/mcb1700/board.hpp"
+
+namespace latasim::host {
+
+class FirmwareBinding {
+public:
+    explicit FirmwareBinding(mcb1700::Board& board);
+    ~FirmwareBinding();
+    FirmwareBinding(const FirmwareBinding&) = delete;
+    FirmwareBinding& operator=(const FirmwareBinding&) = delete;
+};
+
+// The bound board, or nullptr.
+mcb1700::Board* bound_board() noexcept;
+
+// For code called from C: the bound board, or abort with a message naming `caller`.
+mcb1700::Board& require_bound_board(const char* caller);
+
+// Print "latasim host: <caller>: <what>" to stderr and abort.
+[[noreturn]] void fail(const char* caller, const char* what);
+
+}  // namespace latasim::host

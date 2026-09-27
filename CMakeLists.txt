@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.25)
-project(latasim CXX)
+project(latasim C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -10,7 +10,7 @@ option(LATASIM_BUILD_UVSC_SPIKE "Build the Phase 0 UVSC spike (needs Keil AN198)
 
 function(latasim_warnings target)
     if(MSVC)
-        target_compile_options(${target} PRIVATE /W4 /WX /permissive- /utf-8)
+        target_compile_options(${target} PRIVATE /W4 /WX /utf-8 $<$<COMPILE_LANGUAGE:CXX>:/permissive->)
     else()
         target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Werror)
     endif()
@@ -25,6 +25,13 @@ add_library(latasim_model STATIC
     src/boards/mcb1700/keil_board_led.cpp)
 target_include_directories(latasim_model PUBLIC src)
 latasim_warnings(latasim_model)
+
+# Host-firmware bridge: C-linkage Keil driver functions and the board binding.
+add_library(latasim_host STATIC
+    src/host/binding.cpp
+    src/host/keil_rte_gpio.cpp)
+target_link_libraries(latasim_host PUBLIC latasim_model)
+latasim_warnings(latasim_host)
 
 add_executable(latasim src/cli/main.cpp src/cli/gpio_demo.cpp)
 target_link_libraries(latasim PRIVATE latasim_model)
