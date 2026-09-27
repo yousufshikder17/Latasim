@@ -4,6 +4,8 @@
 
 #include <gtest/gtest.h>
 
+#include <stdexcept>
+
 using latasim::lpc17xx::gpio_register_address;
 using latasim::lpc17xx::GpioReg;
 using latasim::lpc17xx::KeilGpioDriver;
@@ -29,6 +31,15 @@ TEST(KeilGpioDriver, PinWriteAndPinReadRoundTrip) {
     EXPECT_EQ(gpio.pin_read(2, 2), 1u);
     gpio.pin_write(2, 2, 0);
     EXPECT_EQ(gpio.pin_read(2, 2), 0u);
+}
+
+TEST(KeilGpioDriver, OutOfRangePinOrPortFailsExplicitly) {
+    Board board;
+    KeilGpioDriver gpio(board.mcu());
+    EXPECT_THROW(gpio.set_dir(1, 32, true), std::out_of_range) << "Keil's driver would shift by 32 (undefined)";
+    EXPECT_THROW(gpio.pin_write(1, 32, 1), std::out_of_range);
+    EXPECT_THROW(gpio.pin_read(1, 32), std::out_of_range);
+    EXPECT_THROW(gpio.pin_write(5, 0, 1), latasim::lpc17xx::BusFault) << "port 5 is past the GPIO block";
 }
 
 TEST(KeilBoardLed, InitializeLeavesAllLedsOff) {
