@@ -26,7 +26,7 @@ add_library(vwb_model STATIC
 target_include_directories(vwb_model PUBLIC src)
 vwb_warnings(vwb_model)
 
-add_executable(vwb src/cli/main.cpp)
+add_executable(vwb src/cli/main.cpp src/cli/gpio_demo.cpp)
 target_link_libraries(vwb PRIVATE vwb_model)
 vwb_warnings(vwb)
 

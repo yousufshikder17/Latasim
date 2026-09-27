@@ -12,7 +12,9 @@ add_executable(vwb_tests
     lpc1768_test.cpp
     mcb1700_test.cpp
     keil_board_led_test.cpp
-    convergence_test.cpp)
+    convergence_test.cpp
+    gpio_demo_test.cpp
+    ${PROJECT_SOURCE_DIR}/src/cli/gpio_demo.cpp)
 target_link_libraries(vwb_tests PRIVATE vwb_model GTest::gtest_main)
 vwb_warnings(vwb_tests)
 
