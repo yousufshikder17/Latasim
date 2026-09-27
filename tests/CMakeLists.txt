@@ -17,6 +17,7 @@ add_executable(latasim_tests
     keil_board_led_test.cpp
     convergence_test.cpp
     host_c_api_test.cpp
+    host_registers_test.cpp
     host/gpio_client.c
     gpio_demo_test.cpp
     ${PROJECT_SOURCE_DIR}/src/cli/gpio_demo.cpp)
@@ -52,6 +53,19 @@ if(EXISTS "${LATASIM_KEIL_MCB1700}/LED_MCB1700.c" AND EXISTS "${LATASIM_KEIL_BOA
     # Our warning policy applies to our file, not to the vendor sources.
     set_source_files_properties(keil_firmware_test.cpp PROPERTIES COMPILE_OPTIONS "/W4;/WX;/permissive-;/utf-8")
     gtest_discover_tests(latasim_keil_firmware_tests)
+
+    # Keil's register-level GPIO driver, compiled unchanged as C++ so its register
+    # expressions bind to the host register proxies (docs/phase2/host-registers.md).
+    set(keil_gpio_driver "${LATASIM_KEIL_DFP}/RTE_Driver/GPIO_LPC17xx.c")
+    set_source_files_properties(${keil_gpio_driver} PROPERTIES LANGUAGE CXX)
+    add_executable(latasim_keil_register_tests keil_register_driver_test.cpp ${keil_gpio_driver})
+    target_include_directories(latasim_keil_register_tests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        "${LATASIM_KEIL_DFP}/RTE_Driver")
+    target_compile_definitions(latasim_keil_register_tests PRIVATE LPC175x_6x)
+    target_link_libraries(latasim_keil_register_tests PRIVATE latasim_host GTest::gtest_main)
+    set_source_files_properties(keil_register_driver_test.cpp PROPERTIES COMPILE_OPTIONS "/W4;/WX;/permissive-;/utf-8")
+    gtest_discover_tests(latasim_keil_register_tests)
 else()
     message(STATUS "Keil packs not found under ${LATASIM_KEIL_PACKS_DIR}: Keil firmware tests not built")
 endif()

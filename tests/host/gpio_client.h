@@ -13,6 +13,7 @@ void c_led_pin_init(uint32_t port, uint32_t pin);
 void c_input_pin_init(uint32_t port, uint32_t pin);
 void c_pin_write(uint32_t port, uint32_t pin, uint32_t value);
 uint32_t c_pin_read(uint32_t port, uint32_t pin);
+void c_literal_led0_on(void);
 
 #ifdef __cplusplus
 }

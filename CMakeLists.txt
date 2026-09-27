@@ -29,8 +29,11 @@ latasim_warnings(latasim_model)
 # Host-firmware bridge: C-linkage Keil driver functions and the board binding.
 add_library(latasim_host STATIC
     src/host/binding.cpp
-    src/host/keil_rte_gpio.cpp)
+    src/host/keil_rte_gpio.cpp
+    src/host/registers.cpp)
 target_link_libraries(latasim_host PUBLIC latasim_model)
+# The host LPC17xx.h, for firmware compiled against the host.
+target_include_directories(latasim_host PUBLIC src/host/device)
 latasim_warnings(latasim_host)
 
 add_executable(latasim src/cli/main.cpp src/cli/gpio_demo.cpp)

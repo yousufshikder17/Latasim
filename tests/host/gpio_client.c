@@ -6,7 +6,14 @@
 
 #include "gpio_client.h"
 
+#include "LPC17xx.h"
 #include "host/c/latasim_keil_gpio.h"
+
+/* In C the host device header declares no register structures, so register
+ * expressions cannot silently write host memory. */
+#if defined(LPC_GPIO1) || defined(LPC_SC)
+#error "the host LPC17xx.h must not define peripheral pointers in C"
+#endif
 
 /* In C a character literal has type int; in C++ it has type char. */
 int c_char_literal_size(void) { return (int)sizeof('a'); }
@@ -27,3 +34,13 @@ void c_input_pin_init(uint32_t port, uint32_t pin) {
 void c_pin_write(uint32_t port, uint32_t pin, uint32_t value) { GPIO_PinWrite(port, pin, value); }
 
 uint32_t c_pin_read(uint32_t port, uint32_t pin) { return GPIO_PinRead(port, pin); }
+
+/* Firmware that dereferences literal addresses, adapted for C: each
+ * *(volatile uint32_t *)address becomes a latasim_mmio_read32/write32 call. */
+#define FIO1DIR_ADDRESS 0x2009C020U
+#define FIO1SET_ADDRESS 0x2009C038U
+
+void c_literal_led0_on(void) {
+    latasim_mmio_write32(FIO1DIR_ADDRESS, latasim_mmio_read32(FIO1DIR_ADDRESS) | (1U << 28));
+    latasim_mmio_write32(FIO1SET_ADDRESS, 1U << 28);
+}
