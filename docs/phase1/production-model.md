@@ -57,7 +57,7 @@ Each port keeps `dir`, `mask`, `latch` (the output register) and `external` (the
 - **Derived state:** an LED's state is computed from the GPIO model and never stored:
   - `Undriven` while its pin is not an output. The model doesn't guess what a floating LED driver input does, so a missing FIODIR write is visible.
   - Otherwise `On` or `Off` from the pin level.
-- **Polarity** is the single constant `kLedActiveHigh = true`. Keil's board driver and the legacy `LED.c` both drive high for on. One firmware source assumes active-low, and real hardware has not confirmed either, so this is the one line to change.
+- **Polarity** is the single constant `kLedActiveHigh = true`. Keil's board driver and the legacy `LED.c` both drive high for on. One firmware source assumes active-low, and real hardware has not confirmed either, so this is the one line to change. (Since resolved as active-high from the board schematic: [open-questions.md](../phase2/open-questions.md), question 4.)
 
 ## How B1 and B2 converge
 
@@ -97,7 +97,7 @@ The demo's `LED_On(0)` state (FIO1PIN `5FFFC713`) also matches E3.
 - **Bit-band covers the SRAM region only**, which holds the GPIO block. The peripheral alias region (`0x42000000`) is not mapped.
 - **B1 is a C++ class API, not C symbols.** Firmware source that calls `LED_On()` cannot be linked against it yet. `GPIO_PortClock`, `GPIO_PortWrite/Read`, `PIN_Configure` and `LED_Uninitialize` are not implemented.
 - **Firmware that stores to literal addresses** (`*(volatile uint32_t*)0x233806F0 = 0`) is covered by the `write32` interface, but there is no mechanism yet to route a host-compiled program's raw pointer stores into it (Phase 0 finding 17).
-- **LED polarity is unconfirmed on hardware.**
+- **LED polarity is unconfirmed on hardware.** (Later confirmed active-high from the schematic; see [open-questions.md](../phase2/open-questions.md).)
 - **No trace output yet.** Tests assert on state after each step.
 
 ## Found during Phase 1

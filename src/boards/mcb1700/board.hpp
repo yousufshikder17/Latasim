@@ -22,10 +22,11 @@ inline constexpr std::array<PinRef, kLedCount> kLedPins{{
     {1, 28}, {1, 29}, {1, 31}, {2, 2}, {2, 3}, {2, 4}, {2, 5}, {2, 6},
 }};
 
-// LED polarity, the one place it is decided. Active-high: both Keil's board
-// driver and the legacy LED.c turn an LED on by driving its pin high. Not yet
-// confirmed on real hardware; one firmware source assumes active-low
-// (docs/phase0/findings.md, LED polarity).
+// LED polarity, the one place it is decided. Active-high: the MCB1700 schematic
+// (sheet USB_COM_LED, rev 1.2) buffers all eight pins through a non-inverting
+// 74LVC244 into LED anodes whose cathodes are grounded, and Keil's board driver
+// drives high for on (docs/phase2/open-questions.md, question 4). Assumes the LED
+// jumper is fitted; without it the buffer is disabled and every LED is dark.
 inline constexpr bool kLedActiveHigh = true;
 
 enum class LedState {
@@ -50,7 +51,9 @@ inline constexpr std::array<PinRef, kJoystickDirectionCount> kJoystickPins{{
 
 const char* to_string(JoystickDirection direction);
 
-// INT0 push button: P2.10, low while pressed (MCB1700 guide, "INT0" jumper).
+// INT0 push button: P2.10, low while pressed. Through the INT0 jumper the pin has
+// an external 22k pull-up (R27) and the button shorts it to ground (schematic;
+// docs/phase2/open-questions.md, question 2).
 inline constexpr PinRef kInt0Pin{2, 10};
 
 class Board {

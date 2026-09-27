@@ -15,7 +15,8 @@
 
   Only one board can be bound at a time. A second binding throws; the destructor unbinds.
 - **Misuse aborts with a message.** A C caller cannot catch C++ exceptions, so a call with no bound board, an out-of-range pin or an unmapped port prints `latasim host: <function>: <reason>` and aborts.
-- **`GPIO_PortClock` and `PIN_Configure` are accepted and ignored.** PCONP and PINSEL/PINMODE are not modelled. On reset, GPIO power is on and every pin is GPIO.
+- **`PIN_Configure` is accepted and ignored:** PINSEL/PINMODE are not modelled, and on reset every pin is GPIO.
+- **`GPIO_PortClock` sets or clears PCGPIO in PCONP.** Originally it was ignored. PCONP is stored but gates nothing ([open-questions.md](open-questions.md), question 3).
 
 ## Real firmware: Keil's MCB1700 board support
 

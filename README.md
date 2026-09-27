@@ -2,7 +2,7 @@
 
 Latasim is a virtual lab bench for embedded firmware. It runs real Keil MCB1700 (NXP LPC1768, Cortex-M3) firmware against a simulated board, so LEDs, buttons, the joystick and the LCD can be driven, observed and asserted on in **deterministic, repeatable tests**, with no hardware on the desk.
 
-**Status:** Phase 1 is complete (a production C++20 model of LPC1768 GPIO and the MCB1700 LEDs, with a CLI demo). Phase 2 is in progress: 8/16/32-bit MMIO access, the joystick and INT0 inputs ([progress](docs/phase2/mmio-and-inputs.md)), and running firmware on the host are done. Keil's MCB1700 board drivers run unmodified as C, and register-level code runs through a host device header ([host firmware](docs/phase2/host-firmware.md), [registers](docs/phase2/host-registers.md)); 109 tests, 12 of which need the Keil packs installed. Phase 0 (feasibility) experiments and evidence are kept alongside. Planned stack: C++20 and CMake, CLI first, Qt desktop UI later.
+**Status:** Phase 1 is complete (a production C++20 model of LPC1768 GPIO and the MCB1700 LEDs, with a CLI demo). Phase 2 is in progress: 8/16/32-bit MMIO access, the joystick and INT0 inputs ([progress](docs/phase2/mmio-and-inputs.md)), and running firmware on the host are done. Keil's MCB1700 board drivers run unmodified as C, and register-level code runs through a host device header ([host firmware](docs/phase2/host-firmware.md), [registers](docs/phase2/host-registers.md)); 115 tests, 12 of which need the Keil packs installed. Four hardware-behaviour questions are reviewed in [open-questions.md](docs/phase2/open-questions.md). Phase 0 (feasibility) experiments and evidence are kept alongside. Planned stack: C++20 and CMake, CLI first, Qt desktop UI later.
 
 ## Why
 
@@ -88,7 +88,7 @@ Details, exact semantics, limitations and the Phase 2 list: [docs/phase1/product
 | `src/boards/mcb1700/` | Board model (LEDs; joystick and INT0 inputs), Keil LED board API (B1) |
 | `src/cli/` | The `latasim` command-line tool |
 | `tests/` | GoogleTest suite, including replays of recorded simulator runs |
-| `docs/phase2/` | Phase 2 progress: MMIO access widths, board inputs, host firmware, open questions |
+| `docs/phase2/` | Phase 2 progress: MMIO access widths, board inputs, host firmware, hardware-behaviour questions |
 | `docs/phase1/` | The production model |
 | `docs/phase0/` | Findings, pin map, UVSC results, backend decisions |
 | `spikes/uvsim-script/` | µVision debug-script experiments E1–E8 (`*.ini`) and their recorded output (`*-run*.out`) |

@@ -24,6 +24,7 @@
 - **The simulator could not confirm them.** µVision's debug functions `_WWORD`/`_RWORD` move 32 bits despite being documented as 16-bit. Hand-assembled `STRB`/`STRH` in SRAM could not be executed from an INI (the PC stayed put, on two projects).
 - **The debugger's `_WBYTE` to FIOPIN acts like a word read-modify-write.** Given the above, that says nothing about what a CPU `STRB` does.
 - **So narrow-access semantics are a documented model decision, not a verified fact** (see open questions).
+- **Later, E9 ran compiled `STRB`/`STRH` in the simulator** ([open-questions.md](open-questions.md), question 1). Narrow SET/CLR/DIR stores and narrow loads are lane-local there too. A narrow FIOPIN store, however, acts as a word read-modify-write in the simulator, unlike this model. The model follows UM10360 chapter 9; the question stays bounded.
 
 ## Board inputs
 
@@ -69,6 +70,8 @@
 | board inputs | 11 |
 
 ## Open questions
+
+As recorded when D4–D6 were done. Questions 1 and 2 were reviewed later in [open-questions.md](open-questions.md): 1 is bounded (the simulator diverges for narrow FIOPIN stores), and 2 is resolved from the schematic (a 22 kΩ external pull-up, R27).
 
 1. **What does a CPU `STRB`/`STRH` to FIOPIN really do?** Lane-only (modeled) or word read-modify-write? This needs a real firmware build under B3 or real hardware, since the debugger can't answer it. The obvious B3 test is a tiny ARMCC-built image that does `STRB` to `FIO1PIN0` with inputs high in the same word.
 2. **The INT0 pull resistor.** Keil's `Buttons_Initialize` enables the internal **pull-down** on P2.10, yet reads the pin as active-low. The model follows the board guide (released = high), assuming an external pull-up dominates. It needs confirming on hardware.

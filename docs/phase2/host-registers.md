@@ -64,7 +64,7 @@ Much LPC1768 firmware skips driver APIs and touches registers directly: `LPC_GPI
 - **C firmware** using the accessors matches the register path.
 - **No backing store:** after writes to every port, the anchor objects are still all zero.
 - **Faults abort with the address:**
-  - `PCONP` (unmodelled), a reserved GPIO offset, an unmapped address, a misaligned access;
+  - PCON (unmodelled), a reserved GPIO offset, an unmapped address, a misaligned access;
   - a call with no board bound;
   - a proxy outside the anchors (a local `LPC_GPIO_TypeDef`).
 
@@ -74,8 +74,8 @@ Much LPC1768 firmware skips driver APIs and touches registers directly: `LPC_GPI
 
 ## Limitations
 
-- **Only GPIO registers are declared,** plus `LPC_SC->PCONP` so that `GPIO_PortClock` compiles.
-- **`PCONP` is not modelled, so the two paths diverge on `GPIO_PortClock`.** On the register path it faults. The C GPIO layer (`src/host/keil_rte_gpio.cpp`) accepts it as a no-op, which is why Keil's board drivers run on that layer rather than on `GPIO_LPC17xx.c`.
+- **Only GPIO registers are declared,** plus `LPC_SC->PCONP`, which `GPIO_PortClock` uses.
+- **PCONP was originally unmapped,** so `GPIO_PortClock` faulted on the register path while the C GPIO layer ignored it. Since the open-questions review ([open-questions.md](open-questions.md), question 3), PCONP is stored (with no gating), and both paths make the same read-modify-write. Keil's board drivers still run on the C GPIO layer rather than on `GPIO_LPC17xx.c` and `PIN_LPC17xx.c`, because `PIN_Configure` writes PINSEL/PINMODE, which are not modelled.
 - **`volatile` is meaningless on proxies.** Every access is performed, in program order, because each one is a call into the model's translation unit.
 - **Proxy operators cover the common forms:** assignment, `|=`, `&=`, `^=` and reads. `++`, `<<=` and taking a register's address as a `uint32_t *` are not supported.
 - **The binding is single-board and single-threaded,** as for the C GPIO layer.
