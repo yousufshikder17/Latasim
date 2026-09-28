@@ -2,7 +2,7 @@
 
 Latasim is a virtual lab bench for embedded firmware. It runs real Keil MCB1700 (NXP LPC1768, Cortex-M3) firmware against a simulated board, so LEDs, buttons, the joystick and the LCD can be driven, observed and asserted on in **deterministic, repeatable tests**, with no hardware on the desk.
 
-**Status:** Phases 0, 1 and 2 are complete. Keil's own MCB1700 board drivers, compiled unmodified as C for the host, drive a modelled LPC1768/MCB1700. The model covers GPIO, LEDs, joystick and INT0, and register-level firmware runs through a host device header. Every hardware interaction lands in a deterministic trace, and the same scenario run as real ARM firmware in µVision's simulator gives the same register values. 132 tests; 15 of them need the Keil packs installed. Summary: [docs/phase2/overview.md](docs/phase2/overview.md). Planned stack: C++20 and CMake, CLI first, Qt desktop UI later.
+**Status:** Phases 0, 1, 2 and 3 are complete. Keil's own MCB1700 board drivers, compiled unmodified as C for the host, drive a modelled LPC1768/MCB1700. The model covers GPIO, LEDs, joystick and INT0, and register-level firmware runs through a host device header. Every hardware interaction lands in a deterministic trace, and the same scenario run as real ARM firmware in µVision's simulator gives the same register values. Phase 3 adds deterministic virtual time: SysTick counts virtual core cycles and calls the firmware's `SysTick_Handler`, so Keil's Blinky_ULp runs its 10 ms LED chase on the host with the simulator's timing, and tests read as `run_until(10ms); EXPECT_TRUE(s.led(1, LedState::On))`. 182 tests; 23 of them need the Keil packs installed. Summaries: [Phase 2](docs/phase2/overview.md), [Phase 3](docs/phase3/overview.md). Planned stack: C++20 and CMake, CLI first, Qt desktop UI later.
 
 ## Why
 
@@ -105,20 +105,39 @@ firmware: Joystick_GetState() = 0x08 (JOYSTICK_UP)
 
 Architecture, what is and isn't supported, and the evidence: [docs/phase2/overview.md](docs/phase2/overview.md).
 
+## Phase 3: firmware over virtual time
+
+- **Virtual time.** One integer clock of core cycles (100 MHz) per machine, moved only by `advance_cycles(n)`. No wall clock, sleeps or threads anywhere.
+- **SysTick.** STCTRL/STRELOAD/STCURR/STCALIB in the memory map, counting virtual cycles. It is checked against ARM's Cortex-M3 guide, NXP's manual and two simulator experiments (E11, E12).
+- **Timed firmware.** When SysTick counts to 0 with TICKINT set, the firmware's `SysTick_Handler` runs at that virtual time. This is SysTick only, with no NVIC or priorities. Keil's Blinky_ULp `IRQ.c` runs unchanged: its LED chase steps every 10 ms, first 999,999 cycles after `SysTick_Config`, exactly as in µVision.
+- **Scenarios.** A typed GoogleTest layer: `run_for`/`run_until` in exact virtual time, `press`/`release`, and `led`/`pin`/`reg` checks. On failure, a check prints the virtual time and the last trace events.
+- **Timed trace.** Every event carries its virtual time, and each handler call is an event:
+
+```
+    #38   t=999999     systick handler
+    #39   t=999999     write32 FIO1CLR   0x10000000
+    #40   t=999999     write32 FIO1SET   0x20000000
+    #41   t=999999     led     LED1      ON
+```
+
+What is and isn't supported, the evidence and the open questions: [docs/phase3/overview.md](docs/phase3/overview.md).
+
 ## Layout
 
 | Path | What |
 |---|---|
-| `src/lpc17xx/` | GPIO model, memory map, bit-band and PCONP (`Lpc1768`), Keil GPIO driver (B1) |
+| `src/lpc17xx/` | GPIO model, memory map, bit-band, PCONP, SysTick and virtual time (`Lpc1768`), Keil GPIO driver (B1) |
 | `src/host/` | Host firmware support: board binding, C-linkage Keil GPIO functions, host `LPC17xx.h` and register proxies |
-| `src/trace/` | The deterministic hardware trace |
+| `src/trace/` | The deterministic hardware trace, with virtual time |
+| `src/firmware/` | Host ports of timed Keil examples (Blinky_ULp) |
 | `src/boards/mcb1700/` | Board model (LEDs; joystick and INT0 inputs), Keil LED board API (B1) |
 | `src/cli/` | The `latasim` command-line tool |
-| `tests/` | GoogleTest suite, including replays of recorded simulator runs |
+| `tests/` | GoogleTest suite, including replays of recorded simulator runs and the scenario layer (`scenario.hpp`) |
+| `docs/phase3/` | Phase 3: [overview](docs/phase3/overview.md), timed firmware, timing questions |
 | `docs/phase2/` | Phase 2: [overview](docs/phase2/overview.md), MMIO and inputs, host firmware, registers, hardware-behaviour questions |
 | `docs/phase1/` | The production model |
 | `docs/phase0/` | Findings, pin map, UVSC results, backend decisions |
-| `spikes/uvsim-script/` | µVision simulator experiments E1–E10 (`*.ini`, firmware sources for E9/E10) and their recorded output (`*-run*.out`) |
+| `spikes/uvsim-script/` | µVision simulator experiments E1–E12 (`*.ini`, firmware sources for E9, E10, E12) and their recorded output (`*-run*.out`) |
 | `spikes/uvsc/` | Throwaway native C++ UVSC spike and its recorded results |
 | `scripts/` | Reproduce everything (PowerShell) |
 | `reference/` | Generated copies of the reference firmware (gitignored; recreate with `scripts/`) |

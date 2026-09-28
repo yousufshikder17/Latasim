@@ -129,6 +129,8 @@ Nothing in Keil's API needed changing for this. The one adaptation remains the h
 
 ## Not yet supported
 
+*As of Phase 2. Phase 3 has since added virtual time, SysTick with `SysTick_Handler` delivery, timed Keil firmware, a scenario layer and a timed trace: see [../phase3/overview.md](../phase3/overview.md).*
+
 - **Timing and interrupts:**
   - virtual time;
   - SysTick, timers, RIT;

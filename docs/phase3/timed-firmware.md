@@ -14,18 +14,18 @@
 
 ## SysTick
 
-**STCTRL, STRELOAD, STCURR and STCALIB** at `0xE000E010`–`0xE000E01C` are part of the `Lpc1768` memory map, reached through the same traced loads and stores as GPIO. Sources: ARM DUI 0552A §4.4 (in the device pack), UM10360 chapter 23, and E11 (the stock Blinky_ULp in the simulator).
+**STCTRL, STRELOAD, STCURR and STCALIB** at `0xE000E010`–`0xE000E01C` are part of the `Lpc1768` memory map, reached through the same traced loads and stores as GPIO. Sources: ARM DUI 0552A §4.4 (in the device pack), UM10360 chapter 23, E11 (the stock Blinky_ULp in the simulator) and E12 (SysTick register semantics from firmware in the simulator).
 
 | Behaviour | Model | Source |
 |---|---|---|
-| Reset | STCTRL `0x4` (CLKSOURCE = CPU clock), STRELOAD 0, STCURR 0, STCALIB `0x000F423F` | UM10360 Table 438 (the simulator differs, below) |
-| ENABLE 0→1 | STCURR ← RELOAD at once | ARM 4.4.1; E11 |
+| Reset | STCTRL `0x4` (CLKSOURCE = CPU clock), STRELOAD 0, STCURR 0, STCALIB `0x000F423F` | UM10360 Table 438; the simulator reads STCTRL and STCALIB as 0 ([open-questions.md](open-questions.md) §4) |
+| ENABLE 0→1 | STCURR ← RELOAD at once, whatever it held | ARM 4.4.1; E11, E12 |
 | Each clock while enabled | STCURR = 0 wraps to RELOAD; otherwise decrements; 1→0 sets COUNTFLAG | ARM 4.4 |
 | Resulting period | After `SysTick_Config(N)`: first count to 0 after N−1 clocks, then every N | E11: 999,999 then 1,000,000 |
 | RELOAD 0 | Never counts to 0 | ARM 4.4.2 |
-| Read STCTRL | Returns COUNTFLAG (bit 16) and clears it; reserved bits read 0 | ARM 4.4.1 |
+| Read STCTRL | Returns COUNTFLAG (bit 16) and clears it; reserved bits read 0 | ARM 4.4.1; E12 |
 | Write STCTRL / STRELOAD | Keeps ENABLE, TICKINT, CLKSOURCE / keeps 24 bits | ARM 4.4 |
-| Write STCURR | Any value clears the counter and COUNTFLAG | ARM 4.4.3 |
+| Write STCURR | Any value clears the counter and COUNTFLAG | ARM 4.4.3; E12 |
 | CLKSOURCE = 0 (STCLK pin) | The counter holds: no STCLK clock is modelled | UM10360 23.1 |
 | Write STCALIB, narrow or misaligned access, other SCS addresses | `BusFault` | ARM says STCALIB is read-only, UM10360 says R/W |
 
