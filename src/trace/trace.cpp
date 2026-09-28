@@ -142,6 +142,26 @@ void rtos_text(const TraceEvent& e, char* value, std::size_t size) {
 
 }  // namespace
 
+void Trace::set_mmio_capacity(std::size_t capacity) { mmio_capacity_ = capacity < 2 ? 2 : capacity; }
+
+// Keeps the newest half of the capacity's MMIO accesses and every other event, in
+// order. Amortised over the accesses that filled the other half.
+void Trace::drop_oldest_mmio() {
+    std::size_t excess = mmio_ - mmio_capacity_ / 2;
+    const auto is_mmio = [](const TraceEvent& e) { return e.kind == TraceKind::Read || e.kind == TraceKind::Write; };
+    auto out = events_.begin();
+    for (auto in = events_.begin(); in != events_.end(); ++in) {
+        if (excess > 0 && is_mmio(*in)) {
+            --excess;
+            ++dropped_;
+            --mmio_;
+            continue;
+        }
+        *out++ = *in;
+    }
+    events_.erase(out, events_.end());
+}
+
 TraceParts describe(const TraceEvent& e) {
     char op[16] = {}, what[32] = {}, value[48] = {};
     switch (e.kind) {

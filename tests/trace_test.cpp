@@ -237,3 +237,33 @@ TEST(Trace, RecordingDoesNotChangeTimedBehaviour) {
     EXPECT_EQ(traced.mcu().cycles(), untraced.mcu().cycles());
     EXPECT_EQ(traced.mcu().systick().current(), untraced.mcu().systick().current());
 }
+
+// Retention: past the MMIO capacity the oldest half of the accesses go in one step;
+// every other event stays, order and sequence numbers are kept, drops are counted.
+TEST(Trace, OldMmioAccessesAreDroppedInBulkOtherEventsKept) {
+    latasim::Trace trace;
+    trace.set_mmio_capacity(4);
+    const auto access = [&](std::uint32_t value) {
+        trace.record({.kind = latasim::TraceKind::Read, .address = 0x2009C034, .width = 4, .value = value}, value);
+    };
+    access(1);
+    trace.record({.kind = latasim::TraceKind::Led, .value = 1, .led = 0}, 1);
+    access(2);
+    access(3);
+    access(4);
+    EXPECT_EQ(trace.events().size(), 5u);
+    EXPECT_EQ(trace.dropped(), 0u);
+    access(5);  // five accesses held, capacity four: keep the newest two
+    ASSERT_EQ(trace.events().size(), 3u);
+    EXPECT_EQ(trace.dropped(), 3u);
+    EXPECT_EQ(trace.events()[0].kind, latasim::TraceKind::Led) << "an LED event is never dropped";
+    EXPECT_EQ(trace.events()[0].seq, 2u);
+    EXPECT_EQ(trace.events()[1].value, 4u);
+    EXPECT_EQ(trace.events()[2].value, 5u);
+    EXPECT_EQ(trace.events()[2].seq, 6u) << "sequence numbers are not reused";
+    for (std::uint32_t v = 6; v <= 100; ++v) access(v);
+    std::size_t held = 0;
+    for (const auto& e : trace.events()) held += e.kind == latasim::TraceKind::Read;
+    EXPECT_LE(held, 4u);
+    EXPECT_EQ(trace.dropped() + held, 100u);
+}

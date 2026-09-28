@@ -3,6 +3,7 @@
 #include <QCheckBox>
 #include <QHBoxLayout>
 #include <QHeaderView>
+#include <QLabel>
 #include <QScrollBar>
 #include <QTableView>
 #include <QVBoxLayout>
@@ -34,6 +35,7 @@ void TraceModel::rebuild() {
     beginResetModel();
     rows_.clear();
     seen_ = 0;
+    dropped_seen_ = trace_ != nullptr ? trace_->dropped() : 0;
     endResetModel();
     refresh();
 }
@@ -41,7 +43,8 @@ void TraceModel::rebuild() {
 void TraceModel::refresh() {
     if (trace_ == nullptr) return;
     const auto& events = trace_->events();
-    if (events.size() < seen_) return rebuild();  // a new session's trace
+    // A new session's trace, or old accesses dropped: the indices have moved.
+    if (events.size() < seen_ || trace_->dropped() != dropped_seen_) return rebuild();
     std::vector<std::size_t> added;
     for (std::size_t i = seen_; i < events.size(); ++i)
         if (category_shown(describe(events[i]).category)) added.push_back(i);
@@ -90,6 +93,9 @@ TracePanel::TracePanel(QWidget* parent) : QWidget(parent) {
         filters->addWidget(box);
     }
     filters->addStretch();
+    dropped_ = new QLabel;
+    dropped_->setObjectName("trace_dropped");
+    filters->addWidget(dropped_);
     layout->addLayout(filters);
     view_ = new QTableView;
     view_->setObjectName("trace_table");
@@ -106,6 +112,10 @@ void TracePanel::set_trace(const Trace* trace) { model_.set_trace(trace); }
 void TracePanel::refresh() {
     const bool at_end = view_->verticalScrollBar()->value() == view_->verticalScrollBar()->maximum();
     model_.refresh();
+    const Trace* t = model_.trace();
+    dropped_->setText(t != nullptr && t->dropped() != 0
+                          ? tr("%1 oldest MMIO accesses not kept (limit %2)").arg(t->dropped()).arg(t->mmio_capacity())
+                          : QString());
     if (at_end) view_->scrollToBottom();  // follow new events unless scrolled back
 }
 

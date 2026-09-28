@@ -82,6 +82,15 @@ struct TraceEvent {
     bool operator==(const TraceEvent&) const = default;
 };
 
+// Retention: MMIO accesses (Read, Write) are the bulk of a trace; firmware that
+// polls a register makes millions a second. At most mmio_capacity() of them are
+// kept: when there are more, the oldest half are dropped in one step, and
+// dropped() counts them. Every other event (inputs, LEDs, interrupts, timer
+// matches, conversions, display writes, RTOS events) is always kept: what the
+// accesses did stays in the trace. Sequence numbers are never reused, so the gaps
+// show where accesses were dropped.
+inline constexpr std::size_t kDefaultMmioCapacity = 1'000'000;
+
 class Trace {
 public:
     // Stamps the next sequence number and the given virtual time, unless recording
@@ -91,6 +100,8 @@ public:
         event.seq = ++last_seq_;
         event.cycles = cycles;
         events_.push_back(event);
+        if ((event.kind == TraceKind::Read || event.kind == TraceKind::Write) && ++mmio_ > mmio_capacity_)
+            drop_oldest_mmio();
     }
 
     const std::vector<TraceEvent>& events() const { return events_; }
@@ -99,10 +110,19 @@ public:
     void set_enabled(bool enabled) { enabled_ = enabled; }
     bool enabled() const { return enabled_; }
 
+    std::size_t mmio_capacity() const { return mmio_capacity_; }
+    void set_mmio_capacity(std::size_t capacity);  // at least 2; applies from the next access
+    std::uint64_t dropped() const { return dropped_; }  // MMIO accesses no longer held
+
 private:
+    void drop_oldest_mmio();
+
     std::vector<TraceEvent> events_;
     std::uint64_t last_seq_ = 0;
     bool enabled_ = true;
+    std::size_t mmio_ = 0;  // MMIO accesses held
+    std::size_t mmio_capacity_ = kDefaultMmioCapacity;
+    std::uint64_t dropped_ = 0;
 };
 
 // An event's display fields: its category ("mmio", "usb/audio", "input", "led",
