@@ -63,6 +63,8 @@ Lpc1768::GpioTarget Lpc1768::decode_gpio(std::uint32_t address, unsigned size) {
     throw BusFault(address);  // reserved offsets 0x04-0x0F
 }
 
+void Lpc1768::advance_cycles(std::uint64_t cycles) { cycles_ += cycles; }
+
 std::uint32_t Lpc1768::read(std::uint32_t address, unsigned size) const {
     const std::uint32_t value = load(address, size);
     trace_.record({.kind = TraceKind::Read, .address = address, .width = size, .value = value});

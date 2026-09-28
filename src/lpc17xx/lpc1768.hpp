@@ -24,6 +24,14 @@ inline constexpr std::uint32_t kPconpAddress = 0x400FC0C4;
 inline constexpr std::uint32_t kPconpReset = 0x042887DE;
 inline constexpr std::uint32_t kPconpGpio = std::uint32_t{1} << 15;  // PCGPIO
 
+// The core clock (CCLK) that virtual time counts. Keil's SystemInit for the MCB1700
+// sets PLL0 from the 12 MHz crystal to M = 100, N = 6 and divides by 4:
+// 2 * 12 MHz * 100 / 6 / 4 = 100 MHz; the LPC1768 simulator reports CCLK=100000000
+// after it (E2), and STCALIB's 10 ms value assumes it. There is no clock-tree model:
+// firmware that reprograms the PLL does not change this.
+inline constexpr std::uint64_t kCoreClockHz = 100'000'000;
+inline constexpr std::uint64_t kCyclesPerMillisecond = kCoreClockHz / 1000;
+
 // Cortex-M3 SRAM bit-band: each bit of 0x20000000-0x200FFFFF has a word alias.
 inline constexpr std::uint32_t kBitBandBase = 0x20000000;
 inline constexpr std::uint32_t kBitBandAliasBase = 0x22000000;
@@ -75,6 +83,12 @@ public:
     // Called after every successful store, so the board can trace what it shows.
     void on_store(std::function<void()> hook) { on_store_ = std::move(hook); }
 
+    // Virtual time, in core clock cycles since the machine was created. It moves
+    // only when advance_cycles is called: executing firmware on the host takes no
+    // virtual time, and nothing here reads a wall clock.
+    std::uint64_t cycles() const { return cycles_; }
+    void advance_cycles(std::uint64_t cycles);
+
     // PCONP is storage only: 32-bit access, and no bit gates anything. GPIO keeps
     // working with PCGPIO clear, as in the simulator (E9) and UM10360 section 9.1
     // ("Power: always enabled"); docs/phase2/open-questions.md.
@@ -96,6 +110,7 @@ private:
 
     Gpio gpio_;
     std::uint32_t pconp_ = kPconpReset;
+    std::uint64_t cycles_ = 0;
     mutable Trace trace_;  // observation only: recording a load changes no model state
     std::function<void()> on_store_;
 };
