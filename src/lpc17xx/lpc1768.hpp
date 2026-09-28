@@ -1,7 +1,7 @@
 #pragma once
 // The LPC1768 as firmware sees it: 8/16/32-bit loads and stores to its memory map.
 // This is the seam a future MMIO adapter (host-compiled firmware, emulator)
-// plugs into. Only the GPIO block, its bit-band alias and PCONP are mapped so far;
+// plugs into. Only the GPIO block, its bit-band alias, PCONP and SysTick are mapped;
 // anything else raises BusFault, as an unmapped access would on the chip.
 #include <cstdint>
 #include <stdexcept>
@@ -9,6 +9,7 @@
 #include <functional>
 
 #include "lpc17xx/gpio.hpp"
+#include "lpc17xx/systick.hpp"
 #include "trace/trace.hpp"
 
 namespace latasim::lpc17xx {
@@ -85,9 +86,13 @@ public:
 
     // Virtual time, in core clock cycles since the machine was created. It moves
     // only when advance_cycles is called: executing firmware on the host takes no
-    // virtual time, and nothing here reads a wall clock.
+    // virtual time, and nothing here reads a wall clock. SysTick counts these cycles.
     std::uint64_t cycles() const { return cycles_; }
     void advance_cycles(std::uint64_t cycles);
+
+    // SysTick at 0xE000E010-0xE000E01F: 32-bit accesses only; CALIB is read-only.
+    // For observation; firmware goes through the loads and stores above.
+    const SysTick& systick() const { return systick_; }
 
     // PCONP is storage only: 32-bit access, and no bit gates anything. GPIO keeps
     // working with PCGPIO clear, as in the simulator (E9) and UM10360 section 9.1
@@ -111,6 +116,7 @@ private:
     Gpio gpio_;
     std::uint32_t pconp_ = kPconpReset;
     std::uint64_t cycles_ = 0;
+    mutable SysTick systick_;  // mutable: reading STCTRL clears COUNTFLAG
     mutable Trace trace_;  // observation only: recording a load changes no model state
     std::function<void()> on_store_;
 };

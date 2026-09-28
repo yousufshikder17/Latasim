@@ -14,6 +14,7 @@ add_executable(latasim_tests
     pconp_test.cpp
     trace_test.cpp
     virtual_time_test.cpp
+    systick_test.cpp
     gpio_external_input_test.cpp
     mcb1700_test.cpp
     board_inputs_test.cpp

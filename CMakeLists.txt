@@ -20,6 +20,7 @@ endfunction()
 add_library(latasim_model STATIC
     src/lpc17xx/gpio.cpp
     src/lpc17xx/lpc1768.cpp
+    src/lpc17xx/systick.cpp
     src/lpc17xx/keil_gpio_driver.cpp
     src/boards/mcb1700/board.cpp
     src/boards/mcb1700/keil_board_led.cpp

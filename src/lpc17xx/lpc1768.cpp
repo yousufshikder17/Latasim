@@ -12,6 +12,14 @@ std::string fault_message(std::uint32_t address) {
     return text;
 }
 
+bool is_systick(std::uint32_t address) { return address - kSysTickBase < 0x10; }
+
+// SysTick registers are word accesses here; narrow access is not modeled.
+SysTickReg systick_reg(std::uint32_t address, unsigned size) {
+    if (size != 4 || (address & 3u) != 0) throw BusFault(address);
+    return static_cast<SysTickReg>(address - kSysTickBase);
+}
+
 bool is_alias(std::uint32_t address) {
     return address >= kBitBandAliasBase && address - kBitBandAliasBase < kBitBandSize * 32;
 }
@@ -63,7 +71,10 @@ Lpc1768::GpioTarget Lpc1768::decode_gpio(std::uint32_t address, unsigned size) {
     throw BusFault(address);  // reserved offsets 0x04-0x0F
 }
 
-void Lpc1768::advance_cycles(std::uint64_t cycles) { cycles_ += cycles; }
+void Lpc1768::advance_cycles(std::uint64_t cycles) {
+    cycles_ += cycles;
+    systick_.advance(cycles);
+}
 
 std::uint32_t Lpc1768::read(std::uint32_t address, unsigned size) const {
     const std::uint32_t value = load(address, size);
@@ -88,6 +99,7 @@ std::uint32_t Lpc1768::load(std::uint32_t address, unsigned size) const {
         if (size != 4) throw BusFault(address);
         return pconp_;
     }
+    if (is_systick(address)) return systick_.read(systick_reg(address, size));
     const GpioTarget t = decode_gpio(address, size);
     return (gpio_.read(t.port, t.reg) & t.lanes) >> t.shift;
 }
@@ -104,6 +116,14 @@ void Lpc1768::store(std::uint32_t address, unsigned size, std::uint32_t value) {
     if (address == kPconpAddress) {
         if (size != 4) throw BusFault(address);
         pconp_ = value;
+        return;
+    }
+    if (is_systick(address)) {
+        const SysTickReg reg = systick_reg(address, size);
+        // STCALIB is read-only (ARM DUI 0552A); UM10360 Table 438 says R/W. With the
+        // sources disagreeing, a write is reported rather than guessed at.
+        if (reg == SysTickReg::Calib) throw BusFault(address);
+        systick_.write(reg, value);
         return;
     }
     const GpioTarget t = decode_gpio(address, size);

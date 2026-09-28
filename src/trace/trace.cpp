@@ -14,6 +14,10 @@ std::string register_name(std::uint32_t address, unsigned width) {
     using namespace lpc17xx;
     char text[32];
     if (address == kPconpAddress) return "PCONP";
+    if (address - kSysTickBase < 0x10 && address % 4 == 0) {
+        static const char* const systick[] = {"STCTRL", "STRELOAD", "STCURR", "STCALIB"};
+        return systick[(address - kSysTickBase) / 4];
+    }
     const std::uint32_t offset = address - kGpioBase;
     if (address >= kGpioBase && offset < Gpio::kPortCount * kGpioPortStride) {
         static const char* const names[] = {"DIR", nullptr, nullptr, nullptr, "MASK", "PIN", "SET", "CLR"};
