@@ -23,7 +23,7 @@ TEST(KeilScenario, LedChaseOverTimeWithAJoystickPressInTheMiddle) {
     Scenario s;
     blinky_ulp_start();
     Joystick_Initialize();
-    s.bind(latasim::lpc17xx::kSysTickIrq, SysTick_Handler);
+    latasim::test::bind_blinky(s.mcu());
 
     // Ticks fall 1 cycle before each 10 ms mark (SysTick loads RELOAD on enable).
     EXPECT_TRUE(s.led(0, LedState::Off));

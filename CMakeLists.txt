@@ -64,11 +64,17 @@ if(EXISTS "${LATASIM_KEIL_MCB1700}/LED_MCB1700.c" AND EXISTS "${LATASIM_KEIL_BOA
     # latasim_host supplies the GPIO_*/PIN_* functions and the host LPC17xx.h.
     target_link_libraries(latasim_keil_board_drivers PUBLIC latasim_host)
 
-    # Keil's Blinky_ULp timed example: its IRQ.c (SysTick_Handler) unchanged, plus
-    # Latasim's host port of the rest (docs/phase3/timed-firmware.md).
+    # Keil's Blinky_ULp timed example: its IRQ.c (SysTick_Handler) and the board's
+    # ADC_MCB1700.c unchanged, plus Latasim's host port of Blinky.c
+    # (docs/phase4/overview.md). The ADC driver is compiled as C++ through a wrapper
+    # that includes it, since it accesses registers directly.
     set(keil_blinky_ulp_irq "${LATASIM_KEIL_DFP}/Boards/Keil/MCB1700/Blinky_ULp/IRQ.c")
     set_source_files_properties(${keil_blinky_ulp_irq} PROPERTIES LANGUAGE C)
-    add_library(latasim_keil_blinky_ulp STATIC ${keil_blinky_ulp_irq} src/firmware/blinky_ulp.c)
+    add_library(latasim_keil_blinky_ulp STATIC
+        ${keil_blinky_ulp_irq} src/firmware/blinky_ulp.c src/firmware/adc_mcb1700.cpp)
+    target_include_directories(latasim_keil_blinky_ulp PRIVATE
+        "${LATASIM_KEIL_MCB1700}"               # ADC_MCB1700.c
+        "${LATASIM_KEIL_DFP}/RTE_Driver")       # PIN_LPC17xx.h
     target_link_libraries(latasim_keil_blinky_ulp PUBLIC latasim_keil_board_drivers)
     # Latasim's warning policy for Latasim's file only, not Keil's.
     set_source_files_properties(src/firmware/blinky_ulp.c PROPERTIES COMPILE_OPTIONS "/W4;/WX;/utf-8")

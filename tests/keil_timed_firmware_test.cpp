@@ -54,30 +54,36 @@ TEST(BlinkyUlp, EachTickLightsTheNextLedAndWrapsAfterLed7) {
     for (int tick = 1; tick <= 200; ++tick) EXPECT_EQ(seen[tick - 1], tick % 8) << "tick " << tick;
 }
 
-TEST(BlinkyUlp, NothingChangesBetweenTicks) {
+// Between ticks the only activity is the conversion each tick starts: 65 ADC
+// clocks at 25 MHz / 5 = 1300 cycles later, the ADC interrupt runs Keil's handler.
+TEST(BlinkyUlp, BetweenTicksOnlyTheAdcConversionCompletes) {
     Blinky blinky;
     blinky.run(kTick);  // tick 1 at kTick - 1
-    const auto events = blinky.board.mcu().trace().events().size();
+    const auto before = blinky.board.mcu().trace().events().size();
     blinky.run(kTick - 2);  // tick 2 is at 2 * kTick - 1
-    EXPECT_EQ(blinky.board.mcu().trace().events().size(), events);
+    const auto& all = blinky.board.mcu().trace().events();
+    std::vector<std::string> lines;
+    for (auto i = before; i < all.size(); ++i) lines.push_back(to_string(all[i]).substr(6));
+    EXPECT_EQ(lines, (std::vector<std::string>{
+                         "t=1001299    adc     AD0.2     0x000",
+                         "t=1001299    irq     ADC       pend",
+                         "t=1001299    irq     ADC       enter",
+                         "t=1001299    read32  ADSTAT    0x00010004",
+                         "t=1001299    read32  ADGDR     0x82000000",
+                         "t=1001299    irq     ADC       exit",
+                     }));
     EXPECT_EQ(blinky.lit(), 1);
 }
 
-// The second tick: SysTick pending and entered, then LED_SetOut(0x04)'s stores, one SET or
-// CLR per LED in LED order, each followed by the LED change it causes; all at the
-// virtual time of the count to 0.
+// The second tick: SysTick pending and entered, LED_SetOut(0x04)'s stores (one SET
+// or CLR per LED in LED order, each followed by the LED change it causes), then
+// ADC_StartConversion; all at the virtual time of the count to 0.
 TEST(BlinkyUlp, TickTraceIsTheHandlersRegisterTrafficInOrder) {
     Blinky blinky;
-    blinky.run(kTick);
-    const auto before = blinky.board.mcu().trace().events().size();
-    blinky.run(kTick);
-    const auto& all = blinky.board.mcu().trace().events();
-    const std::vector<TraceEvent> tick(all.begin() + static_cast<std::ptrdiff_t>(before), all.end());
+    blinky.run(2 * kTick);
     std::vector<std::string> lines;
-    for (const auto& e : tick) {
-        EXPECT_EQ(e.cycles, 2 * kTick - 1);
-        lines.push_back(to_string(e).substr(19));  // without "#seq  t=time  "
-    }
+    for (const auto& e : blinky.board.mcu().trace().events())
+        if (e.cycles == 2 * kTick - 1) lines.push_back(to_string(e).substr(19));  // without "#seq  t=time  "
     EXPECT_EQ(lines, (std::vector<std::string>{
                          "irq     SysTick   pend",
                          "irq     SysTick   enter",
@@ -91,6 +97,10 @@ TEST(BlinkyUlp, TickTraceIsTheHandlersRegisterTrafficInOrder) {
                          "write32 FIO2CLR   0x00000010",
                          "write32 FIO2CLR   0x00000020",
                          "write32 FIO2CLR   0x00000040",
+                         "read32  ADCR      0x01200404",  // ADC_StartConversion: stop,
+                         "write32 ADCR      0x00200404",
+                         "read32  ADCR      0x00200404",  // then START = 001
+                         "write32 ADCR      0x01200404",
                          "irq     SysTick   exit",
                      }));
 }

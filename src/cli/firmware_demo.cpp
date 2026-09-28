@@ -114,6 +114,8 @@ void run_timed_firmware(std::ostream& out) {
     blinky_ulp_start();
     trace.summarise("LED pins driven low, SysTick every 1,000,000 cycles");
     board.mcu().bind_handler(lpc17xx::kSysTickIrq, SysTick_Handler);
+    board.mcu().bind_handler(lpc17xx::kAdcIrq, ADC_IRQHandler);
+    board.mcu().on_thread_mode(blinky_ulp_main_loop_step);
 
     out << "\nrun for 25 ms (2,500,000 cycles)\n";
     board.mcu().advance_cycles(25 * lpc17xx::kCyclesPerMillisecond);
