@@ -184,7 +184,8 @@ function(latasim_add_host_firmware target entry)
     add_library(${target} STATIC ${ARGN})
     target_include_directories(${target} BEFORE PRIVATE "${PROJECT_SOURCE_DIR}/src/host/device")
     target_compile_definitions(${target} PRIVATE
-        LATASIM_FIRMWARE_MAIN=${entry} LATASIM_NOP_CYCLES=${LATASIM_FIRMWARE_NOP_CYCLES})
+        LATASIM_FIRMWARE_MAIN=${entry} LATASIM_FIRMWARE_FPUTC=${entry}_fputc
+        LATASIM_NOP_CYCLES=${LATASIM_FIRMWARE_NOP_CYCLES})
     target_compile_options(${target} PRIVATE "/FI${PROJECT_SOURCE_DIR}/src/host/firmware_shim.h" /utf-8)
     target_link_libraries(${target} PUBLIC latasim_host)
 endfunction()
@@ -194,6 +195,35 @@ endfunction()
 # (relative to the folder). Nothing from the folder is copied into the build tree.
 set(LATASIM_USER_FIRMWARE_DIR "" CACHE PATH "External firmware folder to run as a workbench scenario")
 set(LATASIM_USER_FIRMWARE_SOURCES "" CACHE STRING "Its sources relative to the folder (default: its top-level *.c)")
+set(LATASIM_USER_FIRMWARE_ADAPTER "" CACHE STRING
+    "CMake script of source adaptations for it (default: local/adapters/<folder name>.cmake if present)")
+
+# For the adapter script: in the external firmware's `file` (relative to its
+# folder), replace the exact text `old`, which must occur exactly once, with `new`.
+# The original stays untouched: the adapted copy is written to the build tree
+# (with #line pointing diagnostics at the original) and compiled instead. A
+# replacement that stops matching the original is a configure error.
+function(latasim_adapt_source file old new)
+    set(original "${LATASIM_USER_FIRMWARE_DIR}/${file}")
+    set(work "${CMAKE_BINARY_DIR}/user_firmware/${file}.new")
+    get_property(adapted GLOBAL PROPERTY LATASIM_ADAPTED)
+    if(file IN_LIST adapted)
+        file(READ "${work}" text)
+    else()
+        file(READ "${original}" text)
+        set(text "#line 1 \"${original}\"\n${text}")
+        set_property(GLOBAL APPEND PROPERTY LATASIM_ADAPTED "${file}")
+        set_property(DIRECTORY "${PROJECT_SOURCE_DIR}" APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${original}")
+    endif()
+    string(FIND "${text}" "${old}" first)
+    string(FIND "${text}" "${old}" last REVERSE)
+    if(first EQUAL -1 OR NOT first EQUAL last)
+        message(FATAL_ERROR "Adapter: \"${old}\" does not occur exactly once in ${original}")
+    endif()
+    string(REPLACE "${old}" "${new}" text "${text}")
+    file(WRITE "${work}" "${text}")
+endfunction()
+
 if(LATASIM_USER_FIRMWARE_DIR)
     if(NOT TARGET latasim_workbench)
         message(FATAL_ERROR "LATASIM_USER_FIRMWARE_DIR needs the workbench session layer, which needs the Keil packs")
@@ -206,9 +236,35 @@ if(LATASIM_USER_FIRMWARE_DIR)
     if(NOT user_sources)
         message(FATAL_ERROR "No firmware sources in LATASIM_USER_FIRMWARE_DIR = ${LATASIM_USER_FIRMWARE_DIR}")
     endif()
+    # The adapter: the one given (relative paths from this repository), else the
+    # git-ignored local/adapters/<folder name>.cmake if there is one.
+    get_filename_component(user_name "${LATASIM_USER_FIRMWARE_DIR}" NAME)
+    set(adapter "${LATASIM_USER_FIRMWARE_ADAPTER}")
+    if(NOT adapter AND EXISTS "${PROJECT_SOURCE_DIR}/local/adapters/${user_name}.cmake")
+        set(adapter "local/adapters/${user_name}.cmake")
+    endif()
+    if(adapter)
+        get_filename_component(adapter "${adapter}" ABSOLUTE BASE_DIR "${PROJECT_SOURCE_DIR}")
+        message(STATUS "External firmware adapter: ${adapter}")
+        set_property(GLOBAL PROPERTY LATASIM_ADAPTED "")
+        include("${adapter}")
+        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${adapter}")
+        get_property(adapted GLOBAL PROPERTY LATASIM_ADAPTED)
+        foreach(file IN LISTS adapted)
+            list(FIND user_sources "${LATASIM_USER_FIRMWARE_DIR}/${file}" at)
+            if(at EQUAL -1)
+                message(FATAL_ERROR "Adapter: ${file} is not one of the firmware's sources")
+            endif()
+            set(copy "${CMAKE_BINARY_DIR}/user_firmware/${file}")
+            file(COPY_FILE "${copy}.new" "${copy}" ONLY_IF_DIFFERENT)  # unchanged: no rebuild
+            list(REMOVE_AT user_sources ${at})
+            list(APPEND user_sources "${copy}")
+        endforeach()
+    endif()
     message(STATUS "External firmware: ${user_sources}")
     latasim_add_host_firmware(latasim_user_firmware latasim_user_main ${user_sources})
-    get_filename_component(user_name "${LATASIM_USER_FIRMWARE_DIR}" NAME)
+    # Adapted copies still include the firmware's headers from its folder.
+    target_include_directories(latasim_user_firmware PRIVATE "${LATASIM_USER_FIRMWARE_DIR}")
     target_compile_definitions(latasim_workbench PRIVATE
         "LATASIM_USER_FIRMWARE_NAME=\"${user_name}\"" "LATASIM_USER_FIRMWARE_DIR=\"${LATASIM_USER_FIRMWARE_DIR}\"")
     target_link_libraries(latasim_workbench PUBLIC latasim_user_firmware)

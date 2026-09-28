@@ -8,3 +8,7 @@ reference/
 # Keil AN198 (UVSC) package: Keil-licensed, 14 MB. Re-fetch per PROVENANCE.md.
 third_party/uvsc/*
 !third_party/uvsc/PROVENANCE.md
+
+# Local-only files: per-machine external-firmware adapters (docs/external-firmware.md),
+# which may name private projects. Never committed.
+local/

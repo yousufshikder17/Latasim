@@ -10,7 +10,7 @@
  *   delay loop around it (volatile counter plus __NOP) takes the time it would
  *   take on the chip, whose simulator measured such a loop at 10 cycles per pass.
  *   Loops without a __NOP still take no virtual time.
- * - fputc is renamed out of the C library's way. Firmware that retargets printf
+ * - fputc is renamed LATASIM_FIRMWARE_FPUTC, out of the C library's way. Firmware that retargets printf
  *   to ITM by defining fputc keeps its definition, unused: printf writes to the
  *   host process's standard output. ITM is not modelled.
  */
@@ -30,6 +30,6 @@
 
 extern "C" int LATASIM_FIRMWARE_MAIN(void);
 #define main LATASIM_FIRMWARE_MAIN
-#define fputc latasim_firmware_fputc
+#define fputc LATASIM_FIRMWARE_FPUTC
 
 #endif /* LATASIM_FIRMWARE_SHIM_H */
