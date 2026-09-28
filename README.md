@@ -2,7 +2,7 @@
 
 Latasim is a virtual lab bench for embedded firmware. It runs real Keil MCB1700 (NXP LPC1768, Cortex-M3) firmware against a simulated board, so LEDs, buttons, the joystick and the LCD can be driven, observed and asserted on in **deterministic, repeatable tests**, with no hardware on the desk.
 
-**Status:** Phase 1 is complete (a production C++20 model of LPC1768 GPIO and the MCB1700 LEDs, with a CLI demo). Phase 2 is in progress: 8/16/32-bit MMIO access, the joystick and INT0 inputs ([progress](docs/phase2/mmio-and-inputs.md)), and running firmware on the host are done. Keil's MCB1700 board drivers run unmodified as C, and register-level code runs through a host device header ([host firmware](docs/phase2/host-firmware.md), [registers](docs/phase2/host-registers.md)); 115 tests, 12 of which need the Keil packs installed. Four hardware-behaviour questions are reviewed in [open-questions.md](docs/phase2/open-questions.md). Phase 0 (feasibility) experiments and evidence are kept alongside. Planned stack: C++20 and CMake, CLI first, Qt desktop UI later.
+**Status:** Phases 0, 1 and 2 are complete. Keil's own MCB1700 board drivers, compiled unmodified as C for the host, drive a modelled LPC1768/MCB1700. The model covers GPIO, LEDs, joystick and INT0, and register-level firmware runs through a host device header. Every hardware interaction lands in a deterministic trace, and the same scenario run as real ARM firmware in µVision's simulator gives the same register values. 132 tests; 15 of them need the Keil packs installed. Summary: [docs/phase2/overview.md](docs/phase2/overview.md). Planned stack: C++20 and CMake, CLI first, Qt desktop UI later.
 
 ## Why
 
@@ -80,18 +80,45 @@ Keil board API (LED_*), same register model
 
 Details, exact semantics, limitations and the Phase 2 list: [docs/phase1/production-model.md](docs/phase1/production-model.md).
 
+## Phase 2: real firmware on the host, traced
+
+- **Real firmware.** Keil's `LED_MCB1700.c`, `Joystick_MCB1700.c` and `Buttons_MCB1700.c` are compiled unmodified as C from the installed packs. They link against C-linkage versions of Keil's `GPIO_*`/`PIN_*` functions that act on a bound board.
+- **Register-level code.** A host `LPC17xx.h` keeps Keil's names and layout (`LPC_GPIO1->FIOSET`, `FIOPIN0`, …), but its registers are proxies into the model. Keil's own `GPIO_LPC17xx.c` runs unmodified. Literal addresses need one documented adaptation (`LATASIM_REG32`).
+- **Inputs.** Joystick and INT0 are board switches driving pin levels, and firmware reads them through GPIO.
+- **Trace.** Every MMIO load and store, input change and LED change is a structured event, sequenced per machine and identical on every run.
+- **Checked against the simulator.** The same scenario, as ARM firmware in µVision, matches register for register (E10). Four hardware questions were settled or bounded from NXP's manual, the data sheet and the board schematic: [open-questions.md](docs/phase2/open-questions.md).
+
+```powershell
+build\latasim firmware-demo    # needs the Keil packs at build time
+```
+
+```
+firmware: LED_On(0)
+    #51   write32 FIO1SET   0x10000000
+    #52   led     LED0      ON
+
+board:    joystick UP pressed
+    #53   input   P1.23     low
+firmware: Joystick_GetState() = 0x08 (JOYSTICK_UP)
+    #54   read32  FIO1PIN   0x5F7FC713
+```
+
+Architecture, what is and isn't supported, and the evidence: [docs/phase2/overview.md](docs/phase2/overview.md).
+
 ## Layout
 
 | Path | What |
 |---|---|
-| `src/lpc17xx/` | GPIO model, memory map and bit-band (`Lpc1768`), Keil GPIO driver (B1) |
+| `src/lpc17xx/` | GPIO model, memory map, bit-band and PCONP (`Lpc1768`), Keil GPIO driver (B1) |
+| `src/host/` | Host firmware support: board binding, C-linkage Keil GPIO functions, host `LPC17xx.h` and register proxies |
+| `src/trace/` | The deterministic hardware trace |
 | `src/boards/mcb1700/` | Board model (LEDs; joystick and INT0 inputs), Keil LED board API (B1) |
 | `src/cli/` | The `latasim` command-line tool |
 | `tests/` | GoogleTest suite, including replays of recorded simulator runs |
-| `docs/phase2/` | Phase 2 progress: MMIO access widths, board inputs, host firmware, hardware-behaviour questions |
+| `docs/phase2/` | Phase 2: [overview](docs/phase2/overview.md), MMIO and inputs, host firmware, registers, hardware-behaviour questions |
 | `docs/phase1/` | The production model |
 | `docs/phase0/` | Findings, pin map, UVSC results, backend decisions |
-| `spikes/uvsim-script/` | µVision debug-script experiments E1–E8 (`*.ini`) and their recorded output (`*-run*.out`) |
+| `spikes/uvsim-script/` | µVision simulator experiments E1–E10 (`*.ini`, firmware sources for E9/E10) and their recorded output (`*-run*.out`) |
 | `spikes/uvsc/` | Throwaway native C++ UVSC spike and its recorded results |
 | `scripts/` | Reproduce everything (PowerShell) |
 | `reference/` | Generated copies of the reference firmware (gitignored; recreate with `scripts/`) |

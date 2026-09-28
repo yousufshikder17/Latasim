@@ -1,6 +1,6 @@
-# Phase 2 (in progress): MMIO access widths and board inputs
+# Phase 2: MMIO access widths and board inputs
 
-**Status:** deliverables 1–6 are done. Deliverables 1–3 (the C firmware boundary, real firmware on the host, register-level firmware) are described in [host-firmware.md](host-firmware.md) and [host-registers.md](host-registers.md). Tracing is next.
+**Status:** deliverables 1–6 are done. Deliverables 1–3 (the C firmware boundary, real firmware on the host, register-level firmware) are described in [host-firmware.md](host-firmware.md) and [host-registers.md](host-registers.md). Phase 2 is complete: see [overview.md](overview.md).
 
 ## MMIO: 8-, 16- and 32-bit access
 
@@ -60,7 +60,7 @@
 
 ## Tests
 
-79 in total, all passing.
+When D4–D6 were done: 79 in total, all passing. (Current totals are in [overview.md](overview.md).)
 
 | Group | Count |
 |---|---|

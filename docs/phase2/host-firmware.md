@@ -36,7 +36,7 @@ Their public headers (`Board_LED.h` etc.) come from `Keil::MDK-Middleware` 7.13.
 - Together they cover output (LEDs), input (joystick, INT0) and active-low decoding, which is everything the model supports.
 - They are small, and their only dependency is the GPIO/PIN API above.
 
-**How it is built** (`tests/CMakeLists.txt`, target `latasim_keil_firmware_tests`):
+**How it is built** (root `CMakeLists.txt`, library `latasim_keil_board_drivers`, used by `latasim_keil_firmware_tests` and `latasim firmware-demo`):
 - The three `.c` files are compiled **as C, unmodified, directly from the installed pack**. No Keil source or header is copied into this repository.
 - The build looks for the packs under `LATASIM_KEIL_PACKS_DIR`, which defaults to `%LOCALAPPDATA%/Arm/Packs`. If they are absent, the target is skipped with a configure message and the rest of the suite still builds.
 - Keil's own `GPIO_LPC17xx.h`, `PIN_LPC17xx.h` and `Board_*.h` are used.
