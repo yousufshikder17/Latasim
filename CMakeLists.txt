@@ -60,6 +60,15 @@ if(EXISTS "${LATASIM_KEIL_MCB1700}/LED_MCB1700.c" AND EXISTS "${LATASIM_KEIL_BOA
     target_compile_definitions(latasim_keil_board_drivers PRIVATE LPC175x_6x)
     # latasim_host supplies the GPIO_*/PIN_* functions and the host LPC17xx.h.
     target_link_libraries(latasim_keil_board_drivers PUBLIC latasim_host)
+
+    # Keil's Blinky_ULp timed example: its IRQ.c (SysTick_Handler) unchanged, plus
+    # Latasim's host port of the rest (docs/phase3/timed-firmware.md).
+    set(keil_blinky_ulp_irq "${LATASIM_KEIL_DFP}/Boards/Keil/MCB1700/Blinky_ULp/IRQ.c")
+    set_source_files_properties(${keil_blinky_ulp_irq} PROPERTIES LANGUAGE C)
+    add_library(latasim_keil_blinky_ulp STATIC ${keil_blinky_ulp_irq} src/firmware/blinky_ulp.c)
+    target_link_libraries(latasim_keil_blinky_ulp PUBLIC latasim_keil_board_drivers)
+    # Latasim's warning policy for Latasim's file only, not Keil's.
+    set_source_files_properties(src/firmware/blinky_ulp.c PROPERTIES COMPILE_OPTIONS "/W4;/WX;/utf-8")
 else()
     message(STATUS "Keil packs not found under ${LATASIM_KEIL_PACKS_DIR}: "
                    "Keil firmware tests and `latasim firmware-demo` not built")
