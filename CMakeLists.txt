@@ -32,7 +32,8 @@ latasim_warnings(latasim_model)
 add_library(latasim_host STATIC
     src/host/binding.cpp
     src/host/keil_rte_gpio.cpp
-    src/host/registers.cpp)
+    src/host/registers.cpp
+    src/host/cmsis_system.cpp)
 target_link_libraries(latasim_host PUBLIC latasim_model)
 # The host LPC17xx.h, for firmware compiled against the host.
 target_include_directories(latasim_host PUBLIC src/host/device)

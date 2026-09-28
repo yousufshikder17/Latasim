@@ -8,9 +8,9 @@
 // from 1 sets COUNTFLAG. So RELOAD = N-1 gives a period of N clocks, and RELOAD = 0
 // never counts to 0 (ARM 4.4.2).
 //
-// Not modeled: the SysTick exception (TICKINT is stored only; nothing is delivered),
-// the external STCLK clock (with CLKSOURCE = 0 the counter does not advance), and
-// halting in debug.
+// Not modeled here: the SysTick exception. Lpc1768::advance_cycles calls an attached
+// handler instead (see on_systick). Also not modeled: the external STCLK clock (with
+// CLKSOURCE = 0 the counter does not advance) and halting in debug.
 #include <cstdint>
 
 namespace latasim::lpc17xx {
@@ -46,6 +46,12 @@ public:
     // counted from 1 to 0 (each of which sets COUNTFLAG). Does nothing unless
     // enabled with CLKSOURCE = core clock.
     std::uint64_t advance(std::uint64_t cycles);
+
+    // Clocks until the counter next reaches 0 from 1, or 0 if it never will
+    // (disabled, clocked by STCLK, or stuck at 0 with RELOAD 0).
+    std::uint64_t cycles_to_zero() const;
+    // The SysTick exception would be requested on each count to 0.
+    bool interrupt_enabled() const { return (ctrl_ & kSysTickTickint) != 0; }
 
     // Observation without side effects.
     std::uint32_t ctrl() const { return ctrl_; }

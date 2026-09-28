@@ -10,6 +10,8 @@
  * own tests (docs/phase2/host-registers.md):
  *
  *   C and C++   latasim_mmio_read32(address), latasim_mmio_write32(address, value)
+ *               SystemCoreClock, SystemCoreClockUpdate(), SysTick_Config(ticks)
+ *               (host/cmsis_system.cpp)
  *   C++ only    LPC_GPIO0..4 and LPC_SC, with Keil's register names:
  *                 LPC_GPIO1->FIODIR |= 1UL << 28;  LPC_GPIO1->FIOPIN0 = 0x12;
  *               LATASIM_REG32(address), for firmware that dereferences literal
@@ -30,6 +32,11 @@ extern "C" {
 
 uint32_t latasim_mmio_read32(uint32_t address);
 void latasim_mmio_write32(uint32_t address, uint32_t value);
+
+/* CMSIS system_LPC17xx.h and core_cm3.h functions, host versions. */
+extern uint32_t SystemCoreClock;
+void SystemCoreClockUpdate(void);
+uint32_t SysTick_Config(uint32_t ticks);
 
 #ifdef __cplusplus
 }

@@ -8,6 +8,7 @@
 #include <gtest/gtest.h>
 
 #include <cstdint>
+#include <stdexcept>
 #include <vector>
 
 using latasim::TraceKind;
@@ -226,4 +227,72 @@ TEST(SysTick, AccessesAreTracedLikeAnyOtherRegister) {
     EXPECT_EQ(to_string(events[2]), "#3    write32 STCTRL    0x00000005");
     board.mcu().advance_cycles(50);
     EXPECT_EQ(events.size(), 3u) << "advancing time is not an MMIO access";
+}
+
+// --- SysTick_Handler delivery (Lpc1768::on_systick) ---
+
+TEST(SysTickHandler, CalledAtEachCountToZeroAtThatVirtualTime) {
+    Lpc1768 mcu;
+    std::vector<std::uint64_t> calls;
+    mcu.on_systick([&] { calls.push_back(mcu.cycles()); });
+    configure(mcu, 1'000, kRun | kSysTickTickint);
+    mcu.advance_cycles(3'500);
+    EXPECT_EQ(calls, (std::vector<std::uint64_t>{1'000, 2'000, 3'000}));
+    EXPECT_EQ(mcu.cycles(), 3'500u);
+    mcu.advance_cycles(499);
+    EXPECT_EQ(calls.size(), 3u);
+    mcu.advance_cycles(1);
+    EXPECT_EQ(calls.back(), 4'000u) << "splitting the advance changes nothing";
+}
+
+TEST(SysTickHandler, NotCalledWithoutTickint) {
+    Lpc1768 mcu;
+    int calls = 0;
+    mcu.on_systick([&] { ++calls; });
+    configure(mcu, 100);  // ENABLE | CLKSOURCE, no TICKINT
+    mcu.advance_cycles(1'000);
+    EXPECT_EQ(calls, 0);
+    EXPECT_EQ(mcu.read32(STCTRL) & kSysTickCountflag, kSysTickCountflag) << "the counter still ran";
+}
+
+TEST(SysTickHandler, WithoutAHandlerTickintIsOnlyStored) {
+    Lpc1768 mcu;
+    configure(mcu, 100, kRun | kSysTickTickint);
+    mcu.advance_cycles(1'000);
+    EXPECT_EQ(mcu.cycles(), 1'000u);
+    EXPECT_EQ(mcu.read32(STCURR), 0u);
+}
+
+TEST(SysTickHandler, HandlerAccessesAreTracedAndSeeTheModel) {
+    latasim::mcb1700::Board board;
+    auto& mcu = board.mcu();
+    mcu.write32(0x2009C020, 1u << 28);  // FIO1DIR: LED0 output
+    mcu.on_systick([&] { mcu.write32(0x2009C038, 1u << 28); });  // FIO1SET
+    configure(mcu, 100, kRun | kSysTickTickint);
+    mcu.advance_cycles(99);
+    EXPECT_EQ(board.led(0), latasim::mcb1700::LedState::Off);
+    mcu.advance_cycles(1);
+    EXPECT_EQ(board.led(0), latasim::mcb1700::LedState::On);
+}
+
+TEST(SysTickHandler, HandlerMayReconfigureTheTimer) {
+    Lpc1768 mcu;
+    std::vector<std::uint64_t> calls;
+    mcu.on_systick([&] {
+        calls.push_back(mcu.cycles());
+        if (calls.size() == 2) mcu.write32(STCTRL, kRun);  // TICKINT off
+    });
+    configure(mcu, 10, kRun | kSysTickTickint);
+    mcu.advance_cycles(100);
+    EXPECT_EQ(calls, (std::vector<std::uint64_t>{10, 20}));
+}
+
+TEST(SysTickHandler, AdvancingTimeInsideTheHandlerIsAnError) {
+    Lpc1768 mcu;
+    mcu.on_systick([&] { mcu.advance_cycles(1); });
+    configure(mcu, 10, kRun | kSysTickTickint);
+    EXPECT_THROW(mcu.advance_cycles(10), std::logic_error);
+    mcu.on_systick(nullptr);
+    mcu.advance_cycles(5);  // usable again after the failure
+    EXPECT_EQ(mcu.cycles(), 15u);
 }

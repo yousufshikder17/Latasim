@@ -72,8 +72,24 @@ Lpc1768::GpioTarget Lpc1768::decode_gpio(std::uint32_t address, unsigned size) {
 }
 
 void Lpc1768::advance_cycles(std::uint64_t cycles) {
-    cycles_ += cycles;
-    systick_.advance(cycles);
+    if (in_systick_handler_) throw std::logic_error("advance_cycles called from the SysTick handler");
+    while (cycles > 0) {
+        const std::uint64_t to_zero = on_systick_ && systick_.interrupt_enabled() ? systick_.cycles_to_zero() : 0;
+        const std::uint64_t step = to_zero == 0 || to_zero > cycles ? cycles : to_zero;
+        cycles_ += step;
+        systick_.advance(step);
+        cycles -= step;
+        if (step == to_zero) {
+            in_systick_handler_ = true;
+            try {
+                on_systick_();
+            } catch (...) {
+                in_systick_handler_ = false;
+                throw;
+            }
+            in_systick_handler_ = false;
+        }
+    }
 }
 
 std::uint32_t Lpc1768::read(std::uint32_t address, unsigned size) const {

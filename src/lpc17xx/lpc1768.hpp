@@ -90,6 +90,14 @@ public:
     std::uint64_t cycles() const { return cycles_; }
     void advance_cycles(std::uint64_t cycles);
 
+    // The firmware's SysTick_Handler. While one is attached and TICKINT is set,
+    // advance_cycles stops at each SysTick count to 0 and calls it there, so its
+    // register accesses happen at that virtual time. This is the only exception
+    // Latasim delivers, and only in this narrow form: synchronously, between host
+    // firmware calls, with no NVIC, priorities, pending state, preemption or
+    // exception-entry cycles. Advancing time from inside the handler is an error.
+    void on_systick(std::function<void()> handler) { on_systick_ = std::move(handler); }
+
     // SysTick at 0xE000E010-0xE000E01F: 32-bit accesses only; CALIB is read-only.
     // For observation; firmware goes through the loads and stores above.
     const SysTick& systick() const { return systick_; }
@@ -117,6 +125,8 @@ private:
     std::uint32_t pconp_ = kPconpReset;
     std::uint64_t cycles_ = 0;
     mutable SysTick systick_;  // mutable: reading STCTRL clears COUNTFLAG
+    std::function<void()> on_systick_;
+    bool in_systick_handler_ = false;
     mutable Trace trace_;  // observation only: recording a load changes no model state
     std::function<void()> on_store_;
 };

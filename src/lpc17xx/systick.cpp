@@ -28,6 +28,12 @@ void SysTick::write(SysTickReg reg, std::uint32_t value) {
     }
 }
 
+std::uint64_t SysTick::cycles_to_zero() const {
+    if (!(ctrl_ & kSysTickEnable) || !(ctrl_ & kSysTickClksource)) return 0;
+    if (current_ != 0) return current_;
+    return reload_ == 0 ? 0 : std::uint64_t{reload_} + 1;
+}
+
 // Closed form of this per-clock rule, so advancing by millions of cycles is cheap:
 //   if (current == 0) current = reload;
 //   else if (--current == 0) { countflag = true; ++zeros; }
