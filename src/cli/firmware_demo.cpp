@@ -12,7 +12,9 @@ extern "C" {  // Keil's headers have no C++ guards; the drivers are compiled as 
 }
 
 #include "boards/mcb1700/board.hpp"
+#include "firmware/blinky_ulp.h"
 #include "host/binding.hpp"
+#include "lpc17xx/lpc1768.hpp"
 #include "trace/trace.hpp"
 
 namespace latasim::cli {
@@ -53,12 +55,9 @@ private:
     std::size_t shown_ = 0;
 };
 
-}  // namespace
-
-void run_firmware_demo(std::ostream& out) {
-    out << "Latasim MCB1700 firmware demo\n"
-           "Keil's LED_MCB1700.c, Joystick_MCB1700.c and Buttons_MCB1700.c (unmodified C)\n"
-           "on the modelled board. Indented lines are the hardware trace.\n\n";
+void run_board_drivers(std::ostream& out) {
+    out << "Part 1: board drivers\n"
+           "Keil's LED_MCB1700.c, Joystick_MCB1700.c and Buttons_MCB1700.c (unmodified C).\n\n";
 
     Board board;
     host::FirmwareBinding bind(board);
@@ -99,8 +98,40 @@ void run_firmware_demo(std::ostream& out) {
     board.release_int0();
     trace.print();
 
+    out << "\n" << leds(board) << "\n" << board.mcu().trace().events().size() << " trace events\n";
+}
+
+void run_timed_firmware(std::ostream& out) {
+    out << "Part 2: timed firmware, on a new board\n"
+           "Keil's Blinky_ULp: SysTick_Handler in IRQ.c (unmodified C) steps an LED chase\n"
+           "every 10 ms of virtual time.\n\n";
+
+    Board board;
+    host::FirmwareBinding bind(board);
+    TraceTail trace(out, board);
+
+    out << "firmware: LED_Initialize(); ...; SysTick_Config(SystemCoreClock / 100);\n";
+    blinky_ulp_start();
+    trace.summarise("LED pins driven low, SysTick every 1,000,000 cycles");
+    board.mcu().on_systick(SysTick_Handler);
+
+    out << "\nrun for 25 ms (2,500,000 cycles)\n";
+    board.mcu().advance_cycles(25 * lpc17xx::kCyclesPerMillisecond);
+    trace.print();
+
     out << "\n" << leds(board) << "\n"
-        << board.mcu().trace().events().size() << " trace events; the same on every run.\n";
+        << board.mcu().trace().events().size() << " trace events, t=" << board.mcu().cycles() << "\n";
+}
+
+}  // namespace
+
+void run_firmware_demo(std::ostream& out) {
+    out << "Latasim MCB1700 firmware demo\n"
+           "Keil's MCB1700 sources on modelled boards. Indented lines are the hardware trace;\n"
+           "t is virtual time in core clock cycles (100 MHz). Every run is identical.\n\n";
+    run_board_drivers(out);
+    out << "\n";
+    run_timed_firmware(out);
 }
 
 }  // namespace latasim::cli

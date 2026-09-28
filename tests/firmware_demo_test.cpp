@@ -1,18 +1,26 @@
 #include "cli/firmware_demo.hpp"
 
+#include "blinky_ulp_fixture.hpp"
+
 #include <gtest/gtest.h>
 
 #include <sstream>
 
-// Keil's board drivers on the modelled board, with the trace. The run is
-// deterministic, so the whole output is pinned; update it only on purpose.
+// Keil's board drivers and timed Blinky_ULp on modelled boards, with the trace.
+// The run is deterministic, so the whole output is pinned; update it only on
+// purpose. As in a new `latasim` process, IRQ.c's statics start from their
+// initial values (blinky_ulp_fixture.hpp).
 TEST(FirmwareDemo, OutputIsExactlyAsExpected) {
+    latasim::test::reset_irq_statics();
     std::ostringstream out;
     latasim::cli::run_firmware_demo(out);
     EXPECT_EQ(out.str(),
         "Latasim MCB1700 firmware demo\n"
-        "Keil's LED_MCB1700.c, Joystick_MCB1700.c and Buttons_MCB1700.c (unmodified C)\n"
-        "on the modelled board. Indented lines are the hardware trace.\n"
+        "Keil's MCB1700 sources on modelled boards. Indented lines are the hardware trace;\n"
+        "t is virtual time in core clock cycles (100 MHz). Every run is identical.\n"
+        "\n"
+        "Part 1: board drivers\n"
+        "Keil's LED_MCB1700.c, Joystick_MCB1700.c and Buttons_MCB1700.c (unmodified C).\n"
         "\n"
         "LEDs: 0=UNDRIVEN 1=UNDRIVEN 2=UNDRIVEN 3=UNDRIVEN 4=UNDRIVEN 5=UNDRIVEN 6=UNDRIVEN 7=UNDRIVEN\n"
         "\n"
@@ -53,12 +61,47 @@ TEST(FirmwareDemo, OutputIsExactlyAsExpected) {
         "    #71   t=0          input   P2.10     high\n"
         "\n"
         "LEDs: 0=ON 1=OFF 2=OFF 3=ON 4=OFF 5=OFF 6=OFF 7=OFF\n"
-        "71 trace events; the same on every run.\n");
+        "71 trace events\n"
+        "\n"
+        "Part 2: timed firmware, on a new board\n"
+        "Keil's Blinky_ULp: SysTick_Handler in IRQ.c (unmodified C) steps an LED chase\n"
+        "every 10 ms of virtual time.\n"
+        "\n"
+        "firmware: LED_Initialize(); ...; SysTick_Config(SystemCoreClock / 100);\n"
+        "    #1-#37: 37 events, LED pins driven low, SysTick every 1,000,000 cycles\n"
+        "\n"
+        "run for 25 ms (2,500,000 cycles)\n"
+        "    #38   t=999999     systick handler\n"
+        "    #39   t=999999     write32 FIO1CLR   0x10000000\n"
+        "    #40   t=999999     write32 FIO1SET   0x20000000\n"
+        "    #41   t=999999     led     LED1      ON\n"
+        "    #42   t=999999     write32 FIO1CLR   0x80000000\n"
+        "    #43   t=999999     write32 FIO2CLR   0x00000004\n"
+        "    #44   t=999999     write32 FIO2CLR   0x00000008\n"
+        "    #45   t=999999     write32 FIO2CLR   0x00000010\n"
+        "    #46   t=999999     write32 FIO2CLR   0x00000020\n"
+        "    #47   t=999999     write32 FIO2CLR   0x00000040\n"
+        "    #48   t=1999999    systick handler\n"
+        "    #49   t=1999999    write32 FIO1CLR   0x10000000\n"
+        "    #50   t=1999999    write32 FIO1CLR   0x20000000\n"
+        "    #51   t=1999999    led     LED1      OFF\n"
+        "    #52   t=1999999    write32 FIO1SET   0x80000000\n"
+        "    #53   t=1999999    led     LED2      ON\n"
+        "    #54   t=1999999    write32 FIO2CLR   0x00000004\n"
+        "    #55   t=1999999    write32 FIO2CLR   0x00000008\n"
+        "    #56   t=1999999    write32 FIO2CLR   0x00000010\n"
+        "    #57   t=1999999    write32 FIO2CLR   0x00000020\n"
+        "    #58   t=1999999    write32 FIO2CLR   0x00000040\n"
+        "\n"
+        "LEDs: 0=OFF 1=OFF 2=ON 3=OFF 4=OFF 5=OFF 6=OFF 7=OFF\n"
+        "58 trace events, t=2500000\n");
 }
 
 TEST(FirmwareDemo, RepeatedRunsAreIdentical) {
     std::ostringstream first, second;
+    latasim::test::reset_irq_statics();
     latasim::cli::run_firmware_demo(first);
+    latasim::test::reset_irq_statics();
     latasim::cli::run_firmware_demo(second);
     EXPECT_EQ(first.str(), second.str());
 }
