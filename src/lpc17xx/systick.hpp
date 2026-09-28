@@ -3,9 +3,11 @@
 // Sources: ARM DUI 0552A (Cortex-M3 Devices Generic User Guide) section 4.4, and
 // UM10360 chapter 23 for the LPC17xx reset and calibration values.
 //
-// A 24-bit down counter clocked by the core clock (CLKSOURCE = 1). While enabled,
-// each clock either wraps a zero counter to RELOAD or decrements it; reaching 0
-// from 1 sets COUNTFLAG. So RELOAD = N-1 gives a period of N clocks, and RELOAD = 0
+// A 24-bit down counter clocked by the core clock (CLKSOURCE = 1). Setting ENABLE
+// loads RELOAD into the counter at once (ARM 4.4.1; the LPC1768 simulator does the
+// same, E11). While enabled, each clock either wraps a zero counter to RELOAD or
+// decrements it; reaching 0 from 1 sets COUNTFLAG. So after SysTick_Config(N) the
+// counter first reaches 0 after N-1 clocks and then every N clocks, and RELOAD = 0
 // never counts to 0 (ARM 4.4.2).
 //
 // Not modeled here: the SysTick exception. Lpc1768::advance_cycles calls an attached
@@ -36,6 +38,8 @@ inline constexpr std::uint32_t kSysTickCalib = 0x000F423F;
 class SysTick {
 public:
     // Register reads. Reading CTRL returns COUNTFLAG and clears it (ARM 4.4.1).
+    // The reset values are UM10360's; the simulator reads STCTRL and STCALIB as 0
+    // at reset (E11, docs/phase3/open-questions.md).
     // Reserved bits read as 0.
     std::uint32_t read(SysTickReg reg);
     // CTRL keeps ENABLE/TICKINT/CLKSOURCE, LOAD keeps 24 bits, and any write to VAL

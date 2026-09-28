@@ -18,7 +18,12 @@ std::uint32_t SysTick::read(SysTickReg reg) {
 
 void SysTick::write(SysTickReg reg, std::uint32_t value) {
     switch (reg) {
-    case SysTickReg::Ctrl: ctrl_ = value & (kSysTickEnable | kSysTickTickint | kSysTickClksource); break;
+    case SysTickReg::Ctrl: {
+        const bool starting = (value & kSysTickEnable) && !(ctrl_ & kSysTickEnable);
+        ctrl_ = value & (kSysTickEnable | kSysTickTickint | kSysTickClksource);
+        if (starting) current_ = reload_;  // "When ENABLE is set to 1, the counter loads the RELOAD value"
+        break;
+    }
     case SysTickReg::Load: reload_ = value & kSysTickCounterMask; break;
     case SysTickReg::Val:
         current_ = 0;

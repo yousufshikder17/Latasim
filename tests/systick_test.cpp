@@ -94,14 +94,13 @@ TEST(SysTick, ExternalClockSourceIsNotModelledSoTheCounterStops) {
     Lpc1768 mcu;
     configure(mcu, 100, kSysTickEnable);  // CLKSOURCE = 0: STCLK pin, not modelled
     mcu.advance_cycles(1'000);
-    EXPECT_EQ(mcu.read32(STCURR), 0u);
+    EXPECT_EQ(mcu.read32(STCURR), 99u) << "loaded on enable, then no clock edges";
 }
 
-TEST(SysTick, FirstClockLoadsReloadThenEachClockDecrements) {
+TEST(SysTick, EnablingLoadsReloadThenEachClockDecrements) {
     Lpc1768 mcu;
     configure(mcu, 100);  // RELOAD 99
-    mcu.advance_cycles(1);
-    EXPECT_EQ(mcu.read32(STCURR), 99u);
+    EXPECT_EQ(mcu.read32(STCURR), 99u) << "loaded when ENABLE was set (ARM 4.4.1, E11)";
     mcu.advance_cycles(1);
     EXPECT_EQ(mcu.read32(STCURR), 98u);
     mcu.advance_cycles(97);
@@ -112,7 +111,7 @@ TEST(SysTick, FirstClockLoadsReloadThenEachClockDecrements) {
 TEST(SysTick, CountingToZeroSetsCountflagAndTheNextClockReloads) {
     Lpc1768 mcu;
     configure(mcu, 100);
-    mcu.advance_cycles(100);  // 1 clock to load 99, 99 clocks down to 0
+    mcu.advance_cycles(99);  // 99 clocks from 99 down to 0
     EXPECT_EQ(mcu.read32(STCURR), 0u);
     EXPECT_EQ(mcu.read32(STCTRL) & kSysTickCountflag, kSysTickCountflag);
     mcu.advance_cycles(1);
@@ -146,20 +145,26 @@ TEST(SysTick, ReloadZeroNeverCountsToZero) {
     EXPECT_EQ(mcu.read32(STCTRL) & kSysTickCountflag, 0u);
 }
 
+// E11: the simulator's counter reached 0 999,999 cycles after SysTick_Config
+// enabled it, then every 1,000,000 cycles (10 ms).
 TEST(SysTick, TenMillisecondPeriodAtTheCoreClock) {
     Lpc1768 mcu;
     configure(mcu, 1'000'000);  // SysTick_Config(SystemCoreClock / 100)
+    mcu.advance_cycles(999'998);
+    EXPECT_EQ(mcu.read32(STCTRL) & kSysTickCountflag, 0u);
+    mcu.advance_cycles(1);
+    EXPECT_EQ(mcu.read32(STCTRL) & kSysTickCountflag, kSysTickCountflag) << "first: RELOAD cycles";
     mcu.advance_cycles(10 * kCyclesPerMillisecond - 1);
     EXPECT_EQ(mcu.read32(STCTRL) & kSysTickCountflag, 0u);
     mcu.advance_cycles(1);
-    EXPECT_EQ(mcu.read32(STCTRL) & kSysTickCountflag, kSysTickCountflag) << "at exactly 10 ms";
+    EXPECT_EQ(mcu.read32(STCTRL) & kSysTickCountflag, kSysTickCountflag) << "then every 10 ms";
 }
 
 TEST(SysTick, AdvanceReportsEveryCountToZero) {
     SysTick timer;
     timer.write(SysTickReg::Load, 9);  // period 10
     timer.write(SysTickReg::Ctrl, kRun);
-    EXPECT_EQ(timer.advance(10), 1u);
+    EXPECT_EQ(timer.advance(9), 1u);  // loaded 9 on enable
     EXPECT_EQ(timer.advance(10), 1u);
     EXPECT_EQ(timer.advance(35), 3u);
     EXPECT_EQ(timer.current(), 5u);
@@ -172,8 +177,7 @@ TEST(SysTick, ClosedFormMatchesClockByClockReference) {
             for (std::uint64_t step : {1u, 2u, 5u, 13u, 250u}) {
                 SysTick timer;
                 timer.write(SysTickReg::Load, start);  // reach `start` by running
-                timer.write(SysTickReg::Ctrl, kRun);
-                timer.advance(start == 0 ? 0 : 1);     // loads `start`
+                timer.write(SysTickReg::Ctrl, kRun);    // loads `start`
                 timer.write(SysTickReg::Load, reload);
                 Reference ref{reload, timer.current()};
                 std::uint64_t zeros = 0;
@@ -237,12 +241,12 @@ TEST(SysTickHandler, CalledAtEachCountToZeroAtThatVirtualTime) {
     mcu.on_systick([&] { calls.push_back(mcu.cycles()); });
     configure(mcu, 1'000, kRun | kSysTickTickint);
     mcu.advance_cycles(3'500);
-    EXPECT_EQ(calls, (std::vector<std::uint64_t>{1'000, 2'000, 3'000}));
+    EXPECT_EQ(calls, (std::vector<std::uint64_t>{999, 1'999, 2'999}));
     EXPECT_EQ(mcu.cycles(), 3'500u);
-    mcu.advance_cycles(499);
+    mcu.advance_cycles(498);
     EXPECT_EQ(calls.size(), 3u);
     mcu.advance_cycles(1);
-    EXPECT_EQ(calls.back(), 4'000u) << "splitting the advance changes nothing";
+    EXPECT_EQ(calls.back(), 3'999u) << "splitting the advance changes nothing";
 }
 
 TEST(SysTickHandler, NotCalledWithoutTickint) {
@@ -260,7 +264,8 @@ TEST(SysTickHandler, WithoutAHandlerTickintIsOnlyStored) {
     configure(mcu, 100, kRun | kSysTickTickint);
     mcu.advance_cycles(1'000);
     EXPECT_EQ(mcu.cycles(), 1'000u);
-    EXPECT_EQ(mcu.read32(STCURR), 0u);
+    EXPECT_EQ(mcu.read32(STCURR), 99u) << "counted to 0 at 99, 199, ... 999, then reloaded";
+    EXPECT_EQ(mcu.read32(STCTRL) & kSysTickCountflag, kSysTickCountflag);
 }
 
 TEST(SysTickHandler, HandlerAccessesAreTracedAndSeeTheModel) {
@@ -269,7 +274,7 @@ TEST(SysTickHandler, HandlerAccessesAreTracedAndSeeTheModel) {
     mcu.write32(0x2009C020, 1u << 28);  // FIO1DIR: LED0 output
     mcu.on_systick([&] { mcu.write32(0x2009C038, 1u << 28); });  // FIO1SET
     configure(mcu, 100, kRun | kSysTickTickint);
-    mcu.advance_cycles(99);
+    mcu.advance_cycles(98);
     EXPECT_EQ(board.led(0), latasim::mcb1700::LedState::Off);
     mcu.advance_cycles(1);
     EXPECT_EQ(board.led(0), latasim::mcb1700::LedState::On);
@@ -284,7 +289,7 @@ TEST(SysTickHandler, HandlerMayReconfigureTheTimer) {
     });
     configure(mcu, 10, kRun | kSysTickTickint);
     mcu.advance_cycles(100);
-    EXPECT_EQ(calls, (std::vector<std::uint64_t>{10, 20}));
+    EXPECT_EQ(calls, (std::vector<std::uint64_t>{9, 19}));
 }
 
 TEST(SysTickHandler, AdvancingTimeInsideTheHandlerIsAnError) {
@@ -294,5 +299,5 @@ TEST(SysTickHandler, AdvancingTimeInsideTheHandlerIsAnError) {
     EXPECT_THROW(mcu.advance_cycles(10), std::logic_error);
     mcu.on_systick(nullptr);
     mcu.advance_cycles(5);  // usable again after the failure
-    EXPECT_EQ(mcu.cycles(), 15u);
+    EXPECT_EQ(mcu.cycles(), 14u) << "stopped at the count to 0 (cycle 9)";
 }
