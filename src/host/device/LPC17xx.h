@@ -19,6 +19,8 @@
  *               LATASIM_REG32(address), for firmware that dereferences literal
  *               addresses: *(volatile uint32_t *)0x2009C038 becomes
  *               LATASIM_REG32(0x2009C038)
+ *               (uint32_t)&LPC_GPIO1->FIOPIN is the register's LPC address, and
+ *               LATASIM_REG32_PTR a pointer variable to one (host/registers.hpp)
  *
  * In C, the register structures are not defined: C has no way to intercept a
  * store through a struct member, so using LPC_GPIO1 in C fails to compile rather
@@ -80,6 +82,9 @@ uint32_t NVIC_GetPriority(IRQn_Type IRQn);
 #include "host/registers.hpp"
 
 #define LATASIM_REG32(address) (::latasim::host::RegisterAt<uint32_t>(address))
+/* The type of a pointer variable holding a register address: &LPC_GPIO1->FIOPIN,
+ * &LATASIM_REG32(address). */
+#define LATASIM_REG32_PTR ::latasim::host::RegisterPtr<uint32_t>
 
 /* One 32-bit register with its halfword and byte views, as the device header lays
  * them out (FIOPIN, FIOPINL/FIOPINH, FIOPIN0..FIOPIN3). Anonymous structs are a

@@ -130,6 +130,37 @@ TEST(HostRegisters, LiteralAddressesThroughTheReg32Macro) {
     EXPECT_EQ(board.mcu().read32(FIO2DIR), 1u << 28);
 }
 
+// Bit-band firmware computes an alias from a register's address and keeps it in a
+// pointer variable. The textbook macro works unchanged once its dereference is
+// LATASIM_REG32 and the pointer is declared LATASIM_REG32_PTR.
+#define BIT_BAND(reg, bit)                                                              \
+    LATASIM_REG32(((unsigned long)(reg) & 0xF0000000) | 0x02000000 |                    \
+                  (((unsigned long)(reg) & 0x000FFFFF) << 5) | ((bit) << 2))
+
+TEST(HostRegisters, RegisterAddressesSupportBitBandArithmetic) {
+    Board board;
+    FirmwareBinding bind(board);
+    EXPECT_EQ(static_cast<uint32_t>(&LPC_GPIO1->FIOPIN), FIO1PIN);
+    EXPECT_EQ((unsigned long)(&LPC_GPIO1->FIOPIN3), FIO1PIN + 3) << "byte views have their own address";
+    EXPECT_EQ(static_cast<uint32_t>(&LATASIM_REG32(FIO1SET)), FIO1SET);
+    EXPECT_EQ(static_cast<uint32_t>(&LPC_SSP1->DR), 0x40030008u);
+
+    LPC_GPIO1->FIODIR |= 1UL << 28;
+    LATASIM_REG32_PTR bit = &BIT_BAND(&LPC_GPIO1->FIOPIN, 28);
+    EXPECT_EQ(static_cast<uint32_t>(bit), bit_band_alias(FIO1PIN, 28));
+    *bit = 1;
+    EXPECT_EQ(board.led(0), LedState::On);
+    *bit = 0;
+    EXPECT_EQ(board.led(0), LedState::Off);
+    EXPECT_EQ(static_cast<uint32_t>(*bit), 0u);
+    bit = &LPC_GPIO1->FIOSET;  // a pointer to an ordinary register
+    *bit = 1UL << 28;
+    EXPECT_EQ(board.led(0), LedState::On);
+    EXPECT_TRUE(all_zero(latasim_gpio_ports)) << "still nothing stored in host memory";
+}
+
+#undef BIT_BAND
+
 TEST(HostRegisters, CFirmwareUsesTheMmioAccessors) {
     Board via_c;
     {
