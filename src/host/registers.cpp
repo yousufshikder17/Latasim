@@ -71,6 +71,7 @@ void mmio_write(std::uint32_t address, unsigned size, std::uint32_t value) {
     } catch (const std::exception& e) {
         fail("register write", e.what());
     }
+    after_store();
 }
 
 }  // namespace latasim::host

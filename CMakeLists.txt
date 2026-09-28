@@ -45,13 +45,26 @@ add_library(latasim_host STATIC
     src/host/binding.cpp
     src/host/keil_rte_gpio.cpp
     src/host/registers.cpp
-    src/host/cmsis_system.cpp)
+    src/host/cmsis_system.cpp
+    src/host/rtos_binding.cpp)
 target_link_libraries(latasim_host PUBLIC latasim_model)
 # The host LPC17xx.h, for firmware compiled against the host.
 target_include_directories(latasim_host PUBLIC src/host/device)
 latasim_warnings(latasim_host)
 
 set(LATASIM_KEIL_PACKS_DIR "$ENV{LOCALAPPDATA}/Arm/Packs" CACHE PATH "Keil/CMSIS pack root")
+
+# CMSIS-RTOS v1 for host firmware, over the RTOS kernel model (docs/phase5/rtos.md),
+# compiled against RTX 4's cmsis_os.h from the installed CMSIS pack.
+set(LATASIM_CMSIS_RTOS1 "${LATASIM_KEIL_PACKS_DIR}/ARM/CMSIS/5.8.0/CMSIS/RTOS/RTX/INC")
+if(EXISTS "${LATASIM_CMSIS_RTOS1}/cmsis_os.h")
+    add_library(latasim_cmsis_rtos1 STATIC src/host/cmsis_rtos1.cpp)
+    target_include_directories(latasim_cmsis_rtos1 PUBLIC "${LATASIM_CMSIS_RTOS1}")
+    target_link_libraries(latasim_cmsis_rtos1 PUBLIC latasim_host)
+    latasim_warnings(latasim_cmsis_rtos1)
+else()
+    message(STATUS "CMSIS-RTOS v1 header not found under ${LATASIM_CMSIS_RTOS1}: RTOS firmware not built")
+endif()
 
 # Keil's MCB1700 board-support drivers, compiled unchanged as C from the installed
 # packs (docs/phase2/host-firmware.md). Keil sources are never copied into this
@@ -105,6 +118,15 @@ if(EXISTS "${LATASIM_KEIL_MCB1700}/LED_MCB1700.c" AND EXISTS "${LATASIM_KEIL_BOA
         if(MSVC)
             target_link_options(latasim_keil_glcd INTERFACE /LARGEADDRESSAWARE:NO)
         endif()
+    endif()
+    # Representative CMSIS-RTOS v1 firmware (docs/phase5/rtos.md): Latasim's own C,
+    # against RTX 4's cmsis_os.h and Keil's LED board API.
+    if(TARGET latasim_cmsis_rtos1)
+        add_library(latasim_rtos_workloads STATIC
+            src/firmware/rtos/basic.c src/firmware/rtos/sync.c src/firmware/rtos/realtime.c)
+        target_include_directories(latasim_rtos_workloads PUBLIC src/firmware/rtos)
+        target_link_libraries(latasim_rtos_workloads PUBLIC latasim_cmsis_rtos1 latasim_keil_board_drivers)
+        latasim_warnings(latasim_rtos_workloads)
     endif()
     # Latasim's warning policy for Latasim's file only, not Keil's.
     set_source_files_properties(src/firmware/blinky_ulp.c PROPERTIES COMPILE_OPTIONS "/W4;/WX;/utf-8")

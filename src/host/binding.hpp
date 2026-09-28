@@ -14,6 +14,9 @@
 // Misuse is loud: a second concurrent binding throws, and a firmware call with no
 // board bound, or with an invalid pin, aborts with a message (an exception cannot
 // safely unwind through C frames).
+#include <functional>
+#include <string>
+
 #include "boards/mcb1700/board.hpp"
 
 namespace latasim::host {
@@ -32,7 +35,15 @@ mcb1700::Board* bound_board() noexcept;
 // For code called from C: the bound board, or abort with a message naming `caller`.
 mcb1700::Board& require_bound_board(const char* caller);
 
-// Print "latasim host: <caller>: <what>" to stderr and abort.
+// Print "latasim host: <caller>: <what>" to stderr and abort, unless a fault
+// escape is installed and does not return (an RTOS thread abandons its fiber and
+// the error reaches the caller of run_until, see host/rtos_binding.hpp).
 [[noreturn]] void fail(const char* caller, const char* what);
+void set_fault_escape(std::function<void(const std::string& message)> escape);
+
+// Called after every register store from host firmware: where an RTOS may preempt
+// the storing thread if the store's interrupt readied a higher-priority one.
+void set_store_hook(std::function<void()> hook);
+void after_store();
 
 }  // namespace latasim::host
