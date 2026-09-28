@@ -23,6 +23,7 @@ add_executable(latasim_tests
     glcd_test.cpp
     rtos_kernel_test.cpp
     usb_device_test.cpp
+    extensibility_test.cpp
     host/eint0_counter.cpp
     host/timer0_blink.cpp
     scenario.cpp
@@ -37,7 +38,7 @@ add_executable(latasim_tests
     host/gpio_client.c
     gpio_demo_test.cpp
     ${PROJECT_SOURCE_DIR}/src/cli/gpio_demo.cpp)
-target_link_libraries(latasim_tests PRIVATE latasim_host GTest::gtest_main)
+target_link_libraries(latasim_tests PRIVATE latasim_host latasim_devices GTest::gtest_main)
 target_include_directories(latasim_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 latasim_warnings(latasim_tests)
 
