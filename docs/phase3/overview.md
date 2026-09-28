@@ -45,7 +45,7 @@ build\latasim firmware-demo    # part 2: Blinky_ULp over 25 ms of virtual time, 
 | **Virtual time.** `Lpc1768::cycles()`, `advance_cycles(n)`; 100 MHz core clock (`kCoreClockHz`); no wall clock anywhere | [timed-firmware.md](timed-firmware.md) |
 | **SysTick.** STCTRL/STRELOAD/STCURR/STCALIB with ENABLE, RELOAD, 24-bit count, COUNTFLAG, TICKINT; checked against ARM, UM10360, E11 and E12 | [timed-firmware.md](timed-firmware.md) |
 | **SysTick_Handler delivery.** Synchronous, at each count to 0 with TICKINT set; no NVIC | [timed-firmware.md](timed-firmware.md) |
-| **Timed real firmware.** Keil Blinky_ULp's `IRQ.c` unchanged, plus a host port for `main()`'s start-up and a Board_ADC stub | [timed-firmware.md](timed-firmware.md) |
+| **Timed real firmware.** Keil Blinky_ULp's `IRQ.c` unchanged, plus a host port for `main()`'s start-up and a Board_ADC stub (replaced in Phase 4 by Keil's real ADC driver: [Phase 4](../phase4/overview.md)) | [timed-firmware.md](timed-firmware.md) |
 | **Scenarios.** `tests/scenario.hpp`: typed GoogleTest API over virtual time | below |
 | **Timed trace.** Every event has `cycles`; SysTick handler calls are events | below |
 
@@ -58,7 +58,7 @@ latasim::test::reset_irq_statics();          // Blinky_ULp only: fresh IRQ.c sta
 Scenario s;                                  // new board, bound to host firmware, t = 0
 blinky_ulp_start();
 Joystick_Initialize();
-s.on_systick(SysTick_Handler);
+s.on_systick(SysTick_Handler);               // since Phase 4: s.bind(kSysTickIrq, SysTick_Handler)
 
 s.run_until(10ms);
 EXPECT_TRUE(s.led(1, LedState::On));
@@ -131,7 +131,7 @@ Both experiments are scripted and ran twice with identical output. The test suit
 - **Interrupts and timing:** NVIC, interrupt priorities, pending and preemption, exception entry and exit time, and any interrupt other than SysTick.
 - **Cycle accuracy:** host-executed firmware takes no virtual time, and there is no CPU instruction execution (B4).
 - **Clocks:** the clock tree (PLL, dividers). The core clock is fixed at 100 MHz, and the SysTick STCLK source is not modelled.
-- **Peripherals:** timers 0–3, RIT, ADC (Blinky_ULp's is a stub), GLCD, UART, USB, Ethernet, CAN, I2C, audio.
+- **Peripherals:** timers 0–3, RIT, ADC (Blinky_ULp's is a stub), GLCD, UART, USB, Ethernet, CAN, I2C, audio. Phase 4 adds the NVIC, timers 0–3, the ADC, EINT0 and the GLCD ([Phase 4](../phase4/overview.md)).
 - **Tooling:** replay, trace files, VCD, scenario files, Qt UI.
 - **Trace memory:** the trace grows without bound; long runs keep every event in memory.
 

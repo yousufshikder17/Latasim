@@ -2,7 +2,7 @@
 
 Latasim is a virtual lab bench for embedded firmware. It runs real Keil MCB1700 (NXP LPC1768, Cortex-M3) firmware against a simulated board, so LEDs, buttons, the joystick and the LCD can be driven, observed and asserted on in **deterministic, repeatable tests**, with no hardware on the desk.
 
-**Status:** Phases 0, 1, 2 and 3 are complete. Keil's own MCB1700 board drivers, compiled unmodified as C for the host, drive a modelled LPC1768/MCB1700. The model covers GPIO, LEDs, joystick and INT0, and register-level firmware runs through a host device header. Every hardware interaction lands in a deterministic trace, and the same scenario run as real ARM firmware in µVision's simulator gives the same register values. Phase 3 adds deterministic virtual time: SysTick counts virtual core cycles and calls the firmware's `SysTick_Handler`, so Keil's Blinky_ULp runs its 10 ms LED chase on the host with the simulator's timing, and tests read as `run_until(10ms); EXPECT_TRUE(s.led(1, LedState::On))`. 182 tests; 23 of them need the Keil packs installed. Summaries: [Phase 2](docs/phase2/overview.md), [Phase 3](docs/phase3/overview.md). Planned stack: C++20 and CMake, CLI first, Qt desktop UI later.
+**Status:** Phases 0 to 4 are complete. Keil's own MCB1700 board drivers, compiled unmodified as C for the host, drive a modelled LPC1768/MCB1700. The model covers GPIO, LEDs, joystick and INT0, and register-level firmware runs through a host device header. Every hardware interaction lands in a deterministic trace, and the same scenario run as real ARM firmware in µVision's simulator gives the same register values. Phase 3 adds deterministic virtual time: SysTick counts virtual core cycles and calls the firmware's `SysTick_Handler`, so Keil's Blinky_ULp runs its 10 ms LED chase on the host with the simulator's timing, and tests read as `run_until(10ms); EXPECT_TRUE(s.led(1, LedState::On))`. Phase 4 adds an NVIC with priorities and general interrupt delivery, TIMER0–3, the ADC with the board's potentiometer, INT0 as EINT0, and the graphic LCD driven by Keil's own GLCD driver. 267 tests; 37 of them need the Keil packs installed. Summaries: [Phase 2](docs/phase2/overview.md), [Phase 3](docs/phase3/overview.md), [Phase 4](docs/phase4/overview.md). Planned stack: C++20 and CMake, CLI first, Qt desktop UI later.
 
 ## Why
 
@@ -120,24 +120,50 @@ Architecture, what is and isn't supported, and the evidence: [docs/phase2/overvi
     #41   t=999999     led     LED1      ON
 ```
 
+Since Phase 4, the handler call shows as `irq SysTick pend`, `enter` and `exit` events.
+
 What is and isn't supported, the evidence and the open questions: [docs/phase3/overview.md](docs/phase3/overview.md).
+
+## Phase 4: interrupts and peripherals
+
+- **NVIC.** Enable, pending, active and priority state (5 bits) for SysTick and IRQs 0–34, with arbitration by priority, then exception number. Handlers are bound by IRQ number and run at the virtual time of their event; exceptions tail-chain, with no nesting. SysTick is delivered through it, at the priority `SysTick_Config` gives it.
+- **Timers.** TIMER0–3 with match, reset, stop and prescale, clocked through PCLKSEL.
+- **ADC.** Software-started conversions timed from PCLK_ADC and CLKDIV, DONE flags and the interrupt line, with the potentiometer on AD0.2. Keil's `ADC_MCB1700.c` replaces Phase 3's stub, so Blinky_ULp's chase speed follows the potentiometer.
+- **EINT0.** The INT0 button through the pin connect block and EXTINT/EXTMODE/EXTPOLAR, in edge and level modes.
+- **GLCD.** The MCB1700 display's controller over SPI, with chip select on P0.6. Keil's `GLCD_MCB1700.c` and fonts run unchanged and draw into a 320 × 240 framebuffer that tests read pixel by pixel.
+- **Integrated.** Blinky_ULp, EINT0, a TIMER0 interrupt and the display in one run, with simultaneous interrupts taken by priority:
+
+```
+    #655  t=2500000    input   P2.10     low
+    #656  t=2500000    irq     EINT0     pend
+    #657  t=2500000    irq     EINT0     enter
+    #658  t=2500000    write32 EXTINT    0x00000001
+    #661  t=2500000    irq     EINT0     exit
+    #665  t=2500000    glcd    R50       0x0008
+    #696  t=2500000    glcd    GRAM      384 px
+```
+
+- **Checked** against ARM's and NXP's documents and a new simulator experiment (E13). One disagreement is documented: after ICPR, the simulator does not re-pend a line that is still asserted, although ARM says it does.
+
+What is and isn't supported, the evidence and the open questions: [docs/phase4/overview.md](docs/phase4/overview.md).
 
 ## Layout
 
 | Path | What |
 |---|---|
-| `src/lpc17xx/` | GPIO model, memory map, bit-band, PCONP, SysTick and virtual time (`Lpc1768`), Keil GPIO driver (B1) |
-| `src/host/` | Host firmware support: board binding, C-linkage Keil GPIO functions, host `LPC17xx.h` and register proxies |
+| `src/lpc17xx/` | GPIO model, memory map, bit-band, PCONP, SysTick and virtual time (`Lpc1768`), NVIC, timers, ADC, EINT0, pin connect block, Keil GPIO driver (B1) |
+| `src/host/` | Host firmware support: board binding, C-linkage Keil GPIO/PIN functions, CMSIS NVIC and SysTick functions, host `LPC17xx.h` and register proxies |
 | `src/trace/` | The deterministic hardware trace, with virtual time |
-| `src/firmware/` | Host ports of timed Keil examples (Blinky_ULp) |
-| `src/boards/mcb1700/` | Board model (LEDs; joystick and INT0 inputs), Keil LED board API (B1) |
+| `src/firmware/` | Host ports of Keil examples (Blinky_ULp), the ADC driver wrapper, the host `Driver_SPI1` for the GLCD driver |
+| `src/boards/mcb1700/` | Board model (LEDs; joystick, INT0 and potentiometer inputs; GLCD), Keil LED board API (B1) |
 | `src/cli/` | The `latasim` command-line tool |
 | `tests/` | GoogleTest suite, including replays of recorded simulator runs and the scenario layer (`scenario.hpp`) |
+| `docs/phase4/` | Phase 4: [overview](docs/phase4/overview.md), interrupt and peripheral questions |
 | `docs/phase3/` | Phase 3: [overview](docs/phase3/overview.md), timed firmware, timing questions |
 | `docs/phase2/` | Phase 2: [overview](docs/phase2/overview.md), MMIO and inputs, host firmware, registers, hardware-behaviour questions |
 | `docs/phase1/` | The production model |
 | `docs/phase0/` | Findings, pin map, UVSC results, backend decisions |
-| `spikes/uvsim-script/` | µVision simulator experiments E1–E12 (`*.ini`, firmware sources for E9, E10, E12) and their recorded output (`*-run*.out`) |
+| `spikes/uvsim-script/` | µVision simulator experiments E1–E13 (`*.ini`, firmware sources for E9, E10, E12, E13) and their recorded output (`*-run*.out`) |
 | `spikes/uvsc/` | Throwaway native C++ UVSC spike and its recorded results |
 | `scripts/` | Reproduce everything (PowerShell) |
 | `reference/` | Generated copies of the reference firmware (gitignored; recreate with `scripts/`) |

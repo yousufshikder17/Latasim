@@ -35,7 +35,7 @@
 
 All real timed MCB1700 firmware does its work in `SysTick_Handler`: Keil's Blinky_ULp, and the joystick/LED demo firmware. None of it polls COUNTFLAG. So the one exception Latasim delivers is SysTick, in the narrowest form that runs it:
 
-- **`Lpc1768::on_systick(handler)` attaches the firmware's handler.** While one is attached and TICKINT is set, `advance_cycles` stops at each count to 0 and calls it there. Its register accesses happen at that virtual time.
+- **`Lpc1768::on_systick(handler)` attaches the firmware's handler** (Phase 3; since Phase 4 it is `bind_handler(kSysTickIrq, handler)` and SysTick goes through the NVIC). While one is attached and TICKINT is set, `advance_cycles` stops at each count to 0 and calls it there. Its register accesses happen at that virtual time.
 - **Calls are synchronous,** between host firmware calls.
 - **Not modelled:** NVIC, priorities, pending state, preemption, nesting, exception entry and exit cycles.
   - The handler takes no virtual time. In the simulator its LED stores land 114–491 cycles after the count to 0 (E11).
@@ -62,6 +62,8 @@ All real timed MCB1700 firmware does its work in `SysTick_Handler`: Keil's Blink
 | `Blinky.c`'s loop | it only reads the ADC and prints once a second | not run; a test reading `clock_1s` plays its part |
 | `ADC_MCB1700.c` | the ADC and its interrupt are not modelled | `Board_ADC.h` stub: no conversion ever completes, so `AD_last` stays 0 |
 | Startup, `system_LPC17xx.c` | target-only | host `SystemCoreClock`, `SysTick_Config` |
+
+**Since Phase 4** the stub is gone: `ADC_MCB1700.c` runs unchanged against the modelled ADC, `SysTick_Handler` is delivered through the NVIC, and a thread-mode step plays `Blinky.c`'s loop, so `AD_last` follows the potentiometer ([Phase 4](../phase4/overview.md)). The table above describes Phase 3.
 
 **With `AD_last` = 0, the chase steps on every tick.** `AD_last` also reads 0 at the end of E11, so the stock firmware in the simulator steps on every tick as well.
 
