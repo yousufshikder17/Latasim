@@ -5,6 +5,7 @@
 #include <array>
 #include <cstdint>
 
+#include "boards/mcb1700/glcd.hpp"
 #include "lpc17xx/lpc1768.hpp"
 
 namespace latasim::mcb1700 {
@@ -82,6 +83,11 @@ public:
     void set_potentiometer(std::uint32_t raw) { mcu_.set_analog_input(kPotentiometerChannel, raw); }
     std::uint32_t potentiometer() const { return mcu_.adc().input(kPotentiometerChannel); }
 
+    // The GLCD (glcd.hpp): chip select is P0.6, watched after every store; bytes
+    // arrive from the SPI interface (on the host, the CMSIS-Driver Driver_SPI1).
+    const Glcd& glcd() const { return glcd_; }
+    std::uint8_t glcd_transfer(std::uint8_t mosi);
+
     void press_int0();
     void release_int0();
     bool int0_pressed() const { return int0_pressed_; }
@@ -90,9 +96,12 @@ private:
     void drive_active_low(PinRef pin, bool pressed);
     void set_input(PinRef pin, bool& pressed, bool press);
     void trace_led_changes();
+    void after_store();
+    void trace_glcd_writes();
 
     lpc17xx::Lpc1768 mcu_;
     std::array<LedState, kLedCount> leds_shown_{};
+    Glcd glcd_;
     std::array<bool, kJoystickDirectionCount> joystick_pressed_{};
     bool int0_pressed_ = false;
 };

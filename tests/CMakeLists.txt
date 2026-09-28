@@ -20,6 +20,7 @@ add_executable(latasim_tests
     timer_firmware_test.cpp
     adc_test.cpp
     eint_test.cpp
+    glcd_test.cpp
     host/eint0_counter.cpp
     host/timer0_blink.cpp
     scenario.cpp

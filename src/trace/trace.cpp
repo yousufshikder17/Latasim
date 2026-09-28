@@ -109,6 +109,16 @@ std::string to_string(const TraceEvent& e) {
         std::snprintf(what, sizeof what, "LED%u", e.led);
         std::snprintf(value, sizeof value, "%s", mcb1700::to_string(static_cast<mcb1700::LedState>(e.value)));
         break;
+    case TraceKind::Display:
+        std::snprintf(op, sizeof op, "glcd");
+        if (e.address == 0x22) {
+            std::snprintf(what, sizeof what, "GRAM");
+            std::snprintf(value, sizeof value, "%u px", static_cast<unsigned>(e.value));
+        } else {
+            std::snprintf(what, sizeof what, "R%02X", static_cast<unsigned>(e.address));
+            std::snprintf(value, sizeof value, "0x%04X", static_cast<unsigned>(e.value));
+        }
+        break;
     case TraceKind::AdcConversion:
         std::snprintf(op, sizeof op, "adc");
         std::snprintf(what, sizeof what, "AD0.%u", e.pin);

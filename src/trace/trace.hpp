@@ -22,6 +22,8 @@ enum class TraceKind : std::uint8_t {
     Interrupt,  // an exception: irq; value = kInterruptPend, kInterruptEnter or kInterruptExit
     TimerMatch,  // timer match(es) set IR flags: irq = the timer's IRQ, value = the IR bits
     AdcConversion,  // an A/D conversion completed: pin = channel, value = 12-bit result
+    Display,  // a GLCD controller register write: address = index, value = data;
+              // for GRAM (index 0x22) one event per burst, value = pixels written
 };
 
 // TraceKind::Interrupt values: became pending, handler entered, handler returned.

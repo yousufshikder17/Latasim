@@ -30,7 +30,7 @@ Board::Board() {
     for (const PinRef& p : kJoystickPins) drive_active_low(p, false);
     drive_active_low(kInt0Pin, false);
     for (unsigned i = 0; i < kLedCount; ++i) leds_shown_[i] = led(i);
-    mcu_.on_store([this] { trace_led_changes(); });
+    mcu_.on_store([this] { after_store(); });
 }
 
 void Board::drive_active_low(PinRef pin, bool pressed) {
@@ -44,6 +44,23 @@ void Board::set_input(PinRef pin, bool& pressed, bool press) {
     mcu_.trace().record({.kind = TraceKind::Input, .value = press ? 0u : 1u, .port = pin.port, .pin = pin.pin},
                         mcu_.cycles());
     drive_active_low(pin, press);
+}
+
+void Board::after_store() {
+    trace_led_changes();
+    glcd_.chip_select(!mcu_.gpio().pin_level(0, 6));  // P0.6 low selects the GLCD
+    trace_glcd_writes();
+}
+
+std::uint8_t Board::glcd_transfer(std::uint8_t mosi) {
+    const std::uint8_t miso = glcd_.shift(mosi);
+    trace_glcd_writes();
+    return miso;
+}
+
+void Board::trace_glcd_writes() {
+    for (const Glcd::Write& w : glcd_.take_writes())
+        mcu_.trace().record({.kind = TraceKind::Display, .address = w.index, .value = w.value}, mcu_.cycles());
 }
 
 void Board::trace_led_changes() {
