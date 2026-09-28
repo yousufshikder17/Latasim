@@ -17,6 +17,8 @@ add_executable(latasim_tests
     systick_test.cpp
     nvic_test.cpp
     timer_test.cpp
+    timer_firmware_test.cpp
+    host/timer0_blink.cpp
     scenario.cpp
     scenario_test.cpp
     gpio_external_input_test.cpp

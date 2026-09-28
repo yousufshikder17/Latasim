@@ -12,7 +12,8 @@
  *   C and C++   latasim_mmio_read32(address), latasim_mmio_write32(address, value)
  *               SystemCoreClock, SystemCoreClockUpdate(), SysTick_Config(ticks),
  *               IRQn_Type and the NVIC_* functions (host/cmsis_system.cpp)
- *   C++ only    LPC_GPIO0..4 and LPC_SC, with Keil's register names:
+ *   C++ only    LPC_GPIO0..4, LPC_SC, LPC_PINCON, LPC_TIM0..3 and LPC_ADC, with
+ *               Keil's register names (only the registers the model implements work):
  *                 LPC_GPIO1->FIODIR |= 1UL << 28;  LPC_GPIO1->FIOPIN0 = 0x12;
  *               LATASIM_REG32(address), for firmware that dereferences literal
  *               addresses: *(volatile uint32_t *)0x2009C038 becomes
@@ -20,7 +21,7 @@
  *
  * In C, the register structures are not defined: C has no way to intercept a
  * store through a struct member, so using LPC_GPIO1 in C fails to compile rather
- * than writing host memory. Only the registers the model implements are declared. */
+ * than writing host memory. */
 #ifndef LATASIM_HOST_LPC17XX_H
 #define LATASIM_HOST_LPC17XX_H
 
@@ -100,21 +101,75 @@ typedef struct {
 #pragma warning(pop)
 #endif
 
-/* System control: only PCONP is declared (GPIO_PortClock and SystemInit use it).
- * The model stores it but gates nothing; other system control registers fault. */
+#define LATASIM_REG ::latasim::host::Register<uint32_t>
+
+/* System control: the registers modelled so far (UM10360 chapter 4 and 3.6).
+ * Accessing any other system control register faults. */
 typedef struct {
     uint32_t RESERVED0[0xC4 / 4];
-    ::latasim::host::Register<uint32_t> PCONP;
+    LATASIM_REG PCONP;                     /* 0x0C4 */
+    uint32_t RESERVED1[(0x140 - 0xC8) / 4];
+    LATASIM_REG EXTINT;                    /* 0x140 */
+    uint32_t RESERVED2;
+    LATASIM_REG EXTMODE;                   /* 0x148 */
+    LATASIM_REG EXTPOLAR;                  /* 0x14C */
+    uint32_t RESERVED3[(0x1A8 - 0x150) / 4];
+    LATASIM_REG PCLKSEL0;                  /* 0x1A8 */
+    LATASIM_REG PCLKSEL1;                  /* 0x1AC */
 } LPC_SC_TypeDef;
+
+/* Pin connect block (UM10360 chapter 8): PINSEL, PINMODE, PINMODE_OD. */
+typedef struct {
+    LATASIM_REG PINSEL0, PINSEL1, PINSEL2, PINSEL3, PINSEL4, PINSEL5, PINSEL6, PINSEL7, PINSEL8, PINSEL9,
+        PINSEL10;                          /* 0x00-0x28 */
+    uint32_t RESERVED0[5];
+    LATASIM_REG PINMODE0, PINMODE1, PINMODE2, PINMODE3, PINMODE4, PINMODE5, PINMODE6, PINMODE7, PINMODE8,
+        PINMODE9;                          /* 0x40-0x64 */
+    LATASIM_REG PINMODE_OD0, PINMODE_OD1, PINMODE_OD2, PINMODE_OD3, PINMODE_OD4; /* 0x68-0x78 */
+    LATASIM_REG I2CPADCFG;                 /* 0x7C */
+} LPC_PINCON_TypeDef;
+
+/* Timer 0-3 (UM10360 chapter 21). CCR, CR0-1, EMR and CTCR are declared but not
+ * modelled: accessing them faults. */
+typedef struct {
+    LATASIM_REG IR, TCR, TC, PR, PC, MCR, MR0, MR1, MR2, MR3; /* 0x00-0x24 */
+    LATASIM_REG CCR, CR0, CR1;             /* 0x28-0x30 */
+    uint32_t RESERVED0[2];
+    LATASIM_REG EMR;                       /* 0x3C */
+    uint32_t RESERVED1[12];
+    LATASIM_REG CTCR;                      /* 0x70 */
+} LPC_TIM_TypeDef;
+
+/* A/D converter (UM10360 chapter 29). */
+typedef struct {
+    LATASIM_REG ADCR, ADGDR;               /* 0x00, 0x04 */
+    uint32_t RESERVED0;
+    LATASIM_REG ADINTEN;                   /* 0x0C */
+    LATASIM_REG ADDR0, ADDR1, ADDR2, ADDR3, ADDR4, ADDR5, ADDR6, ADDR7; /* 0x10-0x2C */
+    LATASIM_REG ADSTAT, ADTRM;             /* 0x30, 0x34 */
+} LPC_ADC_TypeDef;
+
+#undef LATASIM_REG
 
 static_assert(sizeof(LPC_GPIO_TypeDef) == 0x20, "GPIO port block is 0x20 bytes");
 static_assert(offsetof(LPC_GPIO_TypeDef, FIOPIN) == 0x14, "FIOPIN at 0x14");
 static_assert(offsetof(LPC_SC_TypeDef, PCONP) == 0xC4, "PCONP at 0xC4");
+static_assert(offsetof(LPC_SC_TypeDef, EXTINT) == 0x140, "EXTINT at 0x140");
+static_assert(offsetof(LPC_SC_TypeDef, EXTPOLAR) == 0x14C, "EXTPOLAR at 0x14C");
+static_assert(offsetof(LPC_SC_TypeDef, PCLKSEL1) == 0x1AC, "PCLKSEL1 at 0x1AC");
+static_assert(offsetof(LPC_PINCON_TypeDef, PINMODE0) == 0x40, "PINMODE0 at 0x40");
+static_assert(offsetof(LPC_PINCON_TypeDef, I2CPADCFG) == 0x7C, "I2CPADCFG at 0x7C");
+static_assert(offsetof(LPC_TIM_TypeDef, EMR) == 0x3C, "EMR at 0x3C");
+static_assert(offsetof(LPC_TIM_TypeDef, CTCR) == 0x70, "CTCR at 0x70");
+static_assert(offsetof(LPC_ADC_TypeDef, ADSTAT) == 0x30, "ADSTAT at 0x30");
 
 /* The host objects these names refer to hold no register state: each register's
  * LPC address is its offset within them (host/registers.cpp). */
 extern LPC_GPIO_TypeDef latasim_gpio_ports[5];
 extern LPC_SC_TypeDef latasim_sc;
+extern LPC_PINCON_TypeDef latasim_pincon;
+extern LPC_TIM_TypeDef latasim_tim[4];
+extern LPC_ADC_TypeDef latasim_adc;
 
 #define LPC_GPIO0_BASE (reinterpret_cast<uintptr_t>(&latasim_gpio_ports[0]))
 #define LPC_GPIO1_BASE (reinterpret_cast<uintptr_t>(&latasim_gpio_ports[1]))
@@ -122,6 +177,12 @@ extern LPC_SC_TypeDef latasim_sc;
 #define LPC_GPIO3_BASE (reinterpret_cast<uintptr_t>(&latasim_gpio_ports[3]))
 #define LPC_GPIO4_BASE (reinterpret_cast<uintptr_t>(&latasim_gpio_ports[4]))
 #define LPC_SC_BASE (reinterpret_cast<uintptr_t>(&latasim_sc))
+#define LPC_PINCON_BASE (reinterpret_cast<uintptr_t>(&latasim_pincon))
+#define LPC_TIM0_BASE (reinterpret_cast<uintptr_t>(&latasim_tim[0]))
+#define LPC_TIM1_BASE (reinterpret_cast<uintptr_t>(&latasim_tim[1]))
+#define LPC_TIM2_BASE (reinterpret_cast<uintptr_t>(&latasim_tim[2]))
+#define LPC_TIM3_BASE (reinterpret_cast<uintptr_t>(&latasim_tim[3]))
+#define LPC_ADC_BASE (reinterpret_cast<uintptr_t>(&latasim_adc))
 
 #define LPC_GPIO0 (&latasim_gpio_ports[0])
 #define LPC_GPIO1 (&latasim_gpio_ports[1])
@@ -129,6 +190,12 @@ extern LPC_SC_TypeDef latasim_sc;
 #define LPC_GPIO3 (&latasim_gpio_ports[3])
 #define LPC_GPIO4 (&latasim_gpio_ports[4])
 #define LPC_SC (&latasim_sc)
+#define LPC_PINCON (&latasim_pincon)
+#define LPC_TIM0 (&latasim_tim[0])
+#define LPC_TIM1 (&latasim_tim[1])
+#define LPC_TIM2 (&latasim_tim[2])
+#define LPC_TIM3 (&latasim_tim[3])
+#define LPC_ADC (&latasim_adc)
 
 #endif /* __cplusplus */
 

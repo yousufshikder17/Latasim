@@ -11,26 +11,39 @@
 // address is its offset within them, added to the peripheral's base address.
 LPC_GPIO_TypeDef latasim_gpio_ports[5];
 LPC_SC_TypeDef latasim_sc;
+LPC_PINCON_TypeDef latasim_pincon;
+LPC_TIM_TypeDef latasim_tim[4];
+LPC_ADC_TypeDef latasim_adc;
 
 namespace latasim::host {
 namespace {
 
-constexpr std::uint32_t kScBase = 0x400FC000;  // LPC_SC_BASE
+// Each anchor object and the LPC address its first byte stands for.
+struct Window {
+    const void* anchor;
+    std::size_t size;
+    std::uint32_t base;
+};
 
-// `p - base < size` also rejects p below base (unsigned wrap).
-bool inside(std::uintptr_t p, const void* object, std::size_t size, std::uintptr_t& offset) {
-    offset = p - reinterpret_cast<std::uintptr_t>(object);
-    return offset < size;
-}
+const Window kWindows[] = {
+    {latasim_gpio_ports, sizeof latasim_gpio_ports, lpc17xx::kGpioBase},
+    {&latasim_sc, sizeof latasim_sc, 0x400FC000},       // LPC_SC_BASE
+    {&latasim_pincon, sizeof latasim_pincon, 0x4002C000},  // LPC_PINCON_BASE
+    {&latasim_tim[0], sizeof latasim_tim[0], lpc17xx::kTimerBase[0]},
+    {&latasim_tim[1], sizeof latasim_tim[1], lpc17xx::kTimerBase[1]},
+    {&latasim_tim[2], sizeof latasim_tim[2], lpc17xx::kTimerBase[2]},
+    {&latasim_tim[3], sizeof latasim_tim[3], lpc17xx::kTimerBase[3]},
+    {&latasim_adc, sizeof latasim_adc, 0x40034000},     // LPC_ADC_BASE
+};
 
 }  // namespace
 
 std::uint32_t lpc_address(const void* proxy) {
     const auto p = reinterpret_cast<std::uintptr_t>(proxy);
-    std::uintptr_t offset = 0;
-    if (inside(p, latasim_gpio_ports, sizeof latasim_gpio_ports, offset))
-        return lpc17xx::kGpioBase + static_cast<std::uint32_t>(offset);
-    if (inside(p, &latasim_sc, sizeof latasim_sc, offset)) return kScBase + static_cast<std::uint32_t>(offset);
+    for (const Window& w : kWindows) {
+        const std::uintptr_t offset = p - reinterpret_cast<std::uintptr_t>(w.anchor);  // below: wraps, rejected
+        if (offset < w.size) return w.base + static_cast<std::uint32_t>(offset);
+    }
     fail("register access", "not a device register (a copy of a peripheral structure?)");
 }
 
