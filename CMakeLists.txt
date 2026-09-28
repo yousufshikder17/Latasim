@@ -174,6 +174,46 @@ else()
                    "Keil firmware tests and `latasim firmware-demo` not built")
 endif()
 
+# Host-compiled firmware from outside this repository (docs/external-firmware.md):
+# its C sources compiled as C++ against the host LPC17xx.h, with firmware_shim.h
+# force-included; its main() becomes `entry` (C linkage) for a workbench scenario.
+# Its own warnings are its own: Latasim's warning policy is not applied.
+set(LATASIM_FIRMWARE_NOP_CYCLES 10 CACHE STRING "Core cycles one __NOP() takes in host-compiled external firmware")
+function(latasim_add_host_firmware target entry)
+    set_source_files_properties(${ARGN} PROPERTIES LANGUAGE CXX)
+    add_library(${target} STATIC ${ARGN})
+    target_include_directories(${target} BEFORE PRIVATE "${PROJECT_SOURCE_DIR}/src/host/device")
+    target_compile_definitions(${target} PRIVATE
+        LATASIM_FIRMWARE_MAIN=${entry} LATASIM_NOP_CYCLES=${LATASIM_FIRMWARE_NOP_CYCLES})
+    target_compile_options(${target} PRIVATE "/FI${PROJECT_SOURCE_DIR}/src/host/firmware_shim.h" /utf-8)
+    target_link_libraries(${target} PUBLIC latasim_host)
+endfunction()
+
+# One external firmware folder, built into the workbench as a scenario. Its sources
+# are the .c files at its top level unless LATASIM_USER_FIRMWARE_SOURCES lists them
+# (relative to the folder). Nothing from the folder is copied into the build tree.
+set(LATASIM_USER_FIRMWARE_DIR "" CACHE PATH "External firmware folder to run as a workbench scenario")
+set(LATASIM_USER_FIRMWARE_SOURCES "" CACHE STRING "Its sources relative to the folder (default: its top-level *.c)")
+if(LATASIM_USER_FIRMWARE_DIR)
+    if(NOT TARGET latasim_workbench)
+        message(FATAL_ERROR "LATASIM_USER_FIRMWARE_DIR needs the workbench session layer, which needs the Keil packs")
+    endif()
+    if(LATASIM_USER_FIRMWARE_SOURCES)
+        list(TRANSFORM LATASIM_USER_FIRMWARE_SOURCES PREPEND "${LATASIM_USER_FIRMWARE_DIR}/" OUTPUT_VARIABLE user_sources)
+    else()
+        file(GLOB user_sources CONFIGURE_DEPENDS "${LATASIM_USER_FIRMWARE_DIR}/*.c")
+    endif()
+    if(NOT user_sources)
+        message(FATAL_ERROR "No firmware sources in LATASIM_USER_FIRMWARE_DIR = ${LATASIM_USER_FIRMWARE_DIR}")
+    endif()
+    message(STATUS "External firmware: ${user_sources}")
+    latasim_add_host_firmware(latasim_user_firmware latasim_user_main ${user_sources})
+    get_filename_component(user_name "${LATASIM_USER_FIRMWARE_DIR}" NAME)
+    target_compile_definitions(latasim_workbench PRIVATE
+        "LATASIM_USER_FIRMWARE_NAME=\"${user_name}\"" "LATASIM_USER_FIRMWARE_DIR=\"${LATASIM_USER_FIRMWARE_DIR}\"")
+    target_link_libraries(latasim_workbench PUBLIC latasim_user_firmware)
+endif()
+
 # The Qt 6 desktop workbench (docs/phase5/desktop.md), optional: the model, the CLI
 # and the tests build without Qt. Point CMake at Qt with CMAKE_PREFIX_PATH, e.g.
 # -DCMAKE_PREFIX_PATH=C:/Qt/6.8.3/msvc2022_64.

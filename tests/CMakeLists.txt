@@ -73,6 +73,11 @@ if(TARGET latasim_keil_board_drivers)
     if(TARGET latasim_workbench)
         target_sources(latasim_keil_firmware_tests PRIVATE workbench_test.cpp)
         target_link_libraries(latasim_keil_firmware_tests PRIVATE latasim_workbench)
+        # The external-firmware path, with a repo-owned sample standing in for an
+        # external folder (docs/external-firmware.md).
+        latasim_add_host_firmware(latasim_sample_firmware latasim_sample_main external_firmware/sample_firmware.c)
+        target_sources(latasim_keil_firmware_tests PRIVATE external_firmware_test.cpp)
+        target_link_libraries(latasim_keil_firmware_tests PRIVATE latasim_sample_firmware)
     endif()
     # RTOS firmware needs RTX's cmsis_os.h from the CMSIS pack.
     if(TARGET latasim_rtos_workloads)

@@ -1,5 +1,7 @@
 // The workbench's built-in scenarios: Keil's Blinky_ULp, the representative RTOS
-// workloads (firmware/rtos/workloads.h), the USB speaker and the media center.
+// workloads (firmware/rtos/workloads.h), the USB speaker and the media center; and
+// external firmware when the build has one (LATASIM_USER_FIRMWARE_DIR,
+// docs/external-firmware.md).
 #include <cstdio>
 #include <cstring>
 #include <string>
@@ -10,6 +12,10 @@
 #include "usb_speaker.h"
 #include "workbench/session.hpp"
 #include "workloads.h"
+
+#ifdef LATASIM_USER_FIRMWARE_NAME
+extern "C" int latasim_user_main(void);  // the external firmware's main()
+#endif
 
 namespace latasim::workbench {
 namespace {
@@ -196,6 +202,17 @@ std::vector<Scenario> make() {
                std::to_string(media.selection) + ", score " + std::to_string(media.score) + "\n" + speaker_status(s);
     };
     all.push_back(mediacenter);
+
+#ifdef LATASIM_USER_FIRMWARE_NAME
+    // Its statics are not reset between sessions: Latasim cannot know them.
+    Scenario external;
+    external.name = "External: " LATASIM_USER_FIRMWARE_NAME;
+    external.description = "Host-compiled external firmware from " LATASIM_USER_FIRMWARE_DIR ", its main() run bare metal.";
+    external.bare_main = [] { latasim_user_main(); };
+    external.check_after = 100 * kMs;
+    external.check = [](const Session&) { return expect(true, "running without a fault"); };
+    all.push_back(external);
+#endif
     return all;
 }
 
