@@ -49,11 +49,12 @@ if(TARGET latasim_keil_board_drivers)
         keil_timed_firmware_test.cpp
         keil_scenario_test.cpp
         keil_adc_test.cpp
+        keil_glcd_test.cpp
         scenario.cpp
         firmware_demo_test.cpp
         ${PROJECT_SOURCE_DIR}/src/cli/firmware_demo.cpp)
     target_include_directories(latasim_keil_firmware_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-    target_link_libraries(latasim_keil_firmware_tests PRIVATE latasim_keil_blinky_ulp GTest::gtest_main)
+    target_link_libraries(latasim_keil_firmware_tests PRIVATE latasim_keil_blinky_ulp latasim_keil_glcd GTest::gtest_main)
     latasim_warnings(latasim_keil_firmware_tests)
     gtest_discover_tests(latasim_keil_firmware_tests)
 

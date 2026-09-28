@@ -78,6 +78,26 @@ if(EXISTS "${LATASIM_KEIL_MCB1700}/LED_MCB1700.c" AND EXISTS "${LATASIM_KEIL_BOA
         "${LATASIM_KEIL_MCB1700}"               # ADC_MCB1700.c
         "${LATASIM_KEIL_DFP}/RTE_Driver")       # PIN_LPC17xx.h
     target_link_libraries(latasim_keil_blinky_ulp PUBLIC latasim_keil_board_drivers)
+
+    # Keil's MCB1700 GLCD driver and fonts, unchanged as C, over the host Driver_SPI1
+    # (docs/phase4/overview.md). Driver_SPI.h comes from the ARM CMSIS pack.
+    set(LATASIM_CMSIS_DRIVER "${LATASIM_KEIL_PACKS_DIR}/ARM/CMSIS/5.8.0/CMSIS/Driver/Include")
+    if(EXISTS "${LATASIM_CMSIS_DRIVER}/Driver_SPI.h")
+        set(keil_glcd "${LATASIM_KEIL_MCB1700}/GLCD_MCB1700.c" "${LATASIM_KEIL_MCB1700}/GLCD_Fonts.c")
+        set_source_files_properties(${keil_glcd} PROPERTIES LANGUAGE C)
+        add_library(latasim_keil_glcd STATIC ${keil_glcd} src/firmware/spi1_host.cpp)
+        target_include_directories(latasim_keil_glcd
+            PUBLIC "${LATASIM_KEIL_MCB1700}"            # GLCD_Config.h
+            PRIVATE "${LATASIM_KEIL_DFP}/RTE_Driver" "${LATASIM_CMSIS_DRIVER}")
+        target_link_libraries(latasim_keil_glcd PUBLIC latasim_keil_board_drivers)
+        # GLCD_DrawChar and GLCD_DrawBitmap cast pointers through uint32_t, which is
+        # lossless on the 32-bit target but not on a 64-bit host. Executables that
+        # link the driver keep their whole address space below 2 GB instead of
+        # changing the source.
+        if(MSVC)
+            target_link_options(latasim_keil_glcd INTERFACE /LARGEADDRESSAWARE:NO)
+        endif()
+    endif()
     # Latasim's warning policy for Latasim's file only, not Keil's.
     set_source_files_properties(src/firmware/blinky_ulp.c PROPERTIES COMPILE_OPTIONS "/W4;/WX;/utf-8")
 else()

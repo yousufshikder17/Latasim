@@ -27,6 +27,16 @@
 
 #include <stdint.h>
 
+/* CMSIS compiler macros the Keil board drivers use (cmsis_compiler.h on the
+ * target). __NOP() takes no virtual time on the host, so busy-wait delays built
+ * from it take none either. */
+#ifndef __STATIC_INLINE
+#define __STATIC_INLINE static inline
+#endif
+#ifndef __NOP
+#define __NOP() ((void)0)
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
