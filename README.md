@@ -176,14 +176,16 @@ build\latasim-workbench.exe
 
 What is and isn't supported, the validation results and the open questions: [docs/phase5/overview.md](docs/phase5/overview.md).
 
+**External firmware.** An existing register-level LPC1768 project can be built into the workbench from where it lives, with `-DLATASIM_USER_FIRMWARE_DIR=<folder>`. Its `main()` runs bare metal in virtual time, and its SSP1-driven GLCD, LEDs and bit-band accesses show up in the views and the trace. Build options, the few source adaptations, ITM, timing and SSP1 scope: [docs/external-firmware.md](docs/external-firmware.md).
+
 ## Layout
 
 | Path | What |
 |---|---|
-| `src/lpc17xx/` | GPIO model, memory map, bit-band, PCONP, SysTick and virtual time (`Lpc1768`), NVIC, timers, ADC, EINT0, pin connect block, USB device controller, DAC, the RTOS port, Keil GPIO driver (B1) |
+| `src/lpc17xx/` | GPIO model, memory map, bit-band, PCONP, SysTick and virtual time (`Lpc1768`), NVIC, timers, ADC, EINT0, pin connect block, SSP1, USB device controller, DAC, the RTOS port, Keil GPIO driver (B1) |
 | `src/rtos/` | The RTX 4 behavioural kernel and fibers (generic: no microcontroller in it) |
 | `src/devices/` | Generic device models: the USB bus interface and the virtual USB audio host |
-| `src/host/` | Host firmware support: board and RTOS bindings, C-linkage Keil GPIO/PIN functions, CMSIS NVIC and SysTick functions, CMSIS-RTOS v1, host `LPC17xx.h` and register proxies |
+| `src/host/` | Host firmware support: board and RTOS bindings, C-linkage Keil GPIO/PIN functions, CMSIS NVIC and SysTick functions, CMSIS-RTOS v1, host `LPC17xx.h` and register proxies, the external-firmware shim |
 | `src/trace/` | The deterministic hardware trace, with virtual time |
 | `src/firmware/` | Host ports of Keil examples (Blinky_ULp), driver wrappers (ADC, DAC, USB), the host `Driver_SPI1`; RTOS workloads (`rtos/`), the USB speaker (`usb/`) and the media center (`media/`) |
 | `src/workbench/` | Sessions, built-in scenarios with checks, and view data for the desktop |
@@ -191,6 +193,7 @@ What is and isn't supported, the validation results and the open questions: [doc
 | `src/boards/mcb1700/` | Board model (LEDs; joystick, INT0 and potentiometer inputs; GLCD; speaker; USB connector), Keil LED board API (B1) |
 | `src/cli/` | The `latasim` command-line tool |
 | `tests/` | GoogleTest suite, including replays of recorded simulator runs and the scenario layer (`scenario.hpp`) |
+| `docs/external-firmware.md` | Building external host-compiled firmware into the workbench |
 | `docs/phase5/` | Phase 5: [overview](docs/phase5/overview.md), RTOS, USB audio, desktop, open questions |
 | `docs/phase4/` | Phase 4: [overview](docs/phase4/overview.md), interrupt and peripheral questions |
 | `docs/phase3/` | Phase 3: [overview](docs/phase3/overview.md), timed firmware, timing questions |
