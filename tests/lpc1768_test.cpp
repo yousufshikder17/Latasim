@@ -55,7 +55,7 @@ TEST(Lpc1768, UnmappedReservedAndUnalignedAccessesFault) {
     EXPECT_THROW(mcu.read32(0x2009C024), BusFault) << "reserved offset 0x04 in port 1";
     EXPECT_THROW(mcu.write32(0x2009C0A0, 0), BusFault) << "past port 4";
     EXPECT_THROW(mcu.read32(0x2009C035), BusFault) << "unaligned";
-    EXPECT_THROW(mcu.read32(0x40034000), BusFault) << "ADC is not modeled";
+    EXPECT_THROW(mcu.read32(0x4000C000), BusFault) << "UART0 is not modelled (the ADC used to be the example)";
     try {
         mcu.write32(0x40000000, 1);
         FAIL();

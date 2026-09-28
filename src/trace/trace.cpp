@@ -15,6 +15,16 @@ std::string register_name(std::uint32_t address, unsigned width) {
     char text[32];
     if (address == kPconpAddress) return "PCONP";
     if (address == kPclksel0Address) return "PCLKSEL0";
+    if (address - kAdcBase < 0x38 && address % 4 == 0) {
+        const std::uint32_t off = address - kAdcBase;
+        if (off >= 0x10 && off <= 0x2C) {
+            std::snprintf(text, sizeof text, "ADDR%u", static_cast<unsigned>((off - 0x10) / 4));
+            return text;
+        }
+        static const char* const names[] = {"ADCR", "ADGDR", "0x40034008", "ADINTEN"};
+        if (off < 0x10) return names[off / 4];
+        if (off == 0x30) return "ADSTAT";
+    }
     if (address == kPclksel1Address) return "PCLKSEL1";
     for (unsigned n = 0; n < kTimerBase.size(); ++n) {
         const std::uint32_t off = address - kTimerBase[n];
@@ -86,6 +96,11 @@ std::string to_string(const TraceEvent& e) {
         std::snprintf(op, sizeof op, "led");
         std::snprintf(what, sizeof what, "LED%u", e.led);
         std::snprintf(value, sizeof value, "%s", mcb1700::to_string(static_cast<mcb1700::LedState>(e.value)));
+        break;
+    case TraceKind::AdcConversion:
+        std::snprintf(op, sizeof op, "adc");
+        std::snprintf(what, sizeof what, "AD0.%u", e.pin);
+        std::snprintf(value, sizeof value, "0x%03X", static_cast<unsigned>(e.value));
         break;
     case TraceKind::TimerMatch: {
         std::snprintf(op, sizeof op, "match");

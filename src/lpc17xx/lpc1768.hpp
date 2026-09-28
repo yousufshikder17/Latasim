@@ -2,13 +2,16 @@
 // The LPC1768 as firmware sees it: 8/16/32-bit loads and stores to its memory map.
 // This is the seam a future MMIO adapter (host-compiled firmware, emulator)
 // plugs into. Mapped so far: the GPIO block and its bit-band alias, PCONP, PCLKSEL0-1,
-// SysTick, the NVIC and Timer 0-3; anything else raises BusFault, as an unmapped
-// access would on the chip.
+// SysTick, the NVIC, Timer 0-3 and the ADC; anything else raises BusFault, as an
+// unmapped access would on the chip. A mapped register used in a mode the model
+// does not implement (ADC burst mode, ...) raises NotModelled.
 #include <array>
 #include <cstdint>
 #include <functional>
 #include <stdexcept>
+#include <string>
 
+#include "lpc17xx/adc.hpp"
 #include "lpc17xx/gpio.hpp"
 #include "lpc17xx/nvic.hpp"
 #include "lpc17xx/systick.hpp"
@@ -66,6 +69,13 @@ private:
     std::uint32_t address_;
 };
 
+// A register access the model does not implement, e.g. starting the ADC in burst
+// mode: explicit, rather than silently doing something else.
+class NotModelled : public std::runtime_error {
+public:
+    NotModelled(std::uint32_t address, const std::string& what);
+};
+
 class Lpc1768 {
 public:
     // Loads and stores of 8, 16 and 32 bits. Narrow GPIO accesses address the byte
@@ -120,6 +130,13 @@ public:
     void on_thread_mode(std::function<void()> step) { thread_mode_ = std::move(step); }
     const Nvic& nvic() const { return nvic_; }
 
+    // An analog input's level, as a 12-bit conversion result (0 = VREFN, 0xFFF =
+    // VREFP), from the board.
+    void set_analog_input(unsigned channel, std::uint32_t raw) { adc_.set_input(channel, raw); }
+    const Adc& adc() const { return adc_; }
+    // Core cycles one ADC conversion takes: 65 ADC clocks of PCLK_ADC / (CLKDIV + 1).
+    std::uint64_t adc_conversion_cycles() const;
+
     // Timer n (0-3) for observation, and the core cycles per PCLK edge it runs at.
     const Timer& timer(unsigned n) const { return timers_.at(n); }
     std::uint32_t timer_divider(unsigned n) const;
@@ -154,6 +171,7 @@ private:
     void update_interrupt_lines();
     void advance_peripherals(std::uint64_t step);
     std::uint64_t cycles_to_next_event() const;
+    std::uint64_t adc_conversion_cycles_for(std::uint32_t adcr) const;
     void service_interrupts();
     std::array<bool, kExternalIrqCount + 1> pending_snapshot() const;
     void trace_new_pending(const std::array<bool, kExternalIrqCount + 1>& before);
@@ -164,6 +182,7 @@ private:
     SysTick systick_;
     Nvic nvic_;
     std::array<Timer, 4> timers_{};
+    Adc adc_;
     std::array<std::uint32_t, 2> pclksel_{};
     std::array<std::function<void()>, kExternalIrqCount + 1> handlers_;  // [irq + 1]
     std::function<void()> thread_mode_;

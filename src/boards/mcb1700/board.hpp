@@ -58,6 +58,9 @@ inline constexpr PinRef kInt0Pin{2, 10};
 
 // Traces (into mcu().trace()): each input that actually changes, and each LED
 // whose visible state changes after an MMIO store.
+// The potentiometer: AD0.2 on P0.25, 0-3.3 V (docs/phase0/mcb1700-pin-map.md).
+inline constexpr unsigned kPotentiometerChannel = 2;
+
 class Board {
 public:
     Board();  // every input starts released
@@ -74,6 +77,11 @@ public:
     void press(JoystickDirection direction);
     void release(JoystickDirection direction);
     bool is_pressed(JoystickDirection direction) const;
+    // The potentiometer's position as the 12-bit value the ADC converts it to
+    // (0 = 0 V .. 0xFFF = 3.3 V). Starts at 0.
+    void set_potentiometer(std::uint32_t raw) { mcu_.set_analog_input(kPotentiometerChannel, raw); }
+    std::uint32_t potentiometer() const { return mcu_.adc().input(kPotentiometerChannel); }
+
     void press_int0();
     void release_int0();
     bool int0_pressed() const { return int0_pressed_; }

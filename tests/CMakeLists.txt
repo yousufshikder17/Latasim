@@ -18,6 +18,7 @@ add_executable(latasim_tests
     nvic_test.cpp
     timer_test.cpp
     timer_firmware_test.cpp
+    adc_test.cpp
     host/timer0_blink.cpp
     scenario.cpp
     scenario_test.cpp

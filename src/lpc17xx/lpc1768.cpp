@@ -30,6 +30,14 @@ int timer_at(std::uint32_t address, std::uint32_t& offset) {
     return -1;
 }
 
+bool is_adc(std::uint32_t address) { return address - kAdcBase < 0x38; }
+
+std::uint32_t adc_offset(std::uint32_t address, unsigned size) {
+    const std::uint32_t offset = address - kAdcBase;
+    if (size != 4 || !Adc::modelled(offset)) throw BusFault(address);
+    return offset;
+}
+
 TimerReg timer_reg(std::uint32_t address, std::uint32_t offset, unsigned size) {
     if (size != 4 || !Timer::modelled(offset)) throw BusFault(address);
     return static_cast<TimerReg>(offset);
@@ -63,6 +71,14 @@ std::uint32_t Lpc1768::read_target(std::uint32_t alias, std::uint32_t word_addre
 }
 
 BusFault::BusFault(std::uint32_t address) : std::runtime_error(fault_message(address)), address_(address) {}
+
+NotModelled::NotModelled(std::uint32_t address, const std::string& what)
+    : std::runtime_error([&] {
+          char text[96];
+          std::snprintf(text, sizeof text, "not modelled: %s (register 0x%08X)", what.c_str(),
+                        static_cast<unsigned>(address));
+          return std::string(text);
+      }()) {}
 
 // Maps a GPIO address and access size (1, 2 or 4 bytes) to a register and the byte
 // lanes it covers. Narrow accesses must be naturally aligned inside one register.
@@ -104,6 +120,15 @@ void Lpc1768::advance_cycles(std::uint64_t cycles) {
     }
 }
 
+std::uint64_t Lpc1768::adc_conversion_cycles() const { return adc_conversion_cycles_for(adc_.peek(0)); }
+
+// For an ADCR value: its CLKDIV and PCLK_ADC (PCLKSEL0[25:24]).
+std::uint64_t Lpc1768::adc_conversion_cycles_for(std::uint32_t adcr) const {
+    static constexpr std::uint32_t kDivider[] = {4, 1, 2, 8};
+    const std::uint64_t pclk = kDivider[(pclksel_[0] >> 24) & 3u];
+    return kAdcConversionClocks * (((adcr >> 8) & 0xFFu) + 1) * pclk;
+}
+
 std::uint32_t Lpc1768::timer_divider(unsigned n) const {
     static constexpr std::uint32_t kDivider[] = {4, 1, 2, 8};
     const std::uint32_t field = n < 2 ? (pclksel_[0] >> (2 + 2 * n)) & 3u : (pclksel_[1] >> (12 + 2 * (n - 2))) & 3u;
@@ -113,6 +138,7 @@ std::uint32_t Lpc1768::timer_divider(unsigned n) const {
 // 0 = nothing due. PCLK edges fall on multiples of the divider since reset.
 std::uint64_t Lpc1768::cycles_to_next_event() const {
     std::uint64_t next = systick_.interrupt_enabled() ? systick_.cycles_to_zero() : 0;
+    if (const std::uint64_t adc = adc_.cycles_to_done(); adc != 0 && (next == 0 || adc < next)) next = adc;
     for (unsigned n = 0; n < timers_.size(); ++n) {
         const std::uint64_t edges = timers_[n].edges_to_event();
         if (edges == 0) continue;
@@ -130,8 +156,13 @@ void Lpc1768::advance_peripherals(std::uint64_t step) {
         const std::uint64_t d = timer_divider(n);
         timers_[n].advance((cycles_ + step) / d - cycles_ / d);
     }
+    adc_.advance(step);
     cycles_ += step;
     if (systick_due) nvic_.pend_systick();
+    unsigned channel = 0;
+    std::uint32_t result = 0;
+    if (adc_.take_completed(channel, result))
+        trace_.record({.kind = TraceKind::AdcConversion, .value = result, .pin = channel}, cycles_);
     for (unsigned n = 0; n < timers_.size(); ++n)
         if (const std::uint32_t flags = timers_[n].take_new_flags())
             trace_.record({.kind = TraceKind::TimerMatch, .value = flags, .irq = kTimer0Irq + static_cast<int>(n)},
@@ -156,6 +187,7 @@ void Lpc1768::set_external_level(unsigned port, unsigned pin, bool high) {
 // Peripheral interrupt signals, recomputed from peripheral state after anything
 // that can change it.
 void Lpc1768::update_interrupt_lines() {
+    nvic_.set_line(kAdcIrq, adc_.interrupt());
     for (unsigned n = 0; n < timers_.size(); ++n) nvic_.set_line(kTimer0Irq + static_cast<int>(n), timers_[n].interrupt());
 }
 
@@ -220,6 +252,7 @@ std::uint32_t Lpc1768::read(std::uint32_t address, unsigned size) {
 
 void Lpc1768::read_side_effects(std::uint32_t address) {
     if (address == kSysTickBase) systick_.read(SysTickReg::Ctrl);  // clears COUNTFLAG
+    if (is_adc(address)) adc_.read_side_effects(address - kAdcBase);  // clears DONE flags
 }
 
 void Lpc1768::write(std::uint32_t address, unsigned size, std::uint32_t value) {
@@ -254,6 +287,7 @@ std::uint32_t Lpc1768::load(std::uint32_t address, unsigned size) const {
     std::uint32_t offset = 0;
     if (const int n = timer_at(address, offset); n >= 0)
         return timers_[static_cast<std::size_t>(n)].read(timer_reg(address, offset, size));
+    if (is_adc(address)) return adc_.peek(adc_offset(address, size));
     const GpioTarget t = decode_gpio(address, size);
     return (gpio_.read(t.port, t.reg) & t.lanes) >> t.shift;
 }
@@ -289,6 +323,13 @@ void Lpc1768::store(std::uint32_t address, unsigned size, std::uint32_t value) {
     std::uint32_t offset = 0;
     if (const int n = timer_at(address, offset); n >= 0)
         return timers_[static_cast<std::size_t>(n)].write(timer_reg(address, offset, size), value);
+    if (is_adc(address)) {
+        const std::uint32_t reg = adc_offset(address, size);
+        if (reg >= 0x10) throw BusFault(address);  // ADDRn, ADSTAT: read-only
+        if (reg == 0x00 && Adc::unsupported_control(value))
+            throw NotModelled(address, "ADC burst mode or edge-triggered START");
+        return adc_.write(reg, value, adc_conversion_cycles_for(value));
+    }
     const GpioTarget t = decode_gpio(address, size);
     gpio_.write(t.port, t.reg, (value << t.shift) & t.lanes, t.lanes);
 }
