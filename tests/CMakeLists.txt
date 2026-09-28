@@ -50,6 +50,8 @@ if(TARGET latasim_keil_board_drivers)
         keil_scenario_test.cpp
         keil_adc_test.cpp
         keil_glcd_test.cpp
+        keil_integration_test.cpp
+        host/eint0_counter.cpp
         scenario.cpp
         firmware_demo_test.cpp
         ${PROJECT_SOURCE_DIR}/src/cli/firmware_demo.cpp)
