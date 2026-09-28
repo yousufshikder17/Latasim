@@ -149,6 +149,8 @@ TEST(KeilFirmware, RepeatedRunsReachIdenticalState) {
 // The Phase 2 end-to-end scenario: Keil's drivers initialise the board, light an
 // LED, read an injected joystick press and INT0 press, and show both on the LEDs.
 // Every step is checked in the hardware trace, and a repeat run matches exactly.
+// The register values are the ones the LPC1768 simulator showed for the same
+// firmware and inputs (spikes/uvsim-script/e10-run1.out).
 namespace {
 
 using latasim::TraceEvent;
@@ -206,7 +208,7 @@ ScenarioResult run_scenario() {
     for (const auto& e : joystick_reads) {
         EXPECT_EQ(e.kind, TraceKind::Read);
         EXPECT_EQ(e.address, FIO1PIN);
-        EXPECT_EQ(e.value & (1u << 23), 0u) << "the firmware saw the press";
+        EXPECT_EQ(e.value, 0x5F7FC713u) << "E10: P1.23 low, LED0 on";
     }
 
     board.press_int0();
@@ -219,11 +221,19 @@ ScenarioResult run_scenario() {
     const auto button_read = new_events(board, seen);
     EXPECT_EQ(button_read.size(), 1u);
     EXPECT_EQ(button_read.at(0).address, FIO2PIN);
-    EXPECT_EQ(button_read.at(0).value & (1u << 10), 0u);
+    EXPECT_EQ(button_read.at(0).value, 0x00003B83u) << "E10: P2.10 low";
 
     LED_SetOut(joystick | buttons);  // LED3 for UP, LED0 for INT0
+    const auto& gpio = board.mcu().gpio();
+    using latasim::lpc17xx::GpioReg;
+    EXPECT_EQ(gpio.read(1, GpioReg::Pin), 0x5F7FC713u) << "E10 CP5";
+    EXPECT_EQ(gpio.read(2, GpioReg::Pin), 0x00003B87u) << "E10 CP5";
+    EXPECT_EQ(gpio.read(1, GpioReg::Set), 0x10000000u) << "E10 CP5";
+    EXPECT_EQ(gpio.read(2, GpioReg::Set), 0x00000004u) << "E10 CP5";
     board.release(JoystickDirection::Up);
     board.release_int0();
+    EXPECT_EQ(gpio.read(1, GpioReg::Pin), 0x5FFFC713u) << "E10 after release";
+    EXPECT_EQ(gpio.read(2, GpioReg::Pin), 0x00003F87u) << "E10 after release";
     for (unsigned i = 0; i < kLedCount; ++i)
         EXPECT_EQ(board.led(i), (i == 0 || i == 3) ? LedState::On : LedState::Off) << "LED" << i;
     EXPECT_EQ(board.mcu().read32(FIO1PIN) & (1u << 23), 1u << 23) << "released";
