@@ -93,3 +93,15 @@ if(TARGET latasim_keil_board_drivers)
     set_source_files_properties(keil_register_driver_test.cpp PROPERTIES COMPILE_OPTIONS "/W4;/WX;/permissive-;/utf-8")
     gtest_discover_tests(latasim_keil_register_tests)
 endif()
+
+# The Qt workbench, offscreen (QT_QPA_PLATFORM=offscreen), with Qt's DLLs on PATH.
+if(TARGET latasim_ui)
+    add_executable(latasim_ui_tests qt/workbench_ui_test.cpp)
+    set_target_properties(latasim_ui_tests PROPERTIES AUTOMOC ON)
+    target_link_libraries(latasim_ui_tests PRIVATE latasim_ui Qt6::Test)
+    latasim_warnings(latasim_ui_tests)
+    add_test(NAME WorkbenchUi COMMAND latasim_ui_tests)
+    set_tests_properties(WorkbenchUi PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+        ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:${LATASIM_QT_BIN}")
+endif()

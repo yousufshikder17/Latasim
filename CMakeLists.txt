@@ -173,6 +173,38 @@ else()
                    "Keil firmware tests and `latasim firmware-demo` not built")
 endif()
 
+# The Qt 6 desktop workbench (docs/phase5/desktop.md), optional: the model, the CLI
+# and the tests build without Qt. Point CMake at Qt with CMAKE_PREFIX_PATH, e.g.
+# -DCMAKE_PREFIX_PATH=C:/Qt/6.8.3/msvc2022_64.
+option(LATASIM_BUILD_QT "Build the Qt desktop workbench (needs Qt 6 and the Keil packs)" ON)
+if(LATASIM_BUILD_QT AND TARGET latasim_workbench)
+    find_package(Qt6 QUIET COMPONENTS Widgets Multimedia Test)
+    if(Qt6_FOUND)
+        add_library(latasim_ui STATIC
+            src/ui/qt/board_panel.cpp src/ui/qt/glcd_view.cpp src/ui/qt/trace_panel.cpp
+            src/ui/qt/rtos_panel.cpp src/ui/qt/inspect_panels.cpp src/ui/qt/main_window.cpp)
+        set_target_properties(latasim_ui PROPERTIES AUTOMOC ON)
+        target_link_libraries(latasim_ui PUBLIC latasim_workbench Qt6::Widgets Qt6::Multimedia)
+        # The RTOS API has members named "signals": no Qt keyword macros.
+        target_compile_definitions(latasim_ui PUBLIC QT_NO_KEYWORDS)
+        latasim_warnings(latasim_ui)
+        add_executable(latasim_workbench_app WIN32 src/ui/qt/main.cpp)
+        set_target_properties(latasim_workbench_app PROPERTIES OUTPUT_NAME latasim-workbench)
+        target_link_libraries(latasim_workbench_app PRIVATE latasim_ui)
+        latasim_warnings(latasim_workbench_app)
+        get_target_property(LATASIM_QMAKE Qt6::qmake IMPORTED_LOCATION)
+        get_filename_component(LATASIM_QT_BIN "${LATASIM_QMAKE}" DIRECTORY)
+        set(LATASIM_QT_BIN "${LATASIM_QT_BIN}" CACHE INTERNAL "")
+        # Copy the Qt runtime next to the executable (build output only).
+        add_custom_command(TARGET latasim_workbench_app POST_BUILD
+            COMMAND "${LATASIM_QT_BIN}/windeployqt.exe" --no-translations --no-compiler-runtime
+                    --verbose 0 "$<TARGET_FILE:latasim_workbench_app>"
+            VERBATIM)
+    else()
+        message(STATUS "Qt 6 not found: the desktop workbench is not built (set CMAKE_PREFIX_PATH)")
+    endif()
+endif()
+
 add_executable(latasim src/cli/main.cpp src/cli/gpio_demo.cpp)
 target_link_libraries(latasim PRIVATE latasim_model)
 if(TARGET latasim_keil_board_drivers)
