@@ -122,10 +122,12 @@ TEST(HostCApi, CAndCppPathsRecordIdenticalTraces) {
     Board via_cpp;
     KeilGpioDriver gpio(via_cpp.mcu());
     gpio.port_clock(true);
+    gpio.pin_configure(1, 28, 0, 3, 0);  // function 0, pull-down, normal
     gpio.set_dir(1, 28, true);
     gpio.pin_write(1, 28, 0);
     gpio.pin_write(1, 28, 1);
     gpio.port_clock(true);
+    gpio.pin_configure(1, 23, 0, 0, 0);
     gpio.set_dir(1, 23, false);
     gpio.pin_read(1, 23);
     EXPECT_EQ(via_c.mcu().trace().events(), via_cpp.mcu().trace().events());

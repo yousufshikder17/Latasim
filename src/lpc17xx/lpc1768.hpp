@@ -1,9 +1,9 @@
 #pragma once
 // The LPC1768 as firmware sees it: 8/16/32-bit loads and stores to its memory map.
 // This is the seam a future MMIO adapter (host-compiled firmware, emulator)
-// plugs into. Mapped so far: the GPIO block and its bit-band alias, PCONP, PCLKSEL0-1,
-// SysTick, the NVIC, Timer 0-3 and the ADC; anything else raises BusFault, as an
-// unmapped access would on the chip. A mapped register used in a mode the model
+// plugs into. Mapped so far: the GPIO block and its bit-band alias, the pin connect
+// block, PCONP, PCLKSEL0-1, EXTINT/EXTMODE/EXTPOLAR, SysTick, the NVIC, Timer 0-3
+// and the ADC; anything else raises BusFault, as an unmapped access would on the chip. A mapped register used in a mode the model
 // does not implement (ADC burst mode, ...) raises NotModelled.
 #include <array>
 #include <cstdint>
@@ -12,6 +12,7 @@
 #include <string>
 
 #include "lpc17xx/adc.hpp"
+#include "lpc17xx/eint.hpp"
 #include "lpc17xx/gpio.hpp"
 #include "lpc17xx/nvic.hpp"
 #include "lpc17xx/systick.hpp"
@@ -30,6 +31,14 @@ inline constexpr std::uint32_t kGpioPortStride = 0x20;  // LPC_GPIOn_BASE = base
 inline constexpr std::uint32_t kPconpAddress = 0x400FC0C4;
 inline constexpr std::uint32_t kPconpReset = 0x042887DE;
 inline constexpr std::uint32_t kPconpGpio = std::uint32_t{1} << 15;  // PCGPIO
+
+// Pin connect block (UM10360 chapter 8): PINSEL0-10, PINMODE0-9, PINMODE_OD0-4 and
+// I2CPADCFG at 0x4002C000-0x4002C07C, reset 0. Stored; the only function selection
+// the model acts on is P2.10's EINT0 (PINSEL4[21:20] = 01). The reserved words
+// (PINSEL5-6, 0x2C-0x3C, PINMODE8) read 0 and ignore writes: Keil's PIN_Configure
+// touches PINMODE8 for port 4. Pull resistors (PINMODE) have no effect on levels.
+inline constexpr std::uint32_t kPinconBase = 0x4002C000;
+inline constexpr std::uint32_t kPinconWindow = 0x80;
 
 // PCLKSEL0/1 (UM10360 tables 40, 41): storage, reset 0, and the peripheral clock
 // dividers the modelled peripherals use (00: CCLK/4, 01: CCLK, 10: CCLK/2, 11: CCLK/8).
@@ -137,6 +146,9 @@ public:
     // Core cycles one ADC conversion takes: 65 ADC clocks of PCLK_ADC / (CLKDIV + 1).
     std::uint64_t adc_conversion_cycles() const;
 
+    const ExternalInterrupt& external_interrupt() const { return eint_; }
+    std::uint32_t pincon(std::uint32_t offset) const { return pincon_.at(offset / 4); }
+
     // Timer n (0-3) for observation, and the core cycles per PCLK edge it runs at.
     const Timer& timer(unsigned n) const { return timers_.at(n); }
     std::uint32_t timer_divider(unsigned n) const;
@@ -183,6 +195,8 @@ private:
     Nvic nvic_;
     std::array<Timer, 4> timers_{};
     Adc adc_;
+    ExternalInterrupt eint_;
+    std::array<std::uint32_t, kPinconWindow / 4> pincon_{};
     std::array<std::uint32_t, 2> pclksel_{};
     std::array<std::function<void()>, kExternalIrqCount + 1> handlers_;  // [irq + 1]
     std::function<void()> thread_mode_;

@@ -5,8 +5,9 @@
 // Each call delegates to the Phase 1 lpc17xx::KeilGpioDriver on the bound board,
 // which makes the same register accesses as Keil's driver: nothing is duplicated.
 // GPIO_PortClock sets or clears PCGPIO in PCONP, which the model stores but which
-// gates nothing. PIN_Configure (PINSEL/PINMODE) is not modeled and is accepted as a
-// no-op. GPIO_PortWrite/PortRead are not provided.
+// gates nothing. PIN_Configure writes PINSEL/PINMODE/PINMODE_OD as Keil's driver
+// does; the model stores them and acts only on P2.10's EINT0 function.
+// GPIO_PortWrite/PortRead are not provided.
 #include <cstdint>
 #include <exception>
 
@@ -51,9 +52,9 @@ std::uint32_t GPIO_PinRead(std::uint32_t port_num, std::uint32_t pin_num) {
     return with_driver("GPIO_PinRead", [&](KeilGpioDriver& d) { return d.pin_read(port_num, pin_num); });
 }
 
-std::int32_t PIN_Configure(std::uint8_t /*port*/, std::uint8_t /*pin*/, std::uint8_t /*function*/,
-                           std::uint8_t /*mode*/, std::uint8_t /*open_drain*/) {
-    require_bound_board("PIN_Configure");
+std::int32_t PIN_Configure(std::uint8_t port, std::uint8_t pin, std::uint8_t function, std::uint8_t mode,
+                           std::uint8_t open_drain) {
+    with_driver("PIN_Configure", [&](KeilGpioDriver& d) { d.pin_configure(port, pin, function, mode, open_drain); });
     return 0;
 }
 

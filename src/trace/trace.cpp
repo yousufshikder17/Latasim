@@ -15,6 +15,18 @@ std::string register_name(std::uint32_t address, unsigned width) {
     char text[32];
     if (address == kPconpAddress) return "PCONP";
     if (address == kPclksel0Address) return "PCLKSEL0";
+    if (address == kExtintAddress) return "EXTINT";
+    if (address == kExtmodeAddress) return "EXTMODE";
+    if (address == kExtpolarAddress) return "EXTPOLAR";
+    if (address - kPinconBase < kPinconWindow && address % 4 == 0) {
+        const std::uint32_t off = address - kPinconBase;
+        if (off <= 0x28) std::snprintf(text, sizeof text, "PINSEL%u", static_cast<unsigned>(off / 4));
+        else if (off >= 0x40 && off <= 0x64) std::snprintf(text, sizeof text, "PINMODE%u", static_cast<unsigned>((off - 0x40) / 4));
+        else if (off >= 0x68 && off <= 0x78) std::snprintf(text, sizeof text, "PINMODEOD%u", static_cast<unsigned>((off - 0x68) / 4));
+        else if (off == 0x7C) return "I2CPADCFG";
+        else std::snprintf(text, sizeof text, "0x%08X", static_cast<unsigned>(address));
+        return text;
+    }
     if (address - kAdcBase < 0x38 && address % 4 == 0) {
         const std::uint32_t off = address - kAdcBase;
         if (off >= 0x10 && off <= 0x2C) {

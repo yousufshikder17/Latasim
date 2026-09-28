@@ -40,9 +40,10 @@ void Board::drive_active_low(PinRef pin, bool pressed) {
 void Board::set_input(PinRef pin, bool& pressed, bool press) {
     if (pressed == press) return;
     pressed = press;
-    drive_active_low(pin, press);
+    // The input first: driving the pin can take an interrupt, whose events follow it.
     mcu_.trace().record({.kind = TraceKind::Input, .value = press ? 0u : 1u, .port = pin.port, .pin = pin.pin},
                         mcu_.cycles());
+    drive_active_low(pin, press);
 }
 
 void Board::trace_led_changes() {

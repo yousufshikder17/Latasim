@@ -32,6 +32,13 @@ int timer_at(std::uint32_t address, std::uint32_t& offset) {
 
 bool is_adc(std::uint32_t address) { return address - kAdcBase < 0x38; }
 
+bool is_pincon(std::uint32_t address) { return address - kPinconBase < kPinconWindow; }
+
+// Reserved words of the pin connect block: PINSEL5, PINSEL6, 0x2C-0x3C, PINMODE8.
+bool pincon_reserved(std::uint32_t offset) {
+    return offset == 0x14 || offset == 0x18 || (offset >= 0x2C && offset <= 0x3C) || offset == 0x60;
+}
+
 std::uint32_t adc_offset(std::uint32_t address, unsigned size) {
     const std::uint32_t offset = address - kAdcBase;
     if (size != 4 || !Adc::modelled(offset)) throw BusFault(address);
@@ -187,6 +194,9 @@ void Lpc1768::set_external_level(unsigned port, unsigned pin, bool high) {
 // Peripheral interrupt signals, recomputed from peripheral state after anything
 // that can change it.
 void Lpc1768::update_interrupt_lines() {
+    const bool eint0_selected = ((pincon_[4] >> 20) & 3u) == 1u;  // PINSEL4: P2.10 = EINT0
+    eint_.eint0_input(eint0_selected, gpio_.pin_level(2, 10));
+    nvic_.set_line(kEint0Irq, eint_.eint0());
     nvic_.set_line(kAdcIrq, adc_.interrupt());
     for (unsigned n = 0; n < timers_.size(); ++n) nvic_.set_line(kTimer0Irq + static_cast<int>(n), timers_[n].interrupt());
 }
@@ -194,10 +204,16 @@ void Lpc1768::update_interrupt_lines() {
 void Lpc1768::service_interrupts() {
     if (in_handler_) return;  // no nesting: taken after the running handler returns
     bool took = false;
-    for (;;) {
+    // A level interrupt whose handler never clears its source is taken again and
+    // again, on the chip too; here that would hang the host, so it is an error.
+    constexpr unsigned kStorm = 100'000;
+    for (unsigned taken = 0;; ++taken) {
         const int irq =
             nvic_.next([this](int i) { return static_cast<bool>(handlers_[static_cast<std::size_t>(i + 1)]); });
         if (irq < kSysTickIrq) break;
+        if (taken == kStorm)
+            throw std::logic_error("interrupt storm: " + irq_name(irq) + " taken " + std::to_string(kStorm) +
+                                   " times at t=" + std::to_string(cycles_) + " without its source clearing");
         nvic_.enter(irq);
         trace_.record({.kind = TraceKind::Interrupt, .value = kInterruptEnter, .irq = irq}, cycles_);
         in_handler_ = true;
@@ -288,6 +304,14 @@ std::uint32_t Lpc1768::load(std::uint32_t address, unsigned size) const {
     if (const int n = timer_at(address, offset); n >= 0)
         return timers_[static_cast<std::size_t>(n)].read(timer_reg(address, offset, size));
     if (is_adc(address)) return adc_.peek(adc_offset(address, size));
+    if (is_pincon(address)) {
+        if (size != 4 || address % 4 != 0) throw BusFault(address);
+        return pincon_[(address - kPinconBase) / 4];
+    }
+    if (address == kExtintAddress || address == kExtmodeAddress || address == kExtpolarAddress) {
+        if (size != 4) throw BusFault(address);
+        return address == kExtintAddress ? eint_.extint() : address == kExtmodeAddress ? eint_.extmode() : eint_.extpolar();
+    }
     const GpioTarget t = decode_gpio(address, size);
     return (gpio_.read(t.port, t.reg) & t.lanes) >> t.shift;
 }
@@ -329,6 +353,21 @@ void Lpc1768::store(std::uint32_t address, unsigned size, std::uint32_t value) {
         if (reg == 0x00 && Adc::unsupported_control(value))
             throw NotModelled(address, "ADC burst mode or edge-triggered START");
         return adc_.write(reg, value, adc_conversion_cycles_for(value));
+    }
+    if (is_pincon(address)) {
+        if (size != 4 || address % 4 != 0) throw BusFault(address);
+        const std::uint32_t word = address - kPinconBase;
+        if (!pincon_reserved(word)) pincon_[word / 4] = value;
+        return;
+    }
+    if (address == kExtintAddress || address == kExtmodeAddress || address == kExtpolarAddress) {
+        if (size != 4) throw BusFault(address);
+        // The pin's current state first, so a mode change sees it.
+        eint_.eint0_input(((pincon_[4] >> 20) & 3u) == 1u, gpio_.pin_level(2, 10));
+        if (address == kExtintAddress) eint_.write_extint(value);
+        else if (address == kExtmodeAddress) eint_.write_extmode(value);
+        else eint_.write_extpolar(value);
+        return;
     }
     const GpioTarget t = decode_gpio(address, size);
     gpio_.write(t.port, t.reg, (value << t.shift) & t.lanes, t.lanes);

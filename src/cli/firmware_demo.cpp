@@ -68,7 +68,7 @@ void run_board_drivers(std::ostream& out) {
     LED_Initialize();
     Joystick_Initialize();
     Buttons_Initialize();
-    trace.summarise("PCONP, pin directions, LED pins driven low");
+    trace.summarise("PCONP, pin functions and directions, LED pins driven low");
     out << leds(board) << "\n\n";
 
     out << "firmware: LED_On(0)\n";
@@ -112,7 +112,7 @@ void run_timed_firmware(std::ostream& out) {
 
     out << "firmware: LED_Initialize(); ...; SysTick_Config(SystemCoreClock / 100);\n";
     blinky_ulp_start();
-    trace.summarise("LED pins driven low, SysTick every 1,000,000 cycles");
+    trace.summarise("pin functions, LED pins driven low, ADC, SysTick every 1,000,000 cycles");
     board.mcu().bind_handler(lpc17xx::kSysTickIrq, SysTick_Handler);
     board.mcu().bind_handler(lpc17xx::kAdcIrq, ADC_IRQHandler);
     board.mcu().on_thread_mode(blinky_ulp_main_loop_step);

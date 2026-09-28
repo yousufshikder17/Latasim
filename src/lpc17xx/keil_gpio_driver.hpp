@@ -24,6 +24,10 @@ public:
     // GPIO_PinRead: (FIOPIN & bit) ? 1 : 0.
     std::uint32_t pin_read(unsigned port, unsigned pin) const;
 
+    // PIN_Configure (Keil's PIN_LPC17xx.c): read-modify-writes of the pin's two
+    // PINSEL bits, its two PINMODE bits and its PINMODE_OD bit, in that order.
+    void pin_configure(unsigned port, unsigned pin, unsigned function, unsigned mode, unsigned open_drain);
+
 private:
     Lpc1768& mcu_;
 };
