@@ -105,6 +105,18 @@ private:
     bool enabled_ = true;
 };
 
+// An event's display fields: its category ("mmio", "usb/audio", "input", "led",
+// "interrupt", "timer", "adc", "glcd", "rtos"), operation ("write32", "irq",
+// "rtos" ...), subject (a register, pin, LED, IRQ or thread) and value, as
+// to_string() lays them out.
+struct TraceParts {
+    std::string category;
+    std::string operation;
+    std::string subject;
+    std::string value;
+};
+TraceParts describe(const TraceEvent& event);
+
 // One line, e.g. "#12   t=999999     write32 FIO1SET   0x10000000",
 // "#13   t=999999     led     LED0      ON", "#14   t=2500000    input   P1.23     low".
 // Registers are named as in LPC17xx.h; t is in core clock cycles.

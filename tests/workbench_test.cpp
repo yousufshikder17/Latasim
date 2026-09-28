@@ -2,6 +2,7 @@
 // against its own check, fault capture, and the media-center application driven
 // through its menu the way the desktop drives it.
 #include "workbench/session.hpp"
+#include "workbench/views.hpp"
 
 #include "LPC17xx.h"
 #include "cmsis_os.h"
@@ -10,6 +11,9 @@
 #include "usb_speaker.h"
 
 #include <gtest/gtest.h>
+
+#include <set>
+#include <string>
 
 using namespace latasim;
 using latasim::mcb1700::JoystickDirection;
@@ -144,4 +148,37 @@ TEST(MediaCenter, RepeatedRunsAreIdentical) {
         return std::pair{s.board().glcd().hash(), s.board().mcu().trace().events().size()};
     };
     EXPECT_EQ(run(), run());
+}
+
+TEST(WorkbenchViews, RegistersReadWithoutSideEffects) {
+    Session s(index_of("Blinky_ULp"));
+    s.run_for(25 * kMs);
+    const auto before = s.board().mcu().trace().events().size();
+    const auto stctrl = workbench::register_value(s, 0xE000E010);
+    for (const auto& group : workbench::register_groups())
+        for (const auto& r : group.registers) workbench::register_value(s, r.address);  // none faults
+    EXPECT_EQ(s.board().mcu().trace().events().size(), before) << "inspection records nothing";
+    EXPECT_EQ(workbench::register_value(s, 0xE000E010), stctrl) << "COUNTFLAG is not cleared by looking";
+}
+
+TEST(WorkbenchViews, TimelineHasEachThreadsRunsAndTheInterrupts) {
+    Session s(index_of("RTOS: rate-monotonic"));
+    s.run_for(400 * kMs);
+    const auto t = workbench::timeline(s);
+    ASSERT_EQ(t.threads.size(), s.kernel()->threads().size());
+    EXPECT_EQ(t.threads[0].name, "os_idle_demon");
+    std::uint64_t total = 0;
+    for (const auto& row : t.threads)
+        for (const auto& i : row.intervals) total += i.end - i.start;
+    EXPECT_EQ(total, s.now()) << "every cycle is some thread's or the idle demon's";
+    EXPECT_FALSE(t.interrupts.empty()) << "SysTick entries";
+    EXPECT_EQ(t.interrupts.front().label, "SysTick");
+}
+
+TEST(WorkbenchViews, TraceEventsHaveCategories) {
+    Session s(index_of("USB speaker"));
+    s.run_for(50 * kMs);
+    std::set<std::string> seen;
+    for (const auto& e : s.board().mcu().trace().events()) seen.insert(describe(e).category);
+    for (const char* c : {"interrupt", "timer", "usb/audio"}) EXPECT_TRUE(seen.count(c)) << c;
 }

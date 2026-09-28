@@ -49,6 +49,15 @@ Scenario inversion(int mode, const char* name, const char* description, std::uin
         });
 }
 
+std::string speaker_status(const Session&) {
+    return "Speaker firmware: " + std::string(usb_speaker.streaming ? "streaming" : usb_speaker.configured ? "configured" : usb_speaker.connected ? "connected" : "off") +
+           ", " + (usb_speaker.playing ? "playing" : "not playing") + ", buffer " +
+           std::to_string(usb_speaker.buffer_level) + "/" + std::to_string(USB_SPEAKER_BUFFER) + ", volume " +
+           std::to_string(usb_speaker.volume) + "/256, underruns " + std::to_string(usb_speaker.underruns) +
+           ", overruns " + std::to_string(usb_speaker.overruns) + ", received " +
+           std::to_string(usb_speaker.samples_received) + ", played " + std::to_string(usb_speaker.samples_played);
+}
+
 void bind_usb_speaker(Session& s) {
     auto& mcu = s.board().mcu();
     mcu.bind_handler(lpc17xx::kUsbIrq, USB_IRQHandler);
@@ -152,6 +161,7 @@ std::vector<Scenario> make() {
         usb_speaker_start();
     };
     speaker.teardown = [](Session&) { usb_speaker_stop(); };
+    speaker.status = speaker_status;
     speaker.check_after = 200 * kMs;
     speaker.check = [](const Session&) {
         return expect(usb_speaker.streaming && usb_speaker.playing && usb_speaker.underruns == 0,
@@ -179,6 +189,11 @@ std::vector<Scenario> make() {
     };
     mediacenter.teardown = [](Session&) {
         if (usb_speaker.connected) usb_speaker_stop();
+    };
+    mediacenter.status = [](const Session& s) {
+        static const char* const screens[] = {"menu", "photos", "audio", "game"};
+        return std::string("Media center: ") + screens[media.screen % 4] + ", selection " +
+               std::to_string(media.selection) + ", score " + std::to_string(media.score) + "\n" + speaker_status(s);
     };
     all.push_back(mediacenter);
     return all;

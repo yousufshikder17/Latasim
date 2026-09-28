@@ -43,6 +43,8 @@ struct Scenario {
     std::function<void(Session&)> teardown;     // while still bound
     std::uint64_t check_after = 0;              // cycles after which check() is meaningful
     std::function<Check(const Session&)> check;
+    // A line of firmware-level state for the desktop (buffer levels, counters).
+    std::function<std::string(const Session&)> status;
 };
 
 // The built-in scenarios (scenarios.cpp).
@@ -75,6 +77,7 @@ public:
 
     // The scenario's pass/fail check, if it has one and has run long enough.
     Check check() const;
+    std::string status() const { return scenario_.status ? scenario_.status(*this) : std::string{}; }
 
     // Board inputs, guarded like runs (an input can run interrupt handlers).
     void input(const std::function<void(mcb1700::Board&)>& change);

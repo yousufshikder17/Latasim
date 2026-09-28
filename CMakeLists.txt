@@ -162,7 +162,7 @@ if(EXISTS "${LATASIM_KEIL_MCB1700}/LED_MCB1700.c" AND EXISTS "${LATASIM_KEIL_BOA
         target_link_libraries(latasim_media PUBLIC
             latasim_cmsis_rtos1 latasim_keil_glcd latasim_keil_usb latasim_keil_blinky_ulp)
         latasim_warnings(latasim_media)
-        add_library(latasim_workbench STATIC src/workbench/session.cpp src/workbench/scenarios.cpp)
+        add_library(latasim_workbench STATIC src/workbench/session.cpp src/workbench/scenarios.cpp src/workbench/views.cpp)
         target_link_libraries(latasim_workbench PUBLIC latasim_media latasim_rtos_workloads latasim_devices)
         latasim_warnings(latasim_workbench)
     endif()

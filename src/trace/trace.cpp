@@ -138,7 +138,7 @@ void rtos_text(const TraceEvent& e, char* value, std::size_t size) {
 
 }  // namespace
 
-std::string to_string(const TraceEvent& e) {
+TraceParts describe(const TraceEvent& e) {
     char op[16] = {}, what[32] = {}, value[48] = {};
     switch (e.kind) {
     case TraceKind::Read:
@@ -196,11 +196,30 @@ std::string to_string(const TraceEvent& e) {
         break;
     }
     }
+    const char* category = "mmio";
+    switch (e.kind) {
+    case TraceKind::Read:
+    case TraceKind::Write:
+        if (e.address - lpc17xx::kUsbBase < 0x1000 || e.address - lpc17xx::kDacBase < 0x10) category = "usb/audio";
+        break;
+    case TraceKind::Input: category = "input"; break;
+    case TraceKind::Led: category = "led"; break;
+    case TraceKind::Interrupt: category = "interrupt"; break;
+    case TraceKind::TimerMatch: category = "timer"; break;
+    case TraceKind::AdcConversion: category = "adc"; break;
+    case TraceKind::Display: category = "glcd"; break;
+    case TraceKind::Rtos: category = "rtos"; break;
+    }
+    return {category, op, what, value};
+}
+
+std::string to_string(const TraceEvent& e) {
+    const TraceParts parts = describe(e);
     char time[32];
     std::snprintf(time, sizeof time, "t=%llu", static_cast<unsigned long long>(e.cycles));
-    char line[128];
-    std::snprintf(line, sizeof line, "#%-4llu %-12s %-7s %-9s %s", static_cast<unsigned long long>(e.seq), time, op,
-                  what, value);
+    char line[160];
+    std::snprintf(line, sizeof line, "#%-4llu %-12s %-7s %-9s %s", static_cast<unsigned long long>(e.seq), time,
+                  parts.operation.c_str(), parts.subject.c_str(), parts.value.c_str());
     std::string text = line;
     while (!text.empty() && text.back() == ' ') text.pop_back();  // no value: no trailing blanks
     return text;
