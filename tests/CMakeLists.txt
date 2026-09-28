@@ -22,6 +22,7 @@ add_executable(latasim_tests
     eint_test.cpp
     glcd_test.cpp
     rtos_kernel_test.cpp
+    usb_device_test.cpp
     host/eint0_counter.cpp
     host/timer0_blink.cpp
     scenario.cpp

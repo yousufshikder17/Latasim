@@ -34,6 +34,21 @@ bool is_adc(std::uint32_t address) { return address - kAdcBase < 0x38; }
 
 bool is_pincon(std::uint32_t address) { return address - kPinconBase < kPinconWindow; }
 
+bool is_usb(std::uint32_t address) { return address - kUsbBase < 0x1000; }
+
+bool is_dac(std::uint32_t address) { return address - kDacBase < 0x0C; }
+
+std::uint32_t usb_offset(std::uint32_t address, unsigned size) {
+    const std::uint32_t offset = address - kUsbBase;
+    if (size != 4 || !UsbDevice::modelled(offset)) throw BusFault(address);
+    return offset;
+}
+
+std::uint32_t dac_index(std::uint32_t address, unsigned size) {
+    if (size != 4 || address % 4 != 0) throw BusFault(address);
+    return (address - kDacBase) / 4;
+}
+
 // Reserved words of the pin connect block: PINSEL5, PINSEL6, 0x2C-0x3C, PINMODE8.
 bool pincon_reserved(std::uint32_t offset) {
     return offset == 0x14 || offset == 0x18 || (offset >= 0x2C && offset <= 0x3C) || offset == 0x60;
@@ -153,7 +168,20 @@ std::uint64_t Lpc1768::cycles_to_next_event() const {
         const std::uint64_t at = (cycles_ / d + edges) * d;
         if (next == 0 || at - cycles_ < next) next = at - cycles_;
     }
+    if (usb_host_ != nullptr) {
+        const std::uint64_t frame = kUsbFrameCycles - cycles_ % kUsbFrameCycles;
+        if (next == 0 || frame < next) next = frame;
+    }
     return next;
+}
+
+void Lpc1768::attach_usb_host(usb::HostPort* host) {
+    usb_host_ = host;
+    const auto before = pending_snapshot();
+    usb_.cable(host != nullptr);
+    update_interrupt_lines();
+    trace_new_pending(before);
+    service_interrupts();
 }
 
 void Lpc1768::advance_peripherals(std::uint64_t step) {
@@ -166,6 +194,7 @@ void Lpc1768::advance_peripherals(std::uint64_t step) {
     adc_.advance(step);
     cycles_ += step;
     if (systick_due) nvic_.pend_systick();
+    if (usb_host_ != nullptr && cycles_ % kUsbFrameCycles == 0) usb_host_->frame(usb_);
     unsigned channel = 0;
     std::uint32_t result = 0;
     if (adc_.take_completed(channel, result))
@@ -198,6 +227,7 @@ void Lpc1768::update_interrupt_lines() {
     eint_.eint0_input(eint0_selected, gpio_.pin_level(2, 10));
     nvic_.set_line(kEint0Irq, eint_.eint0());
     nvic_.set_line(kAdcIrq, adc_.interrupt());
+    nvic_.set_line(kUsbIrq, usb_.interrupt());
     for (unsigned n = 0; n < timers_.size(); ++n) nvic_.set_line(kTimer0Irq + static_cast<int>(n), timers_[n].interrupt());
 }
 
@@ -269,6 +299,7 @@ std::uint32_t Lpc1768::read(std::uint32_t address, unsigned size) {
 void Lpc1768::read_side_effects(std::uint32_t address) {
     if (address == kSysTickBase) systick_.read(SysTickReg::Ctrl);  // clears COUNTFLAG
     if (is_adc(address)) adc_.read_side_effects(address - kAdcBase);  // clears DONE flags
+    if (is_usb(address)) usb_.read_side_effects(address - kUsbBase);  // USBRxData advances
 }
 
 void Lpc1768::write(std::uint32_t address, unsigned size, std::uint32_t value) {
@@ -312,6 +343,8 @@ std::uint32_t Lpc1768::load(std::uint32_t address, unsigned size) const {
         if (size != 4) throw BusFault(address);
         return address == kExtintAddress ? eint_.extint() : address == kExtmodeAddress ? eint_.extmode() : eint_.extpolar();
     }
+    if (is_usb(address)) return usb_.peek(usb_offset(address, size));
+    if (is_dac(address)) return dac_[dac_index(address, size)];
     const GpioTarget t = decode_gpio(address, size);
     return (gpio_.read(t.port, t.reg) & t.lanes) >> t.shift;
 }
@@ -367,6 +400,13 @@ void Lpc1768::store(std::uint32_t address, unsigned size, std::uint32_t value) {
         if (address == kExtintAddress) eint_.write_extint(value);
         else if (address == kExtmodeAddress) eint_.write_extmode(value);
         else eint_.write_extpolar(value);
+        return;
+    }
+    if (is_usb(address)) return usb_.write(usb_offset(address, size), value);
+    if (is_dac(address)) {
+        const std::uint32_t n = dac_index(address, size);
+        dac_[n] = n == 0 ? value & 0x1FFC0u : value;  // DACR: VALUE and BIAS only
+        if (n == 0 && on_dac_) on_dac_(dac_value());
         return;
     }
     const GpioTarget t = decode_gpio(address, size);

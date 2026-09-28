@@ -38,6 +38,16 @@ std::string register_name(std::uint32_t address, unsigned width) {
         if (off == 0x30) return "ADSTAT";
     }
     if (address == kPclksel1Address) return "PCLKSEL1";
+    if (address == kDacBase) return "DACR";
+    if (address - kUsbBase >= 0x200 && address - kUsbBase <= 0x24C && address % 4 == 0) {
+        static const char* const usb[] = {"USBDevIntSt", "USBDevIntEn", "USBDevIntClr", "USBDevIntSet", "USBCmdCode",
+                                          "USBCmdData",  "USBRxData",   "USBTxData",    "USBRxPLen",    "USBTxPLen",
+                                          "USBCtrl",     "USBDevIntPri", "USBEpIntSt",  "USBEpIntEn",   "USBEpIntClr",
+                                          "USBEpIntSet", "USBEpIntPri", "USBReEp",      "USBEpInd",     "USBMaxPSize"};
+        return usb[(address - kUsbBase - 0x200) / 4];
+    }
+    if (address == kUsbBase + 0xFF4) return "USBClkCtrl";
+    if (address == kUsbBase + 0xFF8) return "USBClkSt";
     for (unsigned n = 0; n < kTimerBase.size(); ++n) {
         const std::uint32_t off = address - kTimerBase[n];
         if (off <= 0x24 && off % 4 == 0) {

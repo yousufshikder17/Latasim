@@ -47,6 +47,7 @@ std::string irq_name(int irq) {
     case kTimer3Irq: return "TIMER3";
     case kEint0Irq: return "EINT0";
     case kAdcIrq: return "ADC";
+    case 24: return "USB";
     }
     return "IRQ" + std::to_string(irq);
 }

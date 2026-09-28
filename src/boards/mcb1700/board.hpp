@@ -4,6 +4,7 @@
 // Pin map: docs/phase0/mcb1700-pin-map.md.
 #include <array>
 #include <cstdint>
+#include <vector>
 
 #include "boards/mcb1700/glcd.hpp"
 #include "lpc17xx/lpc1768.hpp"
@@ -57,6 +58,16 @@ const char* to_string(JoystickDirection direction);
 // docs/phase2/open-questions.md, question 2).
 inline constexpr PinRef kInt0Pin{2, 10};
 
+// The speaker: the DAC output AOUT (P0.26, PINSEL1[21:20] = 10) through the board's
+// amplifier (docs/phase5/usb-audio.md). What reaches it is recorded as DAC values
+// with their virtual times; analog behaviour (filtering, amplifier gain, the
+// speaker itself) is not modelled.
+struct SpeakerSample {
+    std::uint64_t cycles;
+    std::uint16_t value;  // DAC VALUE, 0-1023 (midscale 512)
+    bool operator==(const SpeakerSample&) const = default;
+};
+
 // Traces (into mcu().trace()): each input that actually changes, and each LED
 // whose visible state changes after an MMIO store.
 // The potentiometer: AD0.2 on P0.25, 0-3.3 V (docs/phase0/mcb1700-pin-map.md).
@@ -92,6 +103,16 @@ public:
     void release_int0();
     bool int0_pressed() const { return int0_pressed_; }
 
+    // Speaker output since the board was made (or since clear_speaker()), and the
+    // same as signed 16-bit PCM: (value - 512) * 64.
+    const std::vector<SpeakerSample>& speaker() const { return speaker_; }
+    std::vector<std::int16_t> speaker_pcm() const;
+    void clear_speaker() { speaker_.clear(); }
+
+    // The board's USB device connector (the LPC1768's USB port): plug a host in, or
+    // nullptr to unplug.
+    void connect_usb_host(usb::HostPort* host) { mcu_.attach_usb_host(host); }
+
 private:
     void drive_active_low(PinRef pin, bool pressed);
     void set_input(PinRef pin, bool& pressed, bool press);
@@ -104,6 +125,7 @@ private:
     Glcd glcd_;
     std::array<bool, kJoystickDirectionCount> joystick_pressed_{};
     bool int0_pressed_ = false;
+    std::vector<SpeakerSample> speaker_;
 };
 
 }  // namespace latasim::mcb1700

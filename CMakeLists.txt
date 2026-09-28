@@ -32,6 +32,7 @@ add_library(latasim_model STATIC
     src/lpc17xx/eint.cpp
     src/lpc17xx/keil_gpio_driver.cpp
     src/lpc17xx/rtos_port.cpp
+    src/lpc17xx/usb_device.cpp
     src/boards/mcb1700/board.cpp
     src/boards/mcb1700/glcd.cpp
     src/boards/mcb1700/keil_board_led.cpp

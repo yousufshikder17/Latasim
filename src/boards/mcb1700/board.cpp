@@ -31,6 +31,17 @@ Board::Board() {
     drive_active_low(kInt0Pin, false);
     for (unsigned i = 0; i < kLedCount; ++i) leds_shown_[i] = led(i);
     mcu_.on_store([this] { after_store(); });
+    mcu_.on_dac_output([this](std::uint32_t value) {
+        if (((mcu_.pincon(0x04) >> 20) & 3u) == 2u)  // PINSEL1: P0.26 = AOUT
+            speaker_.push_back({mcu_.cycles(), static_cast<std::uint16_t>(value)});
+    });
+}
+
+std::vector<std::int16_t> Board::speaker_pcm() const {
+    std::vector<std::int16_t> pcm;
+    pcm.reserve(speaker_.size());
+    for (const auto& s : speaker_) pcm.push_back(static_cast<std::int16_t>((static_cast<int>(s.value) - 512) * 64));
+    return pcm;
 }
 
 void Board::drive_active_low(PinRef pin, bool pressed) {

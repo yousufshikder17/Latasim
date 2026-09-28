@@ -17,6 +17,7 @@
 #include "lpc17xx/nvic.hpp"
 #include "lpc17xx/systick.hpp"
 #include "lpc17xx/timer.hpp"
+#include "lpc17xx/usb_device.hpp"
 #include "trace/trace.hpp"
 
 namespace latasim::lpc17xx {
@@ -52,6 +53,15 @@ inline constexpr std::uint32_t kPclksel1Address = 0x400FC1AC;
 // firmware that reprograms the PLL does not change this.
 inline constexpr std::uint64_t kCoreClockHz = 100'000'000;
 inline constexpr std::uint64_t kCyclesPerMillisecond = kCoreClockHz / 1000;
+
+// D/A converter (UM10360 chapter 30): DACR (VALUE bits 15:6, BIAS bit 16),
+// DACCTRL and DACCNTVAL are stored; each DACR store sets the output. The DMA and
+// double-buffer counter modes are not modelled (DACCTRL is storage only).
+inline constexpr std::uint32_t kDacBase = 0x4008C000;
+
+// A USB host plugged into the device port (devices/usb.hpp) is given the bus once
+// per 1 ms frame.
+inline constexpr std::uint64_t kUsbFrameCycles = 100'000;  // 1 ms at 100 MHz
 
 // Cortex-M3 SRAM bit-band: each bit of 0x20000000-0x200FFFFF has a word alias.
 inline constexpr std::uint32_t kBitBandBase = 0x20000000;
@@ -166,6 +176,17 @@ public:
     // For observation; firmware goes through the loads and stores above.
     const SysTick& systick() const { return systick_; }
 
+    // The DAC's output, VALUE (0-1023), and a hook called whenever a store sets it.
+    std::uint32_t dac_value() const { return (dac_[0] >> 6) & 0x3FFu; }
+    void on_dac_output(std::function<void(std::uint32_t value)> hook) { on_dac_ = std::move(hook); }
+
+    // The USB device controller, and the host plugged into its port. Attaching a
+    // host plugs the cable in (the device sees VBUS) and gives the host a frame every
+    // kUsbFrameCycles of virtual time, on multiples of it; nullptr unplugs it.
+    UsbDevice& usb() { return usb_; }
+    const UsbDevice& usb() const { return usb_; }
+    void attach_usb_host(usb::HostPort* host);
+
     // PCONP is storage only: 32-bit access, and no bit gates anything. GPIO keeps
     // working with PCGPIO clear, as in the simulator (E9) and UM10360 section 9.1
     // ("Power: always enabled"); docs/phase2/open-questions.md.
@@ -202,6 +223,10 @@ private:
     ExternalInterrupt eint_;
     std::array<std::uint32_t, kPinconWindow / 4> pincon_{};
     std::array<std::uint32_t, 2> pclksel_{};
+    std::array<std::uint32_t, 3> dac_{};  // DACR, DACCTRL, DACCNTVAL
+    std::function<void(std::uint32_t)> on_dac_;
+    UsbDevice usb_;
+    usb::HostPort* usb_host_ = nullptr;
     std::array<std::function<void()>, kExternalIrqCount + 1> handlers_;  // [irq + 1]
     std::function<void()> thread_mode_;
     bool in_handler_ = false;
