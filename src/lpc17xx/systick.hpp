@@ -4,8 +4,8 @@
 // UM10360 chapter 23 for the LPC17xx reset and calibration values.
 //
 // A 24-bit down counter clocked by the core clock (CLKSOURCE = 1). Setting ENABLE
-// loads RELOAD into the counter at once (ARM 4.4.1; the LPC1768 simulator does the
-// same, E11). While enabled, each clock either wraps a zero counter to RELOAD or
+// loads RELOAD into the counter at once, whatever it held (ARM 4.4.1; the LPC1768
+// simulator does the same, E11 and E12). While enabled, each clock either wraps a zero counter to RELOAD or
 // decrements it; reaching 0 from 1 sets COUNTFLAG. So after SysTick_Config(N) the
 // counter first reaches 0 after N-1 clocks and then every N clocks, and RELOAD = 0
 // never counts to 0 (ARM 4.4.2).

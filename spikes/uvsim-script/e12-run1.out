@@ -1,0 +1,23 @@
+uv4 exited_by_itself=True exit=0 wall=7s
+orphan_uv4=0
+MAP 0xE0001000, 0xE0001FFF READ WRITE
+printf("RESET STCTRL=%08X STRELOAD=%08X STCURR=%08X STCALIB=%08X\n", _RDWORD(0xE000E010), _RDWORD(0xE000E014), _RDWORD(0xE000E018), _RDWORD(0xE000E01C))
+RESET STCTRL=00000000 STRELOAD=00000000 STCURR=00000000 STCALIB=00000000
+G, finished
+printf("r0 VAL after enable       = %u\n", r[0])
+r0 VAL after enable       = 996
+printf("r1 CTRL after flag seen   = %08X\n", r[1])
+r1 CTRL after flag seen   = 00000005
+printf("r2 CTRL after next zero   = %08X\n", r[2])
+r2 CTRL after next zero   = 00010005
+printf("r3 CTRL read again        = %08X\n", r[3])
+r3 CTRL read again        = 00000005
+printf("r4 VAL after writing 123  = %u\n", r[4])
+r4 VAL after writing 123  = 997
+printf("r5 VAL after disabling    = %u\n", r[5])
+r5 VAL after disabling    = 989
+printf("r6 VAL after re-enable, LOAD 500 = %u\n", r[6])
+r6 VAL after re-enable, LOAD 500 = 497
+printf("r7 CALIB (firmware read)  = %08X\n", r[7])
+r7 CALIB (firmware read)  = 00000000
+LOG OFF

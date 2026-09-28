@@ -108,6 +108,20 @@ TEST(SysTick, EnablingLoadsReloadThenEachClockDecrements) {
     EXPECT_EQ(mcu.read32(STCTRL) & kSysTickCountflag, 0u) << "not yet at 0";
 }
 
+// E12: re-enabling with STCURR = 989 and RELOAD = 500 loaded 500.
+TEST(SysTick, EnablingLoadsReloadEvenMidCount) {
+    Lpc1768 mcu;
+    configure(mcu, 1'000);
+    mcu.advance_cycles(10);
+    mcu.write32(STCTRL, kSysTickClksource);  // stop
+    ASSERT_EQ(mcu.read32(STCURR), 989u);
+    mcu.write32(STRELOAD, 500);
+    mcu.write32(STCTRL, kRun);
+    EXPECT_EQ(mcu.read32(STCURR), 500u);
+    mcu.write32(STCTRL, kRun);  // already enabled: no reload
+    EXPECT_EQ(mcu.read32(STCURR), 500u);
+}
+
 TEST(SysTick, CountingToZeroSetsCountflagAndTheNextClockReloads) {
     Lpc1768 mcu;
     configure(mcu, 100);
