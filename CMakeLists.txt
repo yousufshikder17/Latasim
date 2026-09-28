@@ -154,6 +154,18 @@ if(EXISTS "${LATASIM_KEIL_MCB1700}/LED_MCB1700.c" AND EXISTS "${LATASIM_KEIL_BOA
         target_link_libraries(latasim_rtos_workloads PUBLIC latasim_cmsis_rtos1 latasim_keil_board_drivers)
         latasim_warnings(latasim_rtos_workloads)
     endif()
+    # The media-center application and the workbench session layer (built-in
+    # scenarios) need every firmware piece above.
+    if(TARGET latasim_rtos_workloads AND TARGET latasim_keil_usb)
+        add_library(latasim_media STATIC src/firmware/media/media_center.cpp)
+        target_include_directories(latasim_media PUBLIC src/firmware/media)
+        target_link_libraries(latasim_media PUBLIC
+            latasim_cmsis_rtos1 latasim_keil_glcd latasim_keil_usb latasim_keil_blinky_ulp)
+        latasim_warnings(latasim_media)
+        add_library(latasim_workbench STATIC src/workbench/session.cpp src/workbench/scenarios.cpp)
+        target_link_libraries(latasim_workbench PUBLIC latasim_media latasim_rtos_workloads latasim_devices)
+        latasim_warnings(latasim_workbench)
+    endif()
     # Latasim's warning policy for Latasim's file only, not Keil's.
     set_source_files_properties(src/firmware/blinky_ulp.c PROPERTIES COMPILE_OPTIONS "/W4;/WX;/utf-8")
 else()
