@@ -32,7 +32,8 @@ namespace latasim::test {
 
 // One core clock cycle at lpc17xx::kCoreClockHz. Milliseconds and microseconds
 // convert implicitly and exactly; nanoseconds do not, since 1 ns is 0.1 cycle.
-using Cycles = std::chrono::duration<std::uint64_t, std::ratio<1, lpc17xx::kCoreClockHz>>;
+// Signed, so that a negative duration is caught rather than wrapping to ~10^19.
+using Cycles = std::chrono::duration<std::int64_t, std::ratio<1, lpc17xx::kCoreClockHz>>;
 
 enum class Level { Low, High };
 
@@ -44,11 +45,12 @@ public:
 
     mcb1700::Board& board() { return board_; }
     lpc17xx::Lpc1768& mcu() { return board_.mcu(); }
-    Cycles now() const { return Cycles{board_.mcu().cycles()}; }
+    Cycles now() const { return Cycles{static_cast<std::int64_t>(board_.mcu().cycles())}; }
 
     // The firmware's SysTick_Handler (see Lpc1768::on_systick).
     void on_systick(std::function<void()> handler);
 
+    // A negative duration is an error.
     void run_for(Cycles duration);
     // Runs to an absolute virtual time; a time already passed is an error.
     void run_until(Cycles time);

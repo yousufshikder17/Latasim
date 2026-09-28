@@ -63,6 +63,7 @@ TEST(Scenario, RunUntilIsAbsoluteAndRefusesThePast) {
     s.run_until(5ms);  // no-op
     EXPECT_EQ(s.now(), 5ms);
     EXPECT_THROW(s.run_until(4ms), std::logic_error);
+    EXPECT_THROW(s.run_for(-1ms), std::logic_error) << "not wrapped to ~10^19 cycles";
     EXPECT_EQ(s.now(), 5ms);
 }
 

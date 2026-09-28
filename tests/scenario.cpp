@@ -21,7 +21,11 @@ Scenario::Scenario() = default;
 
 void Scenario::on_systick(std::function<void()> handler) { board_.mcu().on_systick(std::move(handler)); }
 
-void Scenario::run_for(Cycles duration) { board_.mcu().advance_cycles(duration.count()); }
+void Scenario::run_for(Cycles duration) {
+    if (duration.count() < 0)
+        throw std::logic_error("run_for(" + std::to_string(duration.count()) + " cycles): negative duration");
+    board_.mcu().advance_cycles(static_cast<std::uint64_t>(duration.count()));
+}
 
 void Scenario::run_until(Cycles time) {
     if (time < now())
@@ -51,7 +55,7 @@ testing::AssertionResult Scenario::reg(std::uint32_t address, std::uint32_t expe
 
 // "<what>\n  at t = <cycles> cycles (<ms> ms)\n  last trace events:\n    #..."
 testing::AssertionResult Scenario::fail(const std::string& what) const {
-    const std::uint64_t cycles = now().count();
+    const std::uint64_t cycles = board_.mcu().cycles();
     char time[96];
     std::snprintf(time, sizeof time, "\n  at t = %llu cycles (%.6f ms)", static_cast<unsigned long long>(cycles),
                   static_cast<double>(cycles) / static_cast<double>(lpc17xx::kCyclesPerMillisecond));
