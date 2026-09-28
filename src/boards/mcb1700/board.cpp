@@ -41,7 +41,8 @@ void Board::set_input(PinRef pin, bool& pressed, bool press) {
     if (pressed == press) return;
     pressed = press;
     drive_active_low(pin, press);
-    mcu_.trace().record({.kind = TraceKind::Input, .value = press ? 0u : 1u, .port = pin.port, .pin = pin.pin});
+    mcu_.trace().record({.kind = TraceKind::Input, .value = press ? 0u : 1u, .port = pin.port, .pin = pin.pin},
+                        mcu_.cycles());
 }
 
 void Board::trace_led_changes() {
@@ -49,7 +50,8 @@ void Board::trace_led_changes() {
         const LedState now = led(i);
         if (now == leds_shown_[i]) continue;
         leds_shown_[i] = now;
-        mcu_.trace().record({.kind = TraceKind::Led, .value = static_cast<std::uint32_t>(now), .led = i});
+        mcu_.trace().record({.kind = TraceKind::Led, .value = static_cast<std::uint32_t>(now), .led = i},
+                            mcu_.cycles());
     }
 }
 

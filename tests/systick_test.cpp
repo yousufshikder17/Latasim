@@ -228,7 +228,7 @@ TEST(SysTick, AccessesAreTracedLikeAnyOtherRegister) {
     ASSERT_EQ(events.size(), 3u);
     EXPECT_EQ(events[0].kind, TraceKind::Write);
     EXPECT_EQ(events[0].address, STRELOAD);
-    EXPECT_EQ(to_string(events[2]), "#3    write32 STCTRL    0x00000005");
+    EXPECT_EQ(to_string(events[2]), "#3    t=0          write32 STCTRL    0x00000005");
     board.mcu().advance_cycles(50);
     EXPECT_EQ(events.size(), 3u) << "advancing time is not an MMIO access";
 }
@@ -247,6 +247,20 @@ TEST(SysTickHandler, CalledAtEachCountToZeroAtThatVirtualTime) {
     EXPECT_EQ(calls.size(), 3u);
     mcu.advance_cycles(1);
     EXPECT_EQ(calls.back(), 3'999u) << "splitting the advance changes nothing";
+}
+
+TEST(SysTickHandler, EachCallIsTracedBeforeTheHandlersOwnAccesses) {
+    latasim::mcb1700::Board board;
+    auto& mcu = board.mcu();
+    mcu.on_systick([&] { mcu.write32(0x2009C038, 1u << 28); });  // FIO1SET
+    configure(mcu, 100, kRun | kSysTickTickint);
+    mcu.advance_cycles(200);
+    const auto& events = mcu.trace().events();
+    ASSERT_EQ(events.size(), 3u + 4u);
+    EXPECT_EQ(to_string(events[3]), "#4    t=99         systick handler");
+    EXPECT_EQ(to_string(events[4]), "#5    t=99         write32 FIO1SET   0x10000000");
+    EXPECT_EQ(to_string(events[5]), "#6    t=199        systick handler");
+    EXPECT_EQ(events[6].cycles, 199u);
 }
 
 TEST(SysTickHandler, NotCalledWithoutTickint) {

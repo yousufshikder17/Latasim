@@ -220,8 +220,8 @@ TEST(HostRegisters, SysTickConfigWritesReloadCurrentAndControl) {
     ASSERT_EQ(SysTick_Config(SystemCoreClock / 100), 0u);
     const auto& events = board.mcu().trace().events();
     ASSERT_EQ(events.size(), 3u);
-    EXPECT_EQ(to_string(events[0]), "#1    write32 STRELOAD  0x000F423F");
-    EXPECT_EQ(to_string(events[1]), "#2    write32 STCURR    0x00000000");
-    EXPECT_EQ(to_string(events[2]), "#3    write32 STCTRL    0x00000007");
+    EXPECT_EQ(to_string(events[0]), "#1    t=0          write32 STRELOAD  0x000F423F");
+    EXPECT_EQ(to_string(events[1]), "#2    t=0          write32 STCURR    0x00000000");
+    EXPECT_EQ(to_string(events[2]), "#3    t=0          write32 STCTRL    0x00000007");
     EXPECT_EQ(SysTick_Config(0x01000001), 1u) << "reload value impossible";
 }

@@ -63,8 +63,9 @@ TEST(BlinkyUlp, NothingChangesBetweenTicks) {
     EXPECT_EQ(blinky.lit(), 1);
 }
 
-// LED_SetOut(0x04) at the second tick: one SET or CLR store per LED, in LED
-// order, each followed by the LED change it causes.
+// The second tick: the SysTick event, then LED_SetOut(0x04)'s stores, one SET or
+// CLR per LED in LED order, each followed by the LED change it causes; all at the
+// virtual time of the count to 0.
 TEST(BlinkyUlp, TickTraceIsTheHandlersRegisterTrafficInOrder) {
     Blinky blinky;
     blinky.run(kTick);
@@ -73,8 +74,12 @@ TEST(BlinkyUlp, TickTraceIsTheHandlersRegisterTrafficInOrder) {
     const auto& all = blinky.board.mcu().trace().events();
     const std::vector<TraceEvent> tick(all.begin() + static_cast<std::ptrdiff_t>(before), all.end());
     std::vector<std::string> lines;
-    for (const auto& e : tick) lines.push_back(to_string(e).substr(6));  // without "#seq  "
+    for (const auto& e : tick) {
+        EXPECT_EQ(e.cycles, 2 * kTick - 1);
+        lines.push_back(to_string(e).substr(19));  // without "#seq  t=time  "
+    }
     EXPECT_EQ(lines, (std::vector<std::string>{
+                         "systick handler",
                          "write32 FIO1CLR   0x10000000",  // LED0 (P1.28), already off
                          "write32 FIO1CLR   0x20000000",  // LED1 (P1.29)
                          "led     LED1      OFF",

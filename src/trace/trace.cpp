@@ -58,10 +58,19 @@ std::string to_string(const TraceEvent& e) {
         std::snprintf(what, sizeof what, "LED%u", e.led);
         std::snprintf(value, sizeof value, "%s", mcb1700::to_string(static_cast<mcb1700::LedState>(e.value)));
         break;
+    case TraceKind::SysTick:
+        std::snprintf(op, sizeof op, "systick");
+        std::snprintf(what, sizeof what, "handler");
+        break;
     }
-    char line[96];
-    std::snprintf(line, sizeof line, "#%-4llu %-7s %-9s %s", static_cast<unsigned long long>(e.seq), op, what, value);
-    return line;
+    char time[32];
+    std::snprintf(time, sizeof time, "t=%llu", static_cast<unsigned long long>(e.cycles));
+    char line[128];
+    std::snprintf(line, sizeof line, "#%-4llu %-12s %-7s %-9s %s", static_cast<unsigned long long>(e.seq), time, op,
+                  what, value);
+    std::string text = line;
+    while (!text.empty() && text.back() == ' ') text.pop_back();  // no value: no trailing blanks
+    return text;
 }
 
 }  // namespace latasim

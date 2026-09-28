@@ -162,11 +162,75 @@ TEST(Trace, RecordingDoesNotChangeModelBehaviour) {
 }
 
 TEST(Trace, FormatsEachKindOnOneLine) {
-    EXPECT_EQ(to_string(write(1, FIO1SET, 4, 0x10000000)), "#1    write32 FIO1SET   0x10000000");
-    EXPECT_EQ(to_string(read(12, FIO1PIN + 3, 1, 0x4F)), "#12   read8   FIO1PIN3  0x4F");
-    EXPECT_EQ(to_string(read(3, FIO1PIN + 2, 2, 0xFF6F)), "#3    read16  FIO1PINH  0xFF6F");
-    EXPECT_EQ(to_string(write(4, latasim::lpc17xx::kPconpAddress, 4, 0)), "#4    write32 PCONP     0x00000000");
-    EXPECT_EQ(to_string(write(5, 0x233806EC, 4, 0)), "#5    write32 0x233806EC 0x00000000");
-    EXPECT_EQ(to_string(input(6, 1, 23, false)), "#6    input   P1.23     low");
-    EXPECT_EQ(to_string(led(7, 0, LedState::On)), "#7    led     LED0      ON");
+    EXPECT_EQ(to_string(write(1, FIO1SET, 4, 0x10000000)), "#1    t=0          write32 FIO1SET   0x10000000");
+    EXPECT_EQ(to_string(read(12, FIO1PIN + 3, 1, 0x4F)), "#12   t=0          read8   FIO1PIN3  0x4F");
+    EXPECT_EQ(to_string(read(3, FIO1PIN + 2, 2, 0xFF6F)), "#3    t=0          read16  FIO1PINH  0xFF6F");
+    EXPECT_EQ(to_string(write(4, latasim::lpc17xx::kPconpAddress, 4, 0)),
+              "#4    t=0          write32 PCONP     0x00000000");
+    EXPECT_EQ(to_string(write(5, 0x233806EC, 4, 0)), "#5    t=0          write32 0x233806EC 0x00000000");
+    EXPECT_EQ(to_string(input(6, 1, 23, false)), "#6    t=0          input   P1.23     low");
+    EXPECT_EQ(to_string(led(7, 0, LedState::On)), "#7    t=0          led     LED0      ON");
+    TraceEvent tick{.seq = 8, .cycles = 999'999, .kind = TraceKind::SysTick};
+    EXPECT_EQ(to_string(tick), "#8    t=999999     systick handler");
+    TraceEvent late = led(9, 3, LedState::Off);
+    late.cycles = 123'456'789'012;
+    EXPECT_EQ(to_string(late), "#9    t=123456789012 led     LED3      OFF") << "long times widen the column";
+}
+
+// --- virtual time on events ---
+
+TEST(Trace, EventsCarryTheVirtualTimeTheyHappenedAt) {
+    Board board;
+    board.mcu().write32(FIO1DIR, 1u << 28);  // t = 0
+    board.mcu().advance_cycles(250);
+    board.press(JoystickDirection::Up);      // t = 250
+    board.mcu().advance_cycles(750);
+    board.mcu().write32(FIO1SET, 1u << 28);  // t = 1000, and its LED change
+    std::vector<std::uint64_t> times;
+    for (const auto& e : board.mcu().trace().events()) times.push_back(e.cycles);
+    EXPECT_EQ(times, (std::vector<std::uint64_t>{0, 0, 250, 1000, 1000}));
+}
+
+TEST(Trace, SequenceAndTimeAreBothMonotonicAndSameTimeKeepsOrder) {
+    Board board;
+    KeilBoardLed leds(board.mcu());
+    for (int step = 0; step < 50; ++step) {
+        leds.set_out(static_cast<std::uint32_t>(step));
+        if (step % 3 == 0) board.press(JoystickDirection::Left);
+        if (step % 3 == 1) board.release(JoystickDirection::Left);
+        board.mcu().advance_cycles(static_cast<std::uint64_t>(step % 4));  // sometimes 0
+    }
+    const auto& events = board.mcu().trace().events();
+    ASSERT_GT(events.size(), 100u);
+    for (std::size_t i = 1; i < events.size(); ++i) {
+        EXPECT_EQ(events[i].seq, events[i - 1].seq + 1);
+        EXPECT_GE(events[i].cycles, events[i - 1].cycles);
+    }
+}
+
+TEST(Trace, NewMachineRestartsSequenceAndTime) {
+    Board first;
+    first.mcu().advance_cycles(1'000);
+    first.mcu().write32(FIO1DIR, 0);
+    Board second;
+    second.mcu().write32(FIO1DIR, 0);
+    EXPECT_EQ(first.mcu().trace().events().front().cycles, 1'000u);
+    EXPECT_EQ(second.mcu().trace().events().front(), write(1, FIO1DIR, 4, 0)) << "seq 1, t = 0";
+}
+
+TEST(Trace, RecordingDoesNotChangeTimedBehaviour) {
+    Board traced, untraced;
+    untraced.mcu().trace().set_enabled(false);
+    for (Board* board : {&traced, &untraced}) {
+        KeilBoardLed leds(board->mcu());
+        leds.initialize();
+        int step = 0;
+        board->mcu().on_systick([&leds, &step] { leds.set_out(1u << (step++ % 8)); });
+        board->mcu().write32(0xE000E014, 999);                 // STRELOAD
+        board->mcu().write32(0xE000E010, 0x7);                 // STCTRL: run with TICKINT
+        board->mcu().advance_cycles(12'345);
+    }
+    EXPECT_EQ(snapshot(traced), snapshot(untraced));
+    EXPECT_EQ(traced.mcu().cycles(), untraced.mcu().cycles());
+    EXPECT_EQ(traced.mcu().systick().current(), untraced.mcu().systick().current());
 }

@@ -80,6 +80,7 @@ void Lpc1768::advance_cycles(std::uint64_t cycles) {
         systick_.advance(step);
         cycles -= step;
         if (step == to_zero) {
+            trace_.record({.kind = TraceKind::SysTick}, cycles_);
             in_systick_handler_ = true;
             try {
                 on_systick_();
@@ -94,13 +95,13 @@ void Lpc1768::advance_cycles(std::uint64_t cycles) {
 
 std::uint32_t Lpc1768::read(std::uint32_t address, unsigned size) const {
     const std::uint32_t value = load(address, size);
-    trace_.record({.kind = TraceKind::Read, .address = address, .width = size, .value = value});
+    trace_.record({.kind = TraceKind::Read, .address = address, .width = size, .value = value}, cycles_);
     return value;
 }
 
 void Lpc1768::write(std::uint32_t address, unsigned size, std::uint32_t value) {
     store(address, size, value);
-    trace_.record({.kind = TraceKind::Write, .address = address, .width = size, .value = value});
+    trace_.record({.kind = TraceKind::Write, .address = address, .width = size, .value = value}, cycles_);
     if (on_store_) on_store_();
 }
 
