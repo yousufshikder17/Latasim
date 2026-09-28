@@ -1,16 +1,8 @@
 // Keil's Blinky_ULp example on virtual time: IRQ.c's SysTick_Handler, compiled
 // unchanged, steps an LED chase every 10 ms (docs/phase3/timed-firmware.md).
-//
-// IRQ.c keeps its state in function-static variables, and nothing re-runs C
-// startup between runs in one process, so a test that runs the firmware twice
-// runs whole 2 s spans: 200 ticks bring both the 8-step chase and the 100-tick
-// seconds counter back to where they started.
-#include "firmware/blinky_ulp.h"
-
-#include "boards/mcb1700/board.hpp"
+// Each Blinky starts from IRQ.c's initial state (blinky_ulp_fixture.hpp).
+#include "blinky_ulp_fixture.hpp"
 #include "gpio_snapshot.hpp"
-#include "host/binding.hpp"
-#include "lpc17xx/lpc1768.hpp"
 #include "trace/trace.hpp"
 
 #include <gtest/gtest.h>
@@ -21,38 +13,14 @@
 #include <vector>
 
 using latasim::TraceEvent;
-using latasim::TraceKind;
-using latasim::host::FirmwareBinding;
-using latasim::lpc17xx::kCyclesPerMillisecond;
-using latasim::mcb1700::Board;
 using latasim::mcb1700::kLedCount;
 using latasim::mcb1700::LedState;
+using latasim::test::Blinky;
 using latasim::test::snapshot;
 
 namespace {
 
-constexpr std::uint64_t kTick = 10 * kCyclesPerMillisecond;  // SysTick_Config(SystemCoreClock / 100)
-
-// Blinky_ULp on a fresh board: Blinky.c's start-up, then SysTick_Handler on each tick.
-struct Blinky {
-    Board board;
-    FirmwareBinding bind{board};
-    Blinky() {
-        blinky_ulp_start();
-        board.mcu().on_systick(SysTick_Handler);
-    }
-    void run(std::uint64_t cycles) { board.mcu().advance_cycles(cycles); }
-    // The one LED on, or -1 if none or several.
-    int lit() const {
-        int on = -1;
-        for (unsigned i = 0; i < kLedCount; ++i) {
-            if (board.led(i) != LedState::On) continue;
-            if (on != -1) return -1;
-            on = static_cast<int>(i);
-        }
-        return on;
-    }
-};
+constexpr std::uint64_t kTick = latasim::test::kBlinkyTick;  // SysTick_Config(SystemCoreClock / 100)
 
 }  // namespace
 
@@ -132,7 +100,7 @@ TEST(BlinkyUlp, SecondsFlagIsSetEvery100Ticks) {
 TEST(BlinkyUlp, RepeatedRunsAreIdentical) {
     auto run = [] {
         Blinky blinky;
-        blinky.run(200 * kTick);  // whole 2 s: IRQ.c's statics end where they began
+        blinky.run(200 * kTick);
         return std::tuple{blinky.board.mcu().trace().events(), snapshot(blinky.board), blinky.board.mcu().cycles()};
     };
     const auto first = run();
