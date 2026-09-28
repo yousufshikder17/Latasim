@@ -1,0 +1,69 @@
+uv4 exited_by_itself=True exit=0 wall=6s
+orphan_uv4=0
+MAP 0xE0001000, 0xE0001FFF READ WRITE
+AIN2 = 1.65
+PORT2 = PORT2 | (1 << 10)
+G, wait_pin
+printf("pin before press: %08X\n", PORT2)
+pin before press: 00003FFF
+PORT2 = PORT2 & ~(1 << 10)
+G, wait_pin
+PORT2 = PORT2 | (1 << 10)
+G, wait_pin
+PORT2 = PORT2 & ~(1 << 10)
+G, finished
+printf("A r0 TC after IR (no reset)   = %u\n", r[0])
+A r0 TC after IR (no reset)   = 1010
+printf("A r1 TC after IR (reset)      = %u\n", r[1])
+A r1 TC after IR (reset)      = 9
+printf("A r2 10 periods MR0=1000      = %u\n", r[2])
+A r2 10 periods MR0=1000      = 10010
+printf("A r3 10 periods PR=3 MR0=100  = %u\n", r[3])
+A r3 10 periods PR=3 MR0=100  = 4042
+printf("A r4 TC after stop-on-match   = %u\n", r[4])
+A r4 TC after stop-on-match   = 50
+printf("A r5 TCR after stop-on-match  = %08X\n", r[5])
+A r5 TCR after stop-on-match  = 00000000
+printf("B r6 ISPR0 IR set, disabled   = %08X\n", r[6])
+B r6 ISPR0 IR set, disabled   = 00010002
+printf("B r7 ISPR0 after ICPR         = %08X\n", r[7])
+B r7 ISPR0 after ICPR         = 00010000
+printf("B r8 ISPR0 after IR clear+ICPR= %08X\n", r[8])
+B r8 ISPR0 after IR clear+ICPR= 00010000
+printf("C r9 handlers run             = %u\n", r[9])
+C r9 handlers run             = 3
+printf("C order                       = %u %u %u\n", r[10], r[11], r[12])
+C order                       = 17 19 15
+printf("C r13 GetPriority(TIMER0)     = %u\n", r[13])
+C r13 GetPriority(TIMER0)     = 0
+printf("C r14 IP[1] after 0xFF        = %02X\n", r[14])
+C r14 IP[1] after 0xFF        = F8
+printf("D r15 ADC start->DONE cycles  = %u\n", r[15])
+D r15 ADC start->DONE cycles  = 1314
+printf("D r16 ADGDR re-read           = %08X\n", r[16])
+D r16 ADGDR re-read           = 02008000
+printf("D r17 ADDR2 first read        = %08X\n", r[17])
+D r17 ADDR2 first read        = 80008000
+printf("D r18 ADDR2 second read       = %08X\n", r[18])
+D r18 ADDR2 second read       = 00008000
+printf("D r19 ADSTAT                  = %08X\n", r[19])
+D r19 ADSTAT                  = 00000000
+printf("D r20 ADSTAT after 2nd conv   = %08X\n", r[20])
+D r20 ADSTAT after 2nd conv   = 00010004
+printf("D r21 ADSTAT after ADCR write = %08X\n", r[21])
+D r21 ADSTAT after ADCR write = 00000004
+printf("D r22 ADINTEN                 = %08X\n", r[22])
+D r22 ADINTEN                 = 00000100
+printf("E r23 EXTINT after setup      = %08X\n", r[23])
+E r23 EXTINT after setup      = 00000000
+printf("E r24 count after fall        = %u\n", r[24])
+E r24 count after fall        = 1
+printf("E r25 EXTINT after handler    = %08X\n", r[25])
+E r25 EXTINT after handler    = 00000000
+printf("E r26 count after rise        = %u\n", r[26])
+E r26 count after rise        = 1
+printf("E r27 count after 2nd fall    = %u\n", r[27])
+E r27 count after 2nd fall    = 2
+printf("E r28 EXTINT level, pin low   = %08X\n", r[28])
+E r28 EXTINT level, pin low   = 00000001
+LOG OFF
