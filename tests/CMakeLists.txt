@@ -62,6 +62,11 @@ if(TARGET latasim_keil_board_drivers)
             keil_glcd_test.cpp keil_integration_test.cpp host/eint0_counter.cpp)
         target_link_libraries(latasim_keil_firmware_tests PRIVATE latasim_keil_glcd)
     endif()
+    # USB audio needs the CMSIS Driver headers (latasim_keil_usb).
+    if(TARGET latasim_keil_usb)
+        target_sources(latasim_keil_firmware_tests PRIVATE usb_audio_test.cpp)
+        target_link_libraries(latasim_keil_firmware_tests PRIVATE latasim_keil_usb latasim_devices)
+    endif()
     # RTOS firmware needs RTX's cmsis_os.h from the CMSIS pack.
     if(TARGET latasim_rtos_workloads)
         target_sources(latasim_keil_firmware_tests PRIVATE rtos_workload_test.cpp)

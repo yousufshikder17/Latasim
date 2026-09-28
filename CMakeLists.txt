@@ -21,6 +21,12 @@ add_library(latasim_rtos STATIC src/rtos/fiber.cpp src/rtos/kernel.cpp)
 target_include_directories(latasim_rtos PUBLIC src)
 latasim_warnings(latasim_rtos)
 
+# Reusable device models outside any one microcontroller or board (the virtual USB
+# audio host).
+add_library(latasim_devices STATIC src/devices/usb_audio_host.cpp)
+target_include_directories(latasim_devices PUBLIC src)
+latasim_warnings(latasim_devices)
+
 # Production model: LPC17xx peripherals and the MCB1700 board. See docs/phase1/.
 add_library(latasim_model STATIC
     src/lpc17xx/gpio.cpp
@@ -119,6 +125,25 @@ if(EXISTS "${LATASIM_KEIL_MCB1700}/LED_MCB1700.c" AND EXISTS "${LATASIM_KEIL_BOA
         if(MSVC)
             target_link_options(latasim_keil_glcd INTERFACE /LARGEADDRESSAWARE:NO)
         endif()
+
+        # USB audio (docs/phase5/usb-audio.md): Keil's USB device driver and its
+        # OTG/pin companion, and the board's DAC driver, unchanged from the pack,
+        # with Latasim's representative speaker firmware. The pin configuration is the
+        # pack's USB Audio example's RTE_Device.h; RTE_Components.h is Latasim's.
+        set(keil_usb_otg "${LATASIM_KEIL_DFP}/RTE_Driver/OTG_LPC17xx.c")
+        set_source_files_properties(${keil_usb_otg} PROPERTIES LANGUAGE C COMPILE_DEFINITIONS LPC175x_6x)
+        add_library(latasim_keil_usb STATIC
+            ${keil_usb_otg}
+            src/firmware/usb/usbd_lpc17xx.cpp
+            src/firmware/dac_mcb1700.cpp
+            src/firmware/usb/usb_speaker.cpp)
+        target_include_directories(latasim_keil_usb
+            PUBLIC src/firmware/usb
+            PRIVATE src/firmware/usb/rte
+                    "${LATASIM_KEIL_DFP}/Boards/Keil/MCB1700/Middleware/USB/Device/Audio/RTE/Device/LPC1768"
+                    "${LATASIM_KEIL_DFP}/RTE_Driver" "${LATASIM_CMSIS_DRIVER}" "${LATASIM_KEIL_MCB1700}")
+        target_link_libraries(latasim_keil_usb PUBLIC latasim_keil_board_drivers)
+        set_source_files_properties(src/firmware/usb/usb_speaker.cpp PROPERTIES COMPILE_OPTIONS "/W4;/WX;/permissive-;/utf-8")
     endif()
     # Representative CMSIS-RTOS v1 firmware (docs/phase5/rtos.md): Latasim's own C,
     # against RTX 4's cmsis_os.h and Keil's LED board API.

@@ -12,7 +12,8 @@
  *   C and C++   latasim_mmio_read32(address), latasim_mmio_write32(address, value)
  *               SystemCoreClock, SystemCoreClockUpdate(), SysTick_Config(ticks),
  *               IRQn_Type and the NVIC_* functions (host/cmsis_system.cpp)
- *   C++ only    LPC_GPIO0..4, LPC_SC, LPC_PINCON, LPC_TIM0..3 and LPC_ADC, with
+ *   C++ only    LPC_GPIO0..4, LPC_SC, LPC_PINCON, LPC_TIM0..3, LPC_ADC, LPC_DAC and the
+ *               USB device registers (latasim_usb), with
  *               Keil's register names (only the registers the model implements work):
  *                 LPC_GPIO1->FIODIR |= 1UL << 28;  LPC_GPIO1->FIOPIN0 = 0x12;
  *               LATASIM_REG32(address), for firmware that dereferences literal
@@ -53,7 +54,8 @@ typedef enum IRQn {
     TIMER2_IRQn = 3,
     TIMER3_IRQn = 4,
     EINT0_IRQn = 18,
-    ADC_IRQn = 22
+    ADC_IRQn = 22,
+    USB_IRQn = 24
 } IRQn_Type;
 #define __NVIC_PRIO_BITS 5
 
@@ -159,8 +161,30 @@ typedef struct {
     LATASIM_REG ADSTAT, ADTRM;             /* 0x30, 0x34 */
 } LPC_ADC_TypeDef;
 
+/* D/A converter (UM10360 chapter 30). */
+typedef struct {
+    LATASIM_REG DACR, DACCTRL, DACCNTVAL;  /* 0x00-0x08 */
+} LPC_DAC_TypeDef;
+
+/* USB device controller (UM10360 chapter 11), the device-side registers and the
+ * clock control pair; the host, OTG and DMA registers are not modelled. The field
+ * names are those Keil's USB device driver uses. */
+typedef struct {
+    uint32_t RESERVED0[0x200 / 4];
+    LATASIM_REG DevIntSt, DevIntEn, DevIntClr, DevIntSet;      /* 0x200 */
+    LATASIM_REG CmdCode, CmdData;                              /* 0x210 */
+    LATASIM_REG RxData, TxData, RxPLen, TxPLen, Ctrl, DevIntPri; /* 0x218 */
+    LATASIM_REG EpIntSt, EpIntEn, EpIntClr, EpIntSet, EpIntPri; /* 0x230 */
+    LATASIM_REG ReEp, EpInd, MaxPSize;                         /* 0x244 */
+    uint32_t RESERVED1[(0xFF4 - 0x250) / 4];
+    LATASIM_REG USBClkCtrl, USBClkSt;                          /* 0xFF4 */
+} LPC_USB_TypeDef;
+
 #undef LATASIM_REG
 
+static_assert(offsetof(LPC_USB_TypeDef, DevIntSt) == 0x200, "USBDevIntSt at 0x200");
+static_assert(offsetof(LPC_USB_TypeDef, MaxPSize) == 0x24C, "USBMaxPSize at 0x24C");
+static_assert(offsetof(LPC_USB_TypeDef, USBClkCtrl) == 0xFF4, "USBClkCtrl at 0xFF4");
 static_assert(sizeof(LPC_GPIO_TypeDef) == 0x20, "GPIO port block is 0x20 bytes");
 static_assert(offsetof(LPC_GPIO_TypeDef, FIOPIN) == 0x14, "FIOPIN at 0x14");
 static_assert(offsetof(LPC_SC_TypeDef, PCONP) == 0xC4, "PCONP at 0xC4");
@@ -180,6 +204,8 @@ extern LPC_SC_TypeDef latasim_sc;
 extern LPC_PINCON_TypeDef latasim_pincon;
 extern LPC_TIM_TypeDef latasim_tim[4];
 extern LPC_ADC_TypeDef latasim_adc;
+extern LPC_DAC_TypeDef latasim_dac;
+extern LPC_USB_TypeDef latasim_usb;
 
 #define LPC_GPIO0_BASE (reinterpret_cast<uintptr_t>(&latasim_gpio_ports[0]))
 #define LPC_GPIO1_BASE (reinterpret_cast<uintptr_t>(&latasim_gpio_ports[1]))
@@ -193,6 +219,7 @@ extern LPC_ADC_TypeDef latasim_adc;
 #define LPC_TIM2_BASE (reinterpret_cast<uintptr_t>(&latasim_tim[2]))
 #define LPC_TIM3_BASE (reinterpret_cast<uintptr_t>(&latasim_tim[3]))
 #define LPC_ADC_BASE (reinterpret_cast<uintptr_t>(&latasim_adc))
+#define LPC_DAC_BASE (reinterpret_cast<uintptr_t>(&latasim_dac))
 
 #define LPC_GPIO0 (&latasim_gpio_ports[0])
 #define LPC_GPIO1 (&latasim_gpio_ports[1])
@@ -206,6 +233,7 @@ extern LPC_ADC_TypeDef latasim_adc;
 #define LPC_TIM2 (&latasim_tim[2])
 #define LPC_TIM3 (&latasim_tim[3])
 #define LPC_ADC (&latasim_adc)
+#define LPC_DAC (&latasim_dac)
 
 #endif /* __cplusplus */
 
