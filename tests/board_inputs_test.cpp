@@ -24,7 +24,7 @@ constexpr JoystickDirection kAll[] = {JoystickDirection::Center, JoystickDirecti
 
 // Legacy joystick driver (KBD.c): get_button() = ~(FIO1PIN >> 20) & KBD_MASK.
 std::uint32_t legacy_get_button(const Board& board) {
-    return ~(board.mcu().read32(FIO1PIN) >> 20) & 0x79u;
+    return ~(board.mcu().peek32(FIO1PIN) >> 20) & 0x79u;
 }
 
 // Legacy KBD.h codes, in JoystickDirection order (pin map, "Legacy bit" column).
@@ -46,7 +46,7 @@ TEST(BoardInputs, EverythingStartsReleasedAndReadsHigh) {
     const Board board;
     for (const auto d : kAll) EXPECT_FALSE(board.is_pressed(d));
     EXPECT_FALSE(board.int0_pressed());
-    EXPECT_EQ(board.mcu().read32(FIO1PIN) & 0x07900000u, 0x07900000u) << "P1.20, P1.23-P1.26 high";
+    EXPECT_EQ(board.mcu().peek32(FIO1PIN) & 0x07900000u, 0x07900000u) << "P1.20, P1.23-P1.26 high";
     EXPECT_TRUE(board.mcu().gpio().pin_level(2, 10));
     EXPECT_EQ(legacy_get_button(board), 0u);
 }
@@ -121,12 +121,12 @@ TEST(BoardInputs, AnOutputPinShowsItsLatchNotTheJoystick) {
 TEST(BoardInputs, MaskedJoystickPinReadsZeroWhateverItsState) {
     Board board;
     board.mcu().write32(FIO1MASK, 1u << 20);
-    EXPECT_EQ(board.mcu().read32(FIO1PIN) & (1u << 20), 0u) << "released but masked";
+    EXPECT_EQ(board.mcu().peek32(FIO1PIN) & (1u << 20), 0u) << "released but masked";
     board.press(JoystickDirection::Center);
-    EXPECT_EQ(board.mcu().read32(FIO1PIN) & (1u << 20), 0u);
+    EXPECT_EQ(board.mcu().peek32(FIO1PIN) & (1u << 20), 0u);
     board.release(JoystickDirection::Center);
     board.mcu().write32(FIO1MASK, 0);
-    EXPECT_EQ(board.mcu().read32(FIO1PIN) & (1u << 20), 1u << 20);
+    EXPECT_EQ(board.mcu().peek32(FIO1PIN) & (1u << 20), 1u << 20);
 }
 
 TEST(BoardInputs, SeveralSwitchesCanBeHeldAtOnce) {

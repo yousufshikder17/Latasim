@@ -247,12 +247,12 @@ TEST(SysTick, AccessesAreTracedLikeAnyOtherRegister) {
     EXPECT_EQ(events.size(), 3u) << "advancing time is not an MMIO access";
 }
 
-// --- SysTick_Handler delivery (Lpc1768::on_systick) ---
+// --- SysTick_Handler delivery through the interrupt dispatch (Lpc1768::bind_handler) ---
 
 TEST(SysTickHandler, CalledAtEachCountToZeroAtThatVirtualTime) {
     Lpc1768 mcu;
     std::vector<std::uint64_t> calls;
-    mcu.on_systick([&] { calls.push_back(mcu.cycles()); });
+    mcu.bind_handler(latasim::lpc17xx::kSysTickIrq, [&] { calls.push_back(mcu.cycles()); });
     configure(mcu, 1'000, kRun | kSysTickTickint);
     mcu.advance_cycles(3'500);
     EXPECT_EQ(calls, (std::vector<std::uint64_t>{999, 1'999, 2'999}));
@@ -266,31 +266,38 @@ TEST(SysTickHandler, CalledAtEachCountToZeroAtThatVirtualTime) {
 TEST(SysTickHandler, EachCallIsTracedBeforeTheHandlersOwnAccesses) {
     latasim::mcb1700::Board board;
     auto& mcu = board.mcu();
-    mcu.on_systick([&] { mcu.write32(0x2009C038, 1u << 28); });  // FIO1SET
+    mcu.bind_handler(latasim::lpc17xx::kSysTickIrq, [&] { mcu.write32(0x2009C038, 1u << 28); });  // FIO1SET
     configure(mcu, 100, kRun | kSysTickTickint);
     mcu.advance_cycles(200);
     const auto& events = mcu.trace().events();
-    ASSERT_EQ(events.size(), 3u + 4u);
-    EXPECT_EQ(to_string(events[3]), "#4    t=99         systick handler");
-    EXPECT_EQ(to_string(events[4]), "#5    t=99         write32 FIO1SET   0x10000000");
-    EXPECT_EQ(to_string(events[5]), "#6    t=199        systick handler");
-    EXPECT_EQ(events[6].cycles, 199u);
+    ASSERT_EQ(events.size(), 3u + 8u);
+    EXPECT_EQ(to_string(events[3]), "#4    t=99         irq     SysTick   pend");
+    EXPECT_EQ(to_string(events[4]), "#5    t=99         irq     SysTick   enter");
+    EXPECT_EQ(to_string(events[5]), "#6    t=99         write32 FIO1SET   0x10000000");
+    EXPECT_EQ(to_string(events[6]), "#7    t=99         irq     SysTick   exit");
+    EXPECT_EQ(to_string(events[7]), "#8    t=199        irq     SysTick   pend");
+    EXPECT_EQ(events[10].cycles, 199u);
 }
 
 TEST(SysTickHandler, NotCalledWithoutTickint) {
     Lpc1768 mcu;
     int calls = 0;
-    mcu.on_systick([&] { ++calls; });
+    mcu.bind_handler(latasim::lpc17xx::kSysTickIrq, [&] { ++calls; });
     configure(mcu, 100);  // ENABLE | CLKSOURCE, no TICKINT
     mcu.advance_cycles(1'000);
     EXPECT_EQ(calls, 0);
     EXPECT_EQ(mcu.read32(STCTRL) & kSysTickCountflag, kSysTickCountflag) << "the counter still ran";
 }
 
-TEST(SysTickHandler, WithoutAHandlerTickintIsOnlyStored) {
+// With no handler bound, SysTick becomes pending and stays pending: it is never
+// taken (Phase 3 only stored TICKINT in this case).
+TEST(SysTickHandler, WithoutAHandlerTheExceptionStaysPending) {
     Lpc1768 mcu;
     configure(mcu, 100, kRun | kSysTickTickint);
+    EXPECT_FALSE(mcu.nvic().pending(latasim::lpc17xx::kSysTickIrq));
     mcu.advance_cycles(1'000);
+    EXPECT_TRUE(mcu.nvic().pending(latasim::lpc17xx::kSysTickIrq));
+    EXPECT_FALSE(mcu.nvic().active(latasim::lpc17xx::kSysTickIrq));
     EXPECT_EQ(mcu.cycles(), 1'000u);
     EXPECT_EQ(mcu.read32(STCURR), 99u) << "counted to 0 at 99, 199, ... 999, then reloaded";
     EXPECT_EQ(mcu.read32(STCTRL) & kSysTickCountflag, kSysTickCountflag);
@@ -300,7 +307,7 @@ TEST(SysTickHandler, HandlerAccessesAreTracedAndSeeTheModel) {
     latasim::mcb1700::Board board;
     auto& mcu = board.mcu();
     mcu.write32(0x2009C020, 1u << 28);  // FIO1DIR: LED0 output
-    mcu.on_systick([&] { mcu.write32(0x2009C038, 1u << 28); });  // FIO1SET
+    mcu.bind_handler(latasim::lpc17xx::kSysTickIrq, [&] { mcu.write32(0x2009C038, 1u << 28); });  // FIO1SET
     configure(mcu, 100, kRun | kSysTickTickint);
     mcu.advance_cycles(98);
     EXPECT_EQ(board.led(0), latasim::mcb1700::LedState::Off);
@@ -311,7 +318,7 @@ TEST(SysTickHandler, HandlerAccessesAreTracedAndSeeTheModel) {
 TEST(SysTickHandler, HandlerMayReconfigureTheTimer) {
     Lpc1768 mcu;
     std::vector<std::uint64_t> calls;
-    mcu.on_systick([&] {
+    mcu.bind_handler(latasim::lpc17xx::kSysTickIrq, [&] {
         calls.push_back(mcu.cycles());
         if (calls.size() == 2) mcu.write32(STCTRL, kRun);  // TICKINT off
     });
@@ -322,10 +329,10 @@ TEST(SysTickHandler, HandlerMayReconfigureTheTimer) {
 
 TEST(SysTickHandler, AdvancingTimeInsideTheHandlerIsAnError) {
     Lpc1768 mcu;
-    mcu.on_systick([&] { mcu.advance_cycles(1); });
+    mcu.bind_handler(latasim::lpc17xx::kSysTickIrq, [&] { mcu.advance_cycles(1); });
     configure(mcu, 10, kRun | kSysTickTickint);
     EXPECT_THROW(mcu.advance_cycles(10), std::logic_error);
-    mcu.on_systick(nullptr);
+    mcu.bind_handler(latasim::lpc17xx::kSysTickIrq, nullptr);
     mcu.advance_cycles(5);  // usable again after the failure
     EXPECT_EQ(mcu.cycles(), 14u) << "stopped at the count to 0 (cycle 9)";
 }

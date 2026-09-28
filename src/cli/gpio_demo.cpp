@@ -25,8 +25,8 @@ void step(std::ostream& out, const Board& board, const std::string& action, unsi
     char line[160];
     std::snprintf(line, sizeof line, "  %-44s LED%u %-9s FIO1PIN=%s FIO2PIN=%s\n", action.c_str(), led,
                   mcb1700::to_string(board.led(led)),
-                  hex(board.mcu().read32(gpio_register_address(1, GpioReg::Pin))).c_str(),
-                  hex(board.mcu().read32(gpio_register_address(2, GpioReg::Pin))).c_str());
+                  hex(board.mcu().peek32(gpio_register_address(1, GpioReg::Pin))).c_str(),
+                  hex(board.mcu().peek32(gpio_register_address(2, GpioReg::Pin))).c_str());
     out << line;
 }
 

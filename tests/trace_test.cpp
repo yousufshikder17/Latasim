@@ -170,8 +170,11 @@ TEST(Trace, FormatsEachKindOnOneLine) {
     EXPECT_EQ(to_string(write(5, 0x233806EC, 4, 0)), "#5    t=0          write32 0x233806EC 0x00000000");
     EXPECT_EQ(to_string(input(6, 1, 23, false)), "#6    t=0          input   P1.23     low");
     EXPECT_EQ(to_string(led(7, 0, LedState::On)), "#7    t=0          led     LED0      ON");
-    TraceEvent tick{.seq = 8, .cycles = 999'999, .kind = TraceKind::SysTick};
-    EXPECT_EQ(to_string(tick), "#8    t=999999     systick handler");
+    TraceEvent tick{.seq = 8, .cycles = 999'999, .kind = TraceKind::Interrupt, .value = latasim::kInterruptEnter,
+                    .irq = latasim::lpc17xx::kSysTickIrq};
+    EXPECT_EQ(to_string(tick), "#8    t=999999     irq     SysTick   enter");
+    TraceEvent adc{.seq = 10, .kind = TraceKind::Interrupt, .value = latasim::kInterruptPend, .irq = 22};
+    EXPECT_EQ(to_string(adc), "#10   t=0          irq     ADC       pend");
     TraceEvent late = led(9, 3, LedState::Off);
     late.cycles = 123'456'789'012;
     EXPECT_EQ(to_string(late), "#9    t=123456789012 led     LED3      OFF") << "long times widen the column";
@@ -225,7 +228,7 @@ TEST(Trace, RecordingDoesNotChangeTimedBehaviour) {
         KeilBoardLed leds(board->mcu());
         leds.initialize();
         int step = 0;
-        board->mcu().on_systick([&leds, &step] { leds.set_out(1u << (step++ % 8)); });
+        board->mcu().bind_handler(latasim::lpc17xx::kSysTickIrq, [&leds, &step] { leds.set_out(1u << (step++ % 8)); });
         board->mcu().write32(0xE000E014, 999);                 // STRELOAD
         board->mcu().write32(0xE000E010, 0x7);                 // STCTRL: run with TICKINT
         board->mcu().advance_cycles(12'345);

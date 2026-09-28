@@ -34,7 +34,7 @@ Board::Board() {
 }
 
 void Board::drive_active_low(PinRef pin, bool pressed) {
-    mcu_.gpio().set_external_level(pin.port, pin.pin, !pressed);
+    mcu_.set_external_level(pin.port, pin.pin, !pressed);
 }
 
 void Board::set_input(PinRef pin, bool& pressed, bool press) {

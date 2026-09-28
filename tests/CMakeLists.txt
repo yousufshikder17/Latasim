@@ -15,6 +15,7 @@ add_executable(latasim_tests
     trace_test.cpp
     virtual_time_test.cpp
     systick_test.cpp
+    nvic_test.cpp
     scenario.cpp
     scenario_test.cpp
     gpio_external_input_test.cpp

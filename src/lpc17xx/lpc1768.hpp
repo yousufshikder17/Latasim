@@ -1,14 +1,15 @@
 #pragma once
 // The LPC1768 as firmware sees it: 8/16/32-bit loads and stores to its memory map.
 // This is the seam a future MMIO adapter (host-compiled firmware, emulator)
-// plugs into. Only the GPIO block, its bit-band alias, PCONP and SysTick are mapped;
-// anything else raises BusFault, as an unmapped access would on the chip.
+// plugs into. Mapped so far: the GPIO block and its bit-band alias, PCONP, SysTick
+// and the NVIC; anything else raises BusFault, as an unmapped access would on the chip.
+#include <array>
 #include <cstdint>
+#include <functional>
 #include <stdexcept>
 
-#include <functional>
-
 #include "lpc17xx/gpio.hpp"
+#include "lpc17xx/nvic.hpp"
 #include "lpc17xx/systick.hpp"
 #include "trace/trace.hpp"
 
@@ -63,9 +64,10 @@ public:
     // Loads and stores of 8, 16 and 32 bits. Narrow GPIO accesses address the byte
     // and halfword registers of LPC17xx.h (FIO1PIN0, FIO1SETH, ...) and must be
     // naturally aligned. Bit-band aliases accept 32-bit accesses only.
-    std::uint8_t read8(std::uint32_t address) const { return static_cast<std::uint8_t>(read(address, 1)); }
-    std::uint16_t read16(std::uint32_t address) const { return static_cast<std::uint16_t>(read(address, 2)); }
-    std::uint32_t read32(std::uint32_t address) const { return read(address, 4); }
+    // Loads are not const: some registers change when read (STCTRL's COUNTFLAG).
+    std::uint8_t read8(std::uint32_t address) { return static_cast<std::uint8_t>(read(address, 1)); }
+    std::uint16_t read16(std::uint32_t address) { return static_cast<std::uint16_t>(read(address, 2)); }
+    std::uint32_t read32(std::uint32_t address) { return read(address, 4); }
     void write8(std::uint32_t address, std::uint8_t value) { write(address, 1, value); }
     void write16(std::uint32_t address, std::uint16_t value) { write(address, 2, value); }
     // Bit-band alias writes are a read-modify-write of the whole target word, as
@@ -95,13 +97,25 @@ public:
     std::uint64_t cycles() const { return cycles_; }
     void advance_cycles(std::uint64_t cycles);
 
-    // The firmware's SysTick_Handler. While one is attached and TICKINT is set,
-    // advance_cycles stops at each SysTick count to 0 and calls it there, so its
-    // register accesses happen at that virtual time. This is the only exception
-    // Latasim delivers, and only in this narrow form: synchronously, between host
-    // firmware calls, with no NVIC, priorities, pending state, preemption or
-    // exception-entry cycles. Advancing time from inside the handler is an error.
-    void on_systick(std::function<void()> handler) { on_systick_ = std::move(handler); }
+    // Interrupt delivery (docs/phase4/overview.md). The host binds each exception's
+    // handler by CMSIS IRQ number (kSysTickIrq, kTimer0Irq, ...); the model never
+    // names firmware symbols. An exception is taken when it is pending, enabled and
+    // the highest priority (Nvic::next), and has a bound handler; without one it
+    // stays pending. Handlers run synchronously on the host and take no virtual
+    // time, at the virtual time of the event that made them pending: after a time
+    // step, after an MMIO store, after an input change. There is no nesting: an
+    // exception that becomes pending during a handler is taken after it returns
+    // (tail-chained), in priority order. Advancing time from a handler is an error.
+    void bind_handler(int irq, std::function<void()> handler);
+    // Called each time the processor returns to thread mode after taking one or
+    // more exceptions: the place for a firmware main loop's reaction to flags its
+    // handlers set, since the host does not run main loops continuously.
+    void on_thread_mode(std::function<void()> step) { thread_mode_ = std::move(step); }
+    const Nvic& nvic() const { return nvic_; }
+
+    // A pin's level driven from outside (board inputs). Updates GPIO and anything
+    // watching the pin, then takes any exception that became due.
+    void set_external_level(unsigned port, unsigned pin, bool high);
 
     // SysTick at 0xE000E010-0xE000E01F: 32-bit accesses only; CALIB is read-only.
     // For observation; firmware goes through the loads and stores above.
@@ -120,19 +134,27 @@ private:
         std::uint32_t lanes;  // the bits the access covers
     };
     static GpioTarget decode_gpio(std::uint32_t address, unsigned size);
-    std::uint32_t read(std::uint32_t address, unsigned size) const;  // traced
+    std::uint32_t read(std::uint32_t address, unsigned size);  // traced
     void write(std::uint32_t address, unsigned size, std::uint32_t value);  // traced
-    std::uint32_t load(std::uint32_t address, unsigned size) const;
+    std::uint32_t load(std::uint32_t address, unsigned size) const;  // no side effects
+    void read_side_effects(std::uint32_t address);
     void store(std::uint32_t address, unsigned size, std::uint32_t value);
     std::uint32_t read_target(std::uint32_t alias, std::uint32_t word_address) const;
+    void update_interrupt_lines();
+    void service_interrupts();
+    std::array<bool, kExternalIrqCount + 1> pending_snapshot() const;
+    void trace_new_pending(const std::array<bool, kExternalIrqCount + 1>& before);
 
     Gpio gpio_;
     std::uint32_t pconp_ = kPconpReset;
     std::uint64_t cycles_ = 0;
-    mutable SysTick systick_;  // mutable: reading STCTRL clears COUNTFLAG
-    std::function<void()> on_systick_;
-    bool in_systick_handler_ = false;
-    mutable Trace trace_;  // observation only: recording a load changes no model state
+    SysTick systick_;
+    Nvic nvic_;
+    std::array<std::function<void()>, kExternalIrqCount + 1> handlers_;  // [irq + 1]
+    std::function<void()> thread_mode_;
+    bool in_handler_ = false;
+    bool in_thread_mode_step_ = false;
+    Trace trace_;
     std::function<void()> on_store_;
 };
 

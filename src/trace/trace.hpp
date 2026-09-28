@@ -19,8 +19,13 @@ enum class TraceKind : std::uint8_t {
     Write,  // an MMIO store: address, width, value stored
     Input,  // a board input changed a pin's external level: port, pin, value = level
     Led,    // a board LED changed what it shows: led, value = mcb1700::LedState
-    SysTick,  // SysTick counted to 0 and the firmware's SysTick_Handler is called
+    Interrupt,  // an exception: irq; value = kInterruptPend, kInterruptEnter or kInterruptExit
 };
+
+// TraceKind::Interrupt values: became pending, handler entered, handler returned.
+inline constexpr std::uint32_t kInterruptPend = 0;
+inline constexpr std::uint32_t kInterruptEnter = 1;
+inline constexpr std::uint32_t kInterruptExit = 2;
 
 struct TraceEvent {
     std::uint64_t seq = 0;
@@ -32,6 +37,7 @@ struct TraceEvent {
     unsigned port = 0;  // Input
     unsigned pin = 0;   // Input
     unsigned led = 0;   // Led
+    int irq = 0;        // Interrupt: CMSIS IRQ number, SysTick = -1
 
     bool operator==(const TraceEvent&) const = default;
 };

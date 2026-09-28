@@ -10,8 +10,8 @@
  * own tests (docs/phase2/host-registers.md):
  *
  *   C and C++   latasim_mmio_read32(address), latasim_mmio_write32(address, value)
- *               SystemCoreClock, SystemCoreClockUpdate(), SysTick_Config(ticks)
- *               (host/cmsis_system.cpp)
+ *               SystemCoreClock, SystemCoreClockUpdate(), SysTick_Config(ticks),
+ *               IRQn_Type and the NVIC_* functions (host/cmsis_system.cpp)
  *   C++ only    LPC_GPIO0..4 and LPC_SC, with Keil's register names:
  *                 LPC_GPIO1->FIODIR |= 1UL << 28;  LPC_GPIO1->FIOPIN0 = 0x12;
  *               LATASIM_REG32(address), for firmware that dereferences literal
@@ -33,10 +33,31 @@ extern "C" {
 uint32_t latasim_mmio_read32(uint32_t address);
 void latasim_mmio_write32(uint32_t address, uint32_t value);
 
+/* The interrupts Latasim models, numbered as in the device header (CMSIS
+ * IRQn_Type), and its implemented priority bits. */
+typedef enum IRQn {
+    SysTick_IRQn = -1,
+    TIMER0_IRQn = 1,
+    TIMER1_IRQn = 2,
+    TIMER2_IRQn = 3,
+    TIMER3_IRQn = 4,
+    EINT0_IRQn = 18,
+    ADC_IRQn = 22
+} IRQn_Type;
+#define __NVIC_PRIO_BITS 5
+
 /* CMSIS system_LPC17xx.h and core_cm3.h functions, host versions. */
 extern uint32_t SystemCoreClock;
 void SystemCoreClockUpdate(void);
 uint32_t SysTick_Config(uint32_t ticks);
+void NVIC_EnableIRQ(IRQn_Type IRQn);
+void NVIC_DisableIRQ(IRQn_Type IRQn);
+void NVIC_SetPendingIRQ(IRQn_Type IRQn);
+void NVIC_ClearPendingIRQ(IRQn_Type IRQn);
+uint32_t NVIC_GetPendingIRQ(IRQn_Type IRQn);
+uint32_t NVIC_GetActive(IRQn_Type IRQn);
+void NVIC_SetPriority(IRQn_Type IRQn, uint32_t priority);
+uint32_t NVIC_GetPriority(IRQn_Type IRQn);
 
 #ifdef __cplusplus
 }

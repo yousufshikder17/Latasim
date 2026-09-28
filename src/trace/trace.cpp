@@ -14,6 +14,25 @@ std::string register_name(std::uint32_t address, unsigned width) {
     using namespace lpc17xx;
     char text[32];
     if (address == kPconpAddress) return "PCONP";
+    // NVIC (ARM DUI 0552A table 4-2): ISERn, ICERn, ISPRn, ICPRn, IABRn; IPRn by word,
+    // PRI_n (the priority field of IRQ n) by byte; SHPR3, PRI_15 (SysTick).
+    static const struct {
+        std::uint32_t base;
+        const char* name;
+    } bitmaps[] = {{0xE000E100, "ISER"}, {0xE000E180, "ICER"}, {0xE000E200, "ISPR"}, {0xE000E280, "ICPR"},
+                   {0xE000E300, "IABR"}};
+    for (const auto& r : bitmaps)
+        if (address == r.base || address == r.base + 4) {
+            std::snprintf(text, sizeof text, "%s%u", r.name, static_cast<unsigned>((address - r.base) / 4));
+            return text;
+        }
+    if (address >= 0xE000E400 && address < 0xE000E424) {
+        if (width == 4) std::snprintf(text, sizeof text, "IPR%u", static_cast<unsigned>((address - 0xE000E400) / 4));
+        else std::snprintf(text, sizeof text, "PRI_%u", static_cast<unsigned>(address - 0xE000E400));
+        return text;
+    }
+    if (address == 0xE000ED20 && width == 4) return "SHPR3";
+    if (address == 0xE000ED23 && width == 1) return "PRI_15";
     if (address - kSysTickBase < 0x10 && address % 4 == 0) {
         static const char* const systick[] = {"STCTRL", "STRELOAD", "STCURR", "STCALIB"};
         return systick[(address - kSysTickBase) / 4];
@@ -58,10 +77,13 @@ std::string to_string(const TraceEvent& e) {
         std::snprintf(what, sizeof what, "LED%u", e.led);
         std::snprintf(value, sizeof value, "%s", mcb1700::to_string(static_cast<mcb1700::LedState>(e.value)));
         break;
-    case TraceKind::SysTick:
-        std::snprintf(op, sizeof op, "systick");
-        std::snprintf(what, sizeof what, "handler");
+    case TraceKind::Interrupt: {
+        static const char* const phases[] = {"pend", "enter", "exit"};
+        std::snprintf(op, sizeof op, "irq");
+        std::snprintf(what, sizeof what, "%s", lpc17xx::irq_name(e.irq).c_str());
+        std::snprintf(value, sizeof value, "%s", e.value < 3 ? phases[e.value] : "?");
         break;
+    }
     }
     char time[32];
     std::snprintf(time, sizeof time, "t=%llu", static_cast<unsigned long long>(e.cycles));

@@ -3,12 +3,14 @@
 namespace latasim::lpc17xx {
 
 std::uint32_t SysTick::read(SysTickReg reg) {
+    const std::uint32_t value = peek(reg);
+    if (reg == SysTickReg::Ctrl) countflag_ = false;
+    return value;
+}
+
+std::uint32_t SysTick::peek(SysTickReg reg) const {
     switch (reg) {
-    case SysTickReg::Ctrl: {
-        const std::uint32_t value = ctrl_ | (countflag_ ? kSysTickCountflag : 0u);
-        countflag_ = false;
-        return value;
-    }
+    case SysTickReg::Ctrl: return ctrl_ | (countflag_ ? kSysTickCountflag : 0u);
     case SysTickReg::Load: return reload_;
     case SysTickReg::Val: return current_;
     case SysTickReg::Calib: return kSysTickCalib;

@@ -19,7 +19,7 @@ std::string hex(std::uint32_t value) {
 
 Scenario::Scenario() = default;
 
-void Scenario::on_systick(std::function<void()> handler) { board_.mcu().on_systick(std::move(handler)); }
+void Scenario::bind(int irq, std::function<void()> handler) { board_.mcu().bind_handler(irq, std::move(handler)); }
 
 void Scenario::run_for(Cycles duration) {
     if (duration.count() < 0)

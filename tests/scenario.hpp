@@ -3,7 +3,7 @@
 //
 //   Scenario s;                                  // new board, bound to host firmware, t = 0
 //   blinky_ulp_start();
-//   s.on_systick(SysTick_Handler);
+//   s.bind(lpc17xx::kSysTickIrq, SysTick_Handler);
 //   s.run_until(10ms);
 //   EXPECT_TRUE(s.led(1, LedState::On));
 //   s.press(JoystickDirection::Up);              // at t = 10 ms
@@ -47,8 +47,8 @@ public:
     lpc17xx::Lpc1768& mcu() { return board_.mcu(); }
     Cycles now() const { return Cycles{static_cast<std::int64_t>(board_.mcu().cycles())}; }
 
-    // The firmware's SysTick_Handler (see Lpc1768::on_systick).
-    void on_systick(std::function<void()> handler);
+    // A firmware interrupt handler, by CMSIS IRQ number (see Lpc1768::bind_handler).
+    void bind(int irq, std::function<void()> handler);
 
     // A negative duration is an error.
     void run_for(Cycles duration);

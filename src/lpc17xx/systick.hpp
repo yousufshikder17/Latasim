@@ -42,6 +42,8 @@ public:
     // at reset (E11, docs/phase3/open-questions.md).
     // Reserved bits read as 0.
     std::uint32_t read(SysTickReg reg);
+    // What read(reg) returns, without clearing COUNTFLAG.
+    std::uint32_t peek(SysTickReg reg) const;
     // CTRL keeps ENABLE/TICKINT/CLKSOURCE, LOAD keeps 24 bits, and any write to VAL
     // clears the counter and COUNTFLAG. CALIB is read-only: the caller rejects it.
     void write(SysTickReg reg, std::uint32_t value);

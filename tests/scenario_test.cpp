@@ -30,7 +30,7 @@ constexpr std::uint32_t STCTRL = 0xE000E010;
 // A 1 ms SysTick whose handler toggles LED0: timed "firmware" in a few lines.
 void start_blinker(Scenario& s, KeilBoardLed& leds) {
     leds.initialize();
-    s.on_systick([&s, &leds] { s.board().led(0) == LedState::On ? leds.off(0) : leds.on(0); });
+    s.bind(latasim::lpc17xx::kSysTickIrq, [&s, &leds] { s.board().led(0) == LedState::On ? leds.off(0) : leds.on(0); });
     s.mcu().write32(0xE000E014, 100'000 - 1);  // STRELOAD: 1 ms
     s.mcu().write32(0xE000E018, 0);            // STCURR
     s.mcu().write32(STCTRL, kSysTickClksource | kSysTickTickint | kSysTickEnable);

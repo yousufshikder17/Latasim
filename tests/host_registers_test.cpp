@@ -211,17 +211,18 @@ TEST(HostRegistersDeathTest, MisuseAborts) {
         "not a device register");
 }
 
-// Host CMSIS SysTick_Config: the register writes of core_cm3.h's version, minus
-// the NVIC priority store.
+// Host CMSIS SysTick_Config: the register writes of core_cm3.h's version.
 TEST(HostRegisters, SysTickConfigWritesReloadCurrentAndControl) {
     Board board;
     FirmwareBinding bind(board);
     EXPECT_EQ(SystemCoreClock, 100'000'000u);
     ASSERT_EQ(SysTick_Config(SystemCoreClock / 100), 0u);
     const auto& events = board.mcu().trace().events();
-    ASSERT_EQ(events.size(), 3u);
+    ASSERT_EQ(events.size(), 4u);
     EXPECT_EQ(to_string(events[0]), "#1    t=0          write32 STRELOAD  0x000F423F");
-    EXPECT_EQ(to_string(events[1]), "#2    t=0          write32 STCURR    0x00000000");
-    EXPECT_EQ(to_string(events[2]), "#3    t=0          write32 STCTRL    0x00000007");
+    EXPECT_EQ(to_string(events[1]), "#2    t=0          write8  PRI_15    0xF8") << "NVIC_SetPriority(SysTick_IRQn, 31)";
+    EXPECT_EQ(to_string(events[2]), "#3    t=0          write32 STCURR    0x00000000");
+    EXPECT_EQ(to_string(events[3]), "#4    t=0          write32 STCTRL    0x00000007");
+    EXPECT_EQ(board.mcu().nvic().priority(latasim::lpc17xx::kSysTickIrq), 0xF8u);
     EXPECT_EQ(SysTick_Config(0x01000001), 1u) << "reload value impossible";
 }

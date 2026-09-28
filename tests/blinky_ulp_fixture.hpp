@@ -25,7 +25,7 @@ inline void reset_irq_statics() {
     mcb1700::Board scratch;
     host::FirmwareBinding bind(scratch);
     blinky_ulp_start();
-    scratch.mcu().on_systick(SysTick_Handler);
+    scratch.mcu().bind_handler(lpc17xx::kSysTickIrq, SysTick_Handler);
     for (int tick = 0; tick < 200; ++tick) {
         clock_1s = 0;
         scratch.mcu().advance_cycles(kBlinkyTick);
@@ -43,7 +43,7 @@ struct Blinky {
         reset_irq_statics();
         bind_ = std::make_unique<host::FirmwareBinding>(board);
         blinky_ulp_start();
-        board.mcu().on_systick(SysTick_Handler);
+        board.mcu().bind_handler(lpc17xx::kSysTickIrq, SysTick_Handler);
     }
     void run(std::uint64_t cycles) { board.mcu().advance_cycles(cycles); }
     // The one LED on, or -1 if none or several.
