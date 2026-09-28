@@ -18,6 +18,7 @@ The scenario list then ends with **External: *folder name***.
 | `LATASIM_USER_FIRMWARE_DIR` | empty (no external firmware) | The project folder. |
 | `LATASIM_USER_FIRMWARE_SOURCES` | the folder's top-level `*.c` | Its sources, relative to the folder, `;`-separated. Needed when the top level holds more than one program or the sources are in subfolders. |
 | `LATASIM_USER_FIRMWARE_ADAPTER` | `local/adapters/<folder name>.cmake` if it exists | A CMake script of source adaptations (see below). Relative paths are from this repository. |
+| `LATASIM_USER_FIRMWARE_BOARD_DRIVERS` | empty | Keil MCB1700 board drivers the firmware uses: `ADC`, `LED`, `Joystick`, `Buttons` (see Keil board drivers). An adapter may set it. |
 | `LATASIM_FIRMWARE_NOP_CYCLES` | 10 | Core cycles one `__NOP()` takes (see Timing). |
 
 - **Requirements.** The option needs the workbench session layer, which needs the Keil packs (as the built-in scenarios do); configuring without them is an error. The desktop also needs Qt.
@@ -36,9 +37,55 @@ The scenario list then ends with **External: *folder name***.
 - **Returning from main** leaves the processor idle; time still advances.
 - **Not provided:**
   - **Startup code.** `startup_*.s` and `SystemInit` are not run. The model starts at its reset state with the 100 MHz core clock that `SystemInit` would set.
-  - **Interrupt handlers.** The external scenario binds none. An interrupt the firmware enables stays pending.
-  - **Resetting statics.** Latasim cannot know the firmware's globals, so **Reset** in the desktop runs main again with the values the last run left. Restart the workbench for a clean start.
+  - **Resetting statics.** Latasim cannot know the firmware's globals (or a board driver's), so **Reset** in the desktop runs main again with the values the last run left, for example a chase continuing where it was. Restart the workbench for a clean start.
 - **Faults** stop the session with a message, as for built-in scenarios: an unmapped or unmodelled register, an unsupported mode.
+
+## Interrupt handlers
+
+The firmware's CMSIS handlers for the exceptions Latasim models run as on the target: `SysTick_Handler`, `TIMER0_IRQHandler` to `TIMER3_IRQHandler`, `EINT0_IRQHandler`, `ADC_IRQHandler` and `USB_IRQHandler`.
+- **Only the handlers the firmware defines are bound.** An interrupt it enables without a handler stays pending.
+- **Handlers run at the virtual time their exception is taken.** They take no virtual time themselves, so a `__NOP()` or `latasim_consume_cycles()` in a handler adds none. `main()` sees their effects at its next step.
+- **No collisions.** The shim renames each handler `<entry>_<name>` with C linkage. It therefore cannot collide with a built-in scenario's handler of the same name, such as Keil's `SysTick_Handler`.
+- **How presence is detected.** `latasim_add_host_firmware` generates a table that binds the handlers that exist.
+  - A name the firmware leaves undefined resolves through the MSVC linker's `/alternatename` to a placeholder, and is skipped.
+  - This works even when the handler is in a file nothing else references.
+  - Executables linking the firmware are linked with `/INCREMENTAL:NO`, so that addresses compare exactly.
+- **Board-driver handlers.** A board driver's own handler (the ADC driver's `ADC_IRQHandler`) is bound when the firmware does not define one; on the target the driver's is then the only definition.
+- The desktop's status line lists the bound handlers.
+
+## Keil board drivers
+
+Firmware built with Keil's RTE "Board Support" components calls pack drivers that are not in its folder: for example `ADC_Initialize`, `ADC_StartConversion` and `ADC_GetValue` from `Board_ADC.h`. List them in `LATASIM_USER_FIRMWARE_BOARD_DRIVERS`:
+
+| Driver | Pack source | Latasim library |
+|---|---|---|
+| `ADC` | `Boards/Keil/MCB1700/Common/ADC_MCB1700.c` | `latasim_keil_adc` (its `ADC_IRQHandler` is bound too) |
+| `LED`, `Joystick`, `Buttons` | `LED_MCB1700.c`, `Joystick_MCB1700.c`, `Buttons_MCB1700.c` | `latasim_keil_board_drivers` |
+
+- **The drivers are Latasim's own builds** of the installed pack's sources, unchanged. Nothing is copied into this repository.
+- **The firmware sees `Board_<name>.h` through generated wrappers** that include the pack header inside `extern "C"`. So its calls, compiled as C++, reach the drivers' C functions without a source change.
+- **Drivers keep their statics** across sessions, as the firmware does (see Resetting statics).
+
+## Polling main loops
+
+A main loop that polls registers or driver state (`while (1) { v = ADC_GetValue(); ... }`) has nothing in it that takes virtual time. On the host it would run without end at one instant, and no interrupt would ever come due. Give each pass a cost with an adapter, for example:
+
+```cmake
+latasim_adapt_source(main.c [[while (1) {]] [[while (1) { latasim_consume_cycles(200);  /* modeled pass cost */]])
+```
+
+- **The cost is a model, not a measurement.** Choose it from the loop's shape, and label it in the adapter.
+  - The loop then runs once per that many core cycles.
+  - Interrupts are taken at their exact times in between.
+  - Each register access still happens once virtual time has caught up with it.
+- **Host speed.** Every register access is a call into the model. A loop making a dozen accesses per 2 µs pass runs several times slower than real time on the host. Virtual time stays exact.
+
+## Trace retention
+
+Register accesses from a polling loop can reach millions a second. The trace keeps at most `Trace::mmio_capacity()` of them: 1,000,000 by default, about 56 MB.
+- **Dropping.** When there are more, the oldest half are dropped in one step, and `Trace::dropped()` counts them. The desktop's trace view notes the count. Sequence numbers are never reused, so the gaps show where accesses went.
+- **Always kept:** input, LED, interrupt, timer, ADC conversion, GLCD and RTOS events. What the dropped accesses did stays in the trace.
+- **Built-in scenarios** stay well under the limit.
 
 ## Source adaptations
 
@@ -91,7 +138,7 @@ ITM is not modelled.
 ## Timing
 
 - **`__NOP()` takes `LATASIM_FIRMWARE_NOP_CYCLES` core cycles.** The default, 10, is what the LPC1768 simulator measured for one pass of a `volatile` counter loop around `__NOP()` (docs/phase0/findings.md). That makes such a delay loop take its target time. A different loop shape or compiler gives a different cost; the option is the calibration.
-- **Other host code takes no virtual time.** That includes busy loops without `__NOP()` and SSP transfers.
+- **Other host code takes no virtual time.** That includes busy loops without `__NOP()`, SSP transfers and interrupt handlers. A polling loop needs a modeled cost (see Polling main loops).
 
 ## SSP1
 
@@ -109,4 +156,5 @@ ITM is not modelled.
 - **Compiled target images:** `.axf`, `.elf`, `.hex` or other ARM binaries. Latasim runs host-compiled C, not ARM code. Running unchanged binaries would take a CPU emulator backend, which is not built.
 - **Assembly sources** and CMSIS core intrinsics other than `__NOP()`.
 - **Peripherals the model does not implement.** They fault at their first access: see `lpc17xx/lpc1768.hpp` for what is mapped.
+- **Text drawn beyond the GLCD's edge.** The GLCD model wraps GRAM addresses beyond the panel back onto it, so a string longer than a line reappears at the line's start. The controller's behaviour there is not specified: treat such output as a firmware overflow.
 - **More than one external folder at a time.** To switch, reconfigure with another `LATASIM_USER_FIRMWARE_DIR`.
