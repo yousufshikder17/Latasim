@@ -20,6 +20,7 @@ enum class TraceKind : std::uint8_t {
     Input,  // a board input changed a pin's external level: port, pin, value = level
     Led,    // a board LED changed what it shows: led, value = mcb1700::LedState
     Interrupt,  // an exception: irq; value = kInterruptPend, kInterruptEnter or kInterruptExit
+    TimerMatch,  // timer match(es) set IR flags: irq = the timer's IRQ, value = the IR bits
 };
 
 // TraceKind::Interrupt values: became pending, handler entered, handler returned.

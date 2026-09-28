@@ -21,6 +21,20 @@ SysTickReg systick_reg(std::uint32_t address, unsigned size) {
     return static_cast<SysTickReg>(address - kSysTickBase);
 }
 
+// Timer n's register offset for an address in its window, or -1.
+int timer_at(std::uint32_t address, std::uint32_t& offset) {
+    for (unsigned n = 0; n < kTimerBase.size(); ++n) {
+        offset = address - kTimerBase[n];
+        if (offset < kTimerWindow) return static_cast<int>(n);
+    }
+    return -1;
+}
+
+TimerReg timer_reg(std::uint32_t address, std::uint32_t offset, unsigned size) {
+    if (size != 4 || !Timer::modelled(offset)) throw BusFault(address);
+    return static_cast<TimerReg>(offset);
+}
+
 bool is_alias(std::uint32_t address) {
     return address >= kBitBandAliasBase && address - kBitBandAliasBase < kBitBandSize * 32;
 }
@@ -72,23 +86,56 @@ Lpc1768::GpioTarget Lpc1768::decode_gpio(std::uint32_t address, unsigned size) {
     throw BusFault(address);  // reserved offsets 0x04-0x0F
 }
 
-// Time moves in steps that end at each event that can change interrupt state (a
-// SysTick count to 0 while TICKINT is set), so exceptions are taken at the
-// virtual time they became due.
+// Time moves in steps that end at each event that can change interrupt or
+// peripheral run state (a SysTick count to 0 while TICKINT is set, a timer match
+// with an MCR action and the edge after it), so exceptions are taken at the
+// virtual time they became due. Each step is computed arithmetically.
 void Lpc1768::advance_cycles(std::uint64_t cycles) {
     if (in_handler_) throw std::logic_error("advance_cycles called from an interrupt handler");
     while (cycles > 0) {
-        const std::uint64_t to_zero = systick_.interrupt_enabled() ? systick_.cycles_to_zero() : 0;
-        const std::uint64_t step = to_zero == 0 || to_zero > cycles ? cycles : to_zero;
+        const std::uint64_t to_event = cycles_to_next_event();
+        const std::uint64_t step = to_event == 0 || to_event > cycles ? cycles : to_event;
         const auto before = pending_snapshot();
-        cycles_ += step;
-        systick_.advance(step);
+        advance_peripherals(step);
         cycles -= step;
-        if (step == to_zero) nvic_.pend_systick();
         update_interrupt_lines();
         trace_new_pending(before);
         service_interrupts();
     }
+}
+
+std::uint32_t Lpc1768::timer_divider(unsigned n) const {
+    static constexpr std::uint32_t kDivider[] = {4, 1, 2, 8};
+    const std::uint32_t field = n < 2 ? (pclksel_[0] >> (2 + 2 * n)) & 3u : (pclksel_[1] >> (12 + 2 * (n - 2))) & 3u;
+    return kDivider[field];
+}
+
+// 0 = nothing due. PCLK edges fall on multiples of the divider since reset.
+std::uint64_t Lpc1768::cycles_to_next_event() const {
+    std::uint64_t next = systick_.interrupt_enabled() ? systick_.cycles_to_zero() : 0;
+    for (unsigned n = 0; n < timers_.size(); ++n) {
+        const std::uint64_t edges = timers_[n].edges_to_event();
+        if (edges == 0) continue;
+        const std::uint64_t d = timer_divider(n);
+        const std::uint64_t at = (cycles_ / d + edges) * d;
+        if (next == 0 || at - cycles_ < next) next = at - cycles_;
+    }
+    return next;
+}
+
+void Lpc1768::advance_peripherals(std::uint64_t step) {
+    const bool systick_due = systick_.interrupt_enabled() && systick_.cycles_to_zero() == step;
+    systick_.advance(step);
+    for (unsigned n = 0; n < timers_.size(); ++n) {
+        const std::uint64_t d = timer_divider(n);
+        timers_[n].advance((cycles_ + step) / d - cycles_ / d);
+    }
+    cycles_ += step;
+    if (systick_due) nvic_.pend_systick();
+    for (unsigned n = 0; n < timers_.size(); ++n)
+        if (const std::uint32_t flags = timers_[n].take_new_flags())
+            trace_.record({.kind = TraceKind::TimerMatch, .value = flags, .irq = kTimer0Irq + static_cast<int>(n)},
+                          cycles_);
 }
 
 void Lpc1768::bind_handler(int irq, std::function<void()> handler) {
@@ -108,7 +155,9 @@ void Lpc1768::set_external_level(unsigned port, unsigned pin, bool high) {
 
 // Peripheral interrupt signals, recomputed from peripheral state after anything
 // that can change it.
-void Lpc1768::update_interrupt_lines() {}
+void Lpc1768::update_interrupt_lines() {
+    for (unsigned n = 0; n < timers_.size(); ++n) nvic_.set_line(kTimer0Irq + static_cast<int>(n), timers_[n].interrupt());
+}
 
 void Lpc1768::service_interrupts() {
     if (in_handler_) return;  // no nesting: taken after the running handler returns
@@ -198,6 +247,13 @@ std::uint32_t Lpc1768::load(std::uint32_t address, unsigned size) const {
     }
     if (is_systick(address)) return systick_.peek(systick_reg(address, size));
     if (Nvic::maps(address)) return nvic_.read(address, size);
+    if (address == kPclksel0Address || address == kPclksel1Address) {
+        if (size != 4) throw BusFault(address);
+        return pclksel_[address == kPclksel1Address];
+    }
+    std::uint32_t offset = 0;
+    if (const int n = timer_at(address, offset); n >= 0)
+        return timers_[static_cast<std::size_t>(n)].read(timer_reg(address, offset, size));
     const GpioTarget t = decode_gpio(address, size);
     return (gpio_.read(t.port, t.reg) & t.lanes) >> t.shift;
 }
@@ -225,6 +281,14 @@ void Lpc1768::store(std::uint32_t address, unsigned size, std::uint32_t value) {
         return;
     }
     if (Nvic::maps(address)) return nvic_.write(address, size, value);
+    if (address == kPclksel0Address || address == kPclksel1Address) {
+        if (size != 4) throw BusFault(address);
+        pclksel_[address == kPclksel1Address] = value;
+        return;
+    }
+    std::uint32_t offset = 0;
+    if (const int n = timer_at(address, offset); n >= 0)
+        return timers_[static_cast<std::size_t>(n)].write(timer_reg(address, offset, size), value);
     const GpioTarget t = decode_gpio(address, size);
     gpio_.write(t.port, t.reg, (value << t.shift) & t.lanes, t.lanes);
 }

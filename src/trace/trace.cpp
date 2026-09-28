@@ -14,6 +14,16 @@ std::string register_name(std::uint32_t address, unsigned width) {
     using namespace lpc17xx;
     char text[32];
     if (address == kPconpAddress) return "PCONP";
+    if (address == kPclksel0Address) return "PCLKSEL0";
+    if (address == kPclksel1Address) return "PCLKSEL1";
+    for (unsigned n = 0; n < kTimerBase.size(); ++n) {
+        const std::uint32_t off = address - kTimerBase[n];
+        if (off <= 0x24 && off % 4 == 0) {
+            static const char* const names[] = {"IR", "TCR", "TC", "PR", "PC", "MCR", "MR0", "MR1", "MR2", "MR3"};
+            std::snprintf(text, sizeof text, "T%u%s", n, names[off / 4]);
+            return text;
+        }
+    }
     // NVIC (ARM DUI 0552A table 4-2): ISERn, ICERn, ISPRn, ICPRn, IABRn; IPRn by word,
     // PRI_n (the priority field of IRQ n) by byte; SHPR3, PRI_15 (SysTick).
     static const struct {
@@ -77,6 +87,15 @@ std::string to_string(const TraceEvent& e) {
         std::snprintf(what, sizeof what, "LED%u", e.led);
         std::snprintf(value, sizeof value, "%s", mcb1700::to_string(static_cast<mcb1700::LedState>(e.value)));
         break;
+    case TraceKind::TimerMatch: {
+        std::snprintf(op, sizeof op, "match");
+        std::snprintf(what, sizeof what, "%s", lpc17xx::irq_name(e.irq).c_str());
+        std::string channels;
+        for (unsigned n = 0; n < 4; ++n)
+            if (e.value & (1u << n)) channels += (channels.empty() ? "MR" : ",MR") + std::to_string(n);
+        std::snprintf(value, sizeof value, "%s", channels.c_str());
+        break;
+    }
     case TraceKind::Interrupt: {
         static const char* const phases[] = {"pend", "enter", "exit"};
         std::snprintf(op, sizeof op, "irq");

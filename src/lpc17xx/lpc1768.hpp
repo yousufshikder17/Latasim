@@ -1,8 +1,9 @@
 #pragma once
 // The LPC1768 as firmware sees it: 8/16/32-bit loads and stores to its memory map.
 // This is the seam a future MMIO adapter (host-compiled firmware, emulator)
-// plugs into. Mapped so far: the GPIO block and its bit-band alias, PCONP, SysTick
-// and the NVIC; anything else raises BusFault, as an unmapped access would on the chip.
+// plugs into. Mapped so far: the GPIO block and its bit-band alias, PCONP, PCLKSEL0-1,
+// SysTick, the NVIC and Timer 0-3; anything else raises BusFault, as an unmapped
+// access would on the chip.
 #include <array>
 #include <cstdint>
 #include <functional>
@@ -11,6 +12,7 @@
 #include "lpc17xx/gpio.hpp"
 #include "lpc17xx/nvic.hpp"
 #include "lpc17xx/systick.hpp"
+#include "lpc17xx/timer.hpp"
 #include "trace/trace.hpp"
 
 namespace latasim::lpc17xx {
@@ -25,6 +27,11 @@ inline constexpr std::uint32_t kGpioPortStride = 0x20;  // LPC_GPIOn_BASE = base
 inline constexpr std::uint32_t kPconpAddress = 0x400FC0C4;
 inline constexpr std::uint32_t kPconpReset = 0x042887DE;
 inline constexpr std::uint32_t kPconpGpio = std::uint32_t{1} << 15;  // PCGPIO
+
+// PCLKSEL0/1 (UM10360 tables 40, 41): storage, reset 0, and the peripheral clock
+// dividers the modelled peripherals use (00: CCLK/4, 01: CCLK, 10: CCLK/2, 11: CCLK/8).
+inline constexpr std::uint32_t kPclksel0Address = 0x400FC1A8;
+inline constexpr std::uint32_t kPclksel1Address = 0x400FC1AC;
 
 // The core clock (CCLK) that virtual time counts. Keil's SystemInit for the MCB1700
 // sets PLL0 from the 12 MHz crystal to M = 100, N = 6 and divides by 4:
@@ -113,6 +120,10 @@ public:
     void on_thread_mode(std::function<void()> step) { thread_mode_ = std::move(step); }
     const Nvic& nvic() const { return nvic_; }
 
+    // Timer n (0-3) for observation, and the core cycles per PCLK edge it runs at.
+    const Timer& timer(unsigned n) const { return timers_.at(n); }
+    std::uint32_t timer_divider(unsigned n) const;
+
     // A pin's level driven from outside (board inputs). Updates GPIO and anything
     // watching the pin, then takes any exception that became due.
     void set_external_level(unsigned port, unsigned pin, bool high);
@@ -141,6 +152,8 @@ private:
     void store(std::uint32_t address, unsigned size, std::uint32_t value);
     std::uint32_t read_target(std::uint32_t alias, std::uint32_t word_address) const;
     void update_interrupt_lines();
+    void advance_peripherals(std::uint64_t step);
+    std::uint64_t cycles_to_next_event() const;
     void service_interrupts();
     std::array<bool, kExternalIrqCount + 1> pending_snapshot() const;
     void trace_new_pending(const std::array<bool, kExternalIrqCount + 1>& before);
@@ -150,6 +163,8 @@ private:
     std::uint64_t cycles_ = 0;
     SysTick systick_;
     Nvic nvic_;
+    std::array<Timer, 4> timers_{};
+    std::array<std::uint32_t, 2> pclksel_{};
     std::array<std::function<void()>, kExternalIrqCount + 1> handlers_;  // [irq + 1]
     std::function<void()> thread_mode_;
     bool in_handler_ = false;
