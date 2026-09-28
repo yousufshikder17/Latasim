@@ -39,6 +39,13 @@ struct Scenario {
     bool usb_pc = false;  // a virtual PC plugged into the USB port, playing a tone
     std::function<void()> reset_statics;        // before the board exists
     std::function<void(Session&)> start;        // bare metal: bind handlers, start firmware
+    // Bare metal with a main loop: the firmware's main(), on a fiber of its own. It
+    // runs whenever virtual time has caught up with the processor time it consumed
+    // (latasim_consume_cycles), so each register access it makes happens at the
+    // right virtual time; a busy loop that consumes nothing never lets time pass.
+    // Time consumed outside it (in interrupt handlers) is not counted: handlers
+    // take no virtual time. Returning from it leaves the processor idle.
+    std::function<void()> bare_main;
     void (*rtos_main)() = nullptr;              // RTOS: the firmware's main()
     std::function<void(Session&)> teardown;     // while still bound
     std::uint64_t check_after = 0;              // cycles after which check() is meaningful
@@ -52,7 +59,8 @@ const std::vector<Scenario>& scenarios();
 
 class Session {
 public:
-    explicit Session(std::size_t scenario);
+    explicit Session(std::size_t scenario);  // a built-in one
+    explicit Session(Scenario scenario);
     ~Session();
     Session(const Session&) = delete;
     Session& operator=(const Session&) = delete;
@@ -85,6 +93,7 @@ public:
 private:
     struct Parts;
     void guarded(const std::function<void()>& work);
+    void run_main_until(std::uint64_t cycle);
 
     Scenario scenario_;
     std::unique_ptr<Parts> parts_;

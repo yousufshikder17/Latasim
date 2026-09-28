@@ -45,6 +45,7 @@ void rtos_fault(const char* caller, const std::string& what) { fail(caller, what
 extern "C" {
 
 void latasim_consume_cycles(uint32_t cycles) {
+    if (latasim::host::consume(cycles)) return;  // a bare-metal main() (host/binding.hpp)
     auto& k = latasim::host::require_bound_kernel("latasim_consume_cycles");
     if (!k.in_thread()) latasim::host::fail("latasim_consume_cycles", "not called from an RTOS thread");
     k.consume(cycles);

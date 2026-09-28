@@ -6,6 +6,7 @@
 
 #include "LPC17xx.h"
 #include "cmsis_os.h"
+#include "latasim_rtos.h"
 #include "host/binding.hpp"
 #include "media_center.h"
 #include "usb_speaker.h"
@@ -181,4 +182,56 @@ TEST(WorkbenchViews, TraceEventsHaveCategories) {
     std::set<std::string> seen;
     for (const auto& e : s.board().mcu().trace().events()) seen.insert(describe(e).category);
     for (const char* c : {"interrupt", "timer", "usb/audio"}) EXPECT_TRUE(seen.count(c)) << c;
+}
+
+// A bare-metal main() (Scenario::bare_main) runs on its own fiber whenever virtual
+// time has caught up with what it consumed; external firmware runs this way.
+namespace {
+
+workbench::Scenario bare(std::function<void()> main) {
+    workbench::Scenario s;
+    s.name = "bare-metal test";
+    s.bare_main = std::move(main);
+    return s;
+}
+
+}  // namespace
+
+TEST(Workbench, BareMainStoresHappenWhenTimeHasCaughtUp) {
+    Session s(bare([] {
+        LPC_GPIO1->FIODIR |= 1UL << 28;
+        latasim_consume_cycles(1'000);
+        LPC_GPIO1->FIOSET = 1UL << 28;
+    }));
+    EXPECT_EQ(s.board().led(0), mcb1700::LedState::Off) << "set-up before the first consume runs at once";
+    s.run_until(999);
+    EXPECT_EQ(s.board().led(0), mcb1700::LedState::Off);
+    s.run_until(1'000);
+    EXPECT_EQ(s.board().led(0), mcb1700::LedState::On);
+    s.run_for(4'000);
+    EXPECT_FALSE(s.faulted()) << "returning from main leaves the processor idle: " << s.fault();
+    EXPECT_EQ(s.now(), 5'000u);
+}
+
+TEST(Workbench, BareMainThatConsumesWithoutAccessesStillAdvances) {
+    Session s(bare([] {
+        for (;;) latasim_consume_cycles(7);
+    }));
+    s.run_for(3 * kMs + 5);
+    EXPECT_FALSE(s.faulted()) << s.fault();
+    EXPECT_EQ(s.now(), 3 * kMs + 5);
+}
+
+TEST(Workbench, BareMainFaultsStopTheSession) {
+    Session s(bare([] {
+        latasim_consume_cycles(50);
+        LATASIM_REG32(0x10000000) = 1;
+    }));
+    EXPECT_FALSE(s.faulted()) << "the store is 50 cycles in";
+    s.run_for(100);
+    ASSERT_TRUE(s.faulted());
+    EXPECT_NE(s.fault().find("bus fault: no register at 0x10000000"), std::string::npos) << s.fault();
+    EXPECT_EQ(s.now(), 50u);
+    s.run_for(100);
+    EXPECT_EQ(s.now(), 50u) << "a faulted session does nothing further";
 }

@@ -5,6 +5,9 @@
  * instead of spinning: the calling thread uses that much processor time, and can be
  * preempted part way, exactly as a busy loop of that length would be on the chip.
  * A plain busy loop never lets virtual time pass on the host.
+ *
+ * Bare-metal firmware whose main() the workbench runs (docs/external-firmware.md)
+ * uses them the same way: main() then waits until virtual time has caught up.
  */
 #ifndef LATASIM_RTOS_H
 #define LATASIM_RTOS_H
