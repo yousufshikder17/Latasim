@@ -2,7 +2,7 @@
 
 Latasim is a virtual lab bench for embedded firmware. It runs real Keil MCB1700 (NXP LPC1768, Cortex-M3) firmware against a simulated board, so LEDs, buttons, the joystick and the LCD can be driven, observed and asserted on in **deterministic, repeatable tests**, with no hardware on the desk.
 
-**Status:** Phases 0 to 4 are complete. Keil's own MCB1700 board drivers, compiled unmodified as C for the host, drive a modelled LPC1768/MCB1700. The model covers GPIO, LEDs, joystick and INT0, and register-level firmware runs through a host device header. Every hardware interaction lands in a deterministic trace, and the same scenario run as real ARM firmware in µVision's simulator gives the same register values. Phase 3 adds deterministic virtual time: SysTick counts virtual core cycles and calls the firmware's `SysTick_Handler`, so Keil's Blinky_ULp runs its 10 ms LED chase on the host with the simulator's timing, and tests read as `run_until(10ms); EXPECT_TRUE(s.led(1, LedState::On))`. Phase 4 adds an NVIC with priorities and general interrupt delivery, TIMER0–3, the ADC with the board's potentiometer, INT0 as EINT0, and the graphic LCD driven by Keil's own GLCD driver. 267 tests; 37 of them need the Keil packs installed. Summaries: [Phase 2](docs/phase2/overview.md), [Phase 3](docs/phase3/overview.md), [Phase 4](docs/phase4/overview.md). Planned stack: C++20 and CMake, CLI first, Qt desktop UI later.
+**Status:** Phases 0 to 5 are complete: Latasim V1. Keil's own MCB1700 board drivers, compiled unmodified as C for the host, drive a modelled LPC1768/MCB1700. The model covers GPIO, LEDs, joystick and INT0, and register-level firmware runs through a host device header. Every hardware interaction lands in a deterministic trace, and the same scenario run as real ARM firmware in µVision's simulator gives the same register values. Phase 3 adds deterministic virtual time: SysTick counts virtual core cycles and calls the firmware's `SysTick_Handler`, so Keil's Blinky_ULp runs its 10 ms LED chase on the host with the simulator's timing, and tests read as `run_until(10ms); EXPECT_TRUE(s.led(1, LedState::On))`. Phase 4 adds an NVIC with priorities and general interrupt delivery, TIMER0–3, the ADC with the board's potentiometer, INT0 as EINT0, and the graphic LCD driven by Keil's own GLCD driver. Phase 5 adds CMSIS-RTOS v1 firmware on a deterministic model of Keil RTX 4's scheduler, USB audio from a virtual PC through Keil's USB device driver to the board's speaker, a media-center application, and a Qt 6 desktop workbench. 353 tests; 78 of them need the Keil packs installed and one needs Qt. Summaries: [Phase 2](docs/phase2/overview.md), [Phase 3](docs/phase3/overview.md), [Phase 4](docs/phase4/overview.md), [Phase 5](docs/phase5/overview.md). Stack: C++20 and CMake, a CLI, and a Qt 6 desktop.
 
 ## Why
 
@@ -147,17 +147,51 @@ What is and isn't supported, the evidence and the open questions: [docs/phase3/o
 
 What is and isn't supported, the evidence and the open questions: [docs/phase4/overview.md](docs/phase4/overview.md).
 
+## Phase 5: V1, the virtual workbench
+
+- **RTOS.** CMSIS-RTOS v1 firmware, compiled against RTX 4's own `cmsis_os.h`, runs on a kernel whose scheduling rules are ported function by function from RTX 4.82's sources:
+  - the priority ready list;
+  - round-robin on the tick;
+  - yield, delays and simultaneous wake order;
+  - signals;
+  - mutexes with priority inheritance;
+  - virtual timers on the timer thread.
+
+  Threads run on fibers switched only by the kernel. Computation is modelled with `latasim_consume_us`, and every switch is traced and kept as a run timeline with idle accounting.
+- **Scheduling workloads.** Round-robin, preemption, yield, delays, signals and mutexes, virtual timers, a rate-monotonic task set, and priority inversion reproduced and fixed by elevation and by an RTX mutex.
+- **USB audio.** The LPC1768 USB device controller and DAC are modelled, and Keil's `USBD_LPC17xx.c`, `OTG_LPC17xx.c` and `DAC_MCB1700.c` run unchanged. A virtual PC enumerates a representative USB Audio Class speaker and streams PCM, and the board's speaker records what the DAC plays.
+- **Media center.** An RTOS application: GLCD menu, joystick navigation, photos, a paddle game, and USB audio whose volume follows the potentiometer through the real ADC path.
+- **Desktop.** `latasim-workbench` (Qt 6) has:
+  - board controls (LEDs, joystick, INT0, potentiometer);
+  - a pixel-exact GLCD view;
+  - run, pause, run-for, run-until and step-to-next-event on virtual time;
+  - trace, RTOS task, timeline, register and USB audio views.
+
+  It observes and controls the simulation and never holds its state. Faults stop the session, not the application.
+
+```powershell
+cmake -S . -B build -DCMAKE_PREFIX_PATH=C:/Qt/6.8.3/msvc2022_64 && cmake --build build
+build\latasim-workbench.exe
+```
+
+What is and isn't supported, the validation results and the open questions: [docs/phase5/overview.md](docs/phase5/overview.md).
+
 ## Layout
 
 | Path | What |
 |---|---|
-| `src/lpc17xx/` | GPIO model, memory map, bit-band, PCONP, SysTick and virtual time (`Lpc1768`), NVIC, timers, ADC, EINT0, pin connect block, Keil GPIO driver (B1) |
-| `src/host/` | Host firmware support: board binding, C-linkage Keil GPIO/PIN functions, CMSIS NVIC and SysTick functions, host `LPC17xx.h` and register proxies |
+| `src/lpc17xx/` | GPIO model, memory map, bit-band, PCONP, SysTick and virtual time (`Lpc1768`), NVIC, timers, ADC, EINT0, pin connect block, USB device controller, DAC, the RTOS port, Keil GPIO driver (B1) |
+| `src/rtos/` | The RTX 4 behavioural kernel and fibers (generic: no microcontroller in it) |
+| `src/devices/` | Generic device models: the USB bus interface and the virtual USB audio host |
+| `src/host/` | Host firmware support: board and RTOS bindings, C-linkage Keil GPIO/PIN functions, CMSIS NVIC and SysTick functions, CMSIS-RTOS v1, host `LPC17xx.h` and register proxies |
 | `src/trace/` | The deterministic hardware trace, with virtual time |
-| `src/firmware/` | Host ports of Keil examples (Blinky_ULp), the ADC driver wrapper, the host `Driver_SPI1` for the GLCD driver |
-| `src/boards/mcb1700/` | Board model (LEDs; joystick, INT0 and potentiometer inputs; GLCD), Keil LED board API (B1) |
+| `src/firmware/` | Host ports of Keil examples (Blinky_ULp), driver wrappers (ADC, DAC, USB), the host `Driver_SPI1`; RTOS workloads (`rtos/`), the USB speaker (`usb/`) and the media center (`media/`) |
+| `src/workbench/` | Sessions, built-in scenarios with checks, and view data for the desktop |
+| `src/ui/qt/` | The Qt desktop workbench |
+| `src/boards/mcb1700/` | Board model (LEDs; joystick, INT0 and potentiometer inputs; GLCD; speaker; USB connector), Keil LED board API (B1) |
 | `src/cli/` | The `latasim` command-line tool |
 | `tests/` | GoogleTest suite, including replays of recorded simulator runs and the scenario layer (`scenario.hpp`) |
+| `docs/phase5/` | Phase 5: [overview](docs/phase5/overview.md), RTOS, USB audio, desktop, open questions |
 | `docs/phase4/` | Phase 4: [overview](docs/phase4/overview.md), interrupt and peripheral questions |
 | `docs/phase3/` | Phase 3: [overview](docs/phase3/overview.md), timed firmware, timing questions |
 | `docs/phase2/` | Phase 2: [overview](docs/phase2/overview.md), MMIO and inputs, host firmware, registers, hardware-behaviour questions |
