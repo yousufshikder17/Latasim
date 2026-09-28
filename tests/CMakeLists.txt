@@ -21,6 +21,8 @@ add_executable(latasim_tests
     adc_test.cpp
     eint_test.cpp
     glcd_test.cpp
+    ssp_test.cpp
+    host/ssp_glcd.cpp
     rtos_kernel_test.cpp
     usb_device_test.cpp
     extensibility_test.cpp

@@ -16,6 +16,7 @@ LPC_TIM_TypeDef latasim_tim[4];
 LPC_ADC_TypeDef latasim_adc;
 LPC_DAC_TypeDef latasim_dac;
 LPC_USB_TypeDef latasim_usb;
+LPC_SSP_TypeDef latasim_ssp1;
 
 namespace latasim::host {
 namespace {
@@ -38,6 +39,7 @@ const Window kWindows[] = {
     {&latasim_adc, sizeof latasim_adc, 0x40034000},     // LPC_ADC_BASE
     {&latasim_dac, sizeof latasim_dac, 0x4008C000},     // LPC_DAC_BASE
     {&latasim_usb, sizeof latasim_usb, 0x5000C000},     // LPC_USB_BASE
+    {&latasim_ssp1, sizeof latasim_ssp1, lpc17xx::kSsp1Base},
 };
 
 }  // namespace

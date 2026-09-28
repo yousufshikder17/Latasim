@@ -38,6 +38,15 @@ bool is_usb(std::uint32_t address) { return address - kUsbBase < 0x1000; }
 
 bool is_dac(std::uint32_t address) { return address - kDacBase < 0x0C; }
 
+bool is_ssp1(std::uint32_t address) { return address - kSsp1Base < kSspWindow; }
+
+std::uint32_t ssp_offset(std::uint32_t address, unsigned size) {
+    const std::uint32_t offset = address - kSsp1Base;
+    if (size != 4 || offset % 4 != 0) throw BusFault(address);
+    if (!Ssp::modelled(offset)) throw NotModelled(address, "SSP interrupts and DMA (IMSC, RIS, MIS, ICR, DMACR)");
+    return offset;
+}
+
 std::uint32_t usb_offset(std::uint32_t address, unsigned size) {
     const std::uint32_t offset = address - kUsbBase;
     if (size != 4 || !UsbDevice::modelled(offset)) throw BusFault(address);
@@ -300,6 +309,7 @@ void Lpc1768::read_side_effects(std::uint32_t address) {
     if (address == kSysTickBase) systick_.read(SysTickReg::Ctrl);  // clears COUNTFLAG
     if (is_adc(address)) adc_.read_side_effects(address - kAdcBase);  // clears DONE flags
     if (is_usb(address)) usb_.read_side_effects(address - kUsbBase);  // USBRxData advances
+    if (is_ssp1(address)) ssp1_.read_side_effects(address - kSsp1Base);  // DR leaves the receive FIFO
 }
 
 void Lpc1768::write(std::uint32_t address, unsigned size, std::uint32_t value) {
@@ -345,6 +355,7 @@ std::uint32_t Lpc1768::load(std::uint32_t address, unsigned size) const {
     }
     if (is_usb(address)) return usb_.peek(usb_offset(address, size));
     if (is_dac(address)) return dac_[dac_index(address, size)];
+    if (is_ssp1(address)) return ssp1_.peek(ssp_offset(address, size));
     const GpioTarget t = decode_gpio(address, size);
     return (gpio_.read(t.port, t.reg) & t.lanes) >> t.shift;
 }
@@ -408,6 +419,13 @@ void Lpc1768::store(std::uint32_t address, unsigned size, std::uint32_t value) {
         dac_[n] = n == 0 ? value & 0x1FFC0u : value;  // DACR: VALUE and BIAS only
         if (n == 0 && on_dac_) on_dac_(dac_value());
         return;
+    }
+    if (is_ssp1(address)) {
+        const std::uint32_t reg = ssp_offset(address, size);
+        if (reg == static_cast<std::uint32_t>(SspReg::Sr)) throw BusFault(address);  // read-only
+        if (reg == static_cast<std::uint32_t>(SspReg::Dr))
+            if (const char* why = ssp1_.cannot_send()) throw NotModelled(address, why);
+        return ssp1_.write(reg, value);
     }
     const GpioTarget t = decode_gpio(address, size);
     gpio_.write(t.port, t.reg, (value << t.shift) & t.lanes, t.lanes);

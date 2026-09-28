@@ -35,6 +35,7 @@ add_library(latasim_model STATIC
     src/lpc17xx/nvic.cpp
     src/lpc17xx/timer.cpp
     src/lpc17xx/adc.cpp
+    src/lpc17xx/ssp.cpp
     src/lpc17xx/eint.cpp
     src/lpc17xx/keil_gpio_driver.cpp
     src/lpc17xx/rtos_port.cpp

@@ -46,6 +46,10 @@ std::string register_name(std::uint32_t address, unsigned width) {
                                           "USBEpIntSet", "USBEpIntPri", "USBReEp",      "USBEpInd",     "USBMaxPSize"};
         return usb[(address - kUsbBase - 0x200) / 4];
     }
+    if (address - kSsp1Base <= 0x10 && address % 4 == 0) {
+        static const char* const ssp[] = {"SSP1CR0", "SSP1CR1", "SSP1DR", "SSP1SR", "SSP1CPSR"};
+        return ssp[(address - kSsp1Base) / 4];
+    }
     if (address == kUsbBase + 0xFF4) return "USBClkCtrl";
     if (address == kUsbBase + 0xFF8) return "USBClkSt";
     for (unsigned n = 0; n < kTimerBase.size(); ++n) {

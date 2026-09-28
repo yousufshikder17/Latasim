@@ -95,7 +95,8 @@ public:
     std::uint32_t potentiometer() const { return mcu_.adc().input(kPotentiometerChannel); }
 
     // The GLCD (glcd.hpp): chip select is P0.6, watched after every store; bytes
-    // arrive from the SPI interface (on the host, the CMSIS-Driver Driver_SPI1).
+    // arrive from SSP1's DR (register-level firmware) or through glcd_transfer (on
+    // the host, the CMSIS-Driver Driver_SPI1).
     const Glcd& glcd() const { return glcd_; }
     std::uint8_t glcd_transfer(std::uint8_t mosi);
 

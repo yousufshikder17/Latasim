@@ -2,8 +2,8 @@
 // The LPC1768 as firmware sees it: 8/16/32-bit loads and stores to its memory map.
 // This is the seam a future MMIO adapter (host-compiled firmware, emulator)
 // plugs into. Mapped so far: the GPIO block and its bit-band alias, the pin connect
-// block, PCONP, PCLKSEL0-1, EXTINT/EXTMODE/EXTPOLAR, SysTick, the NVIC, Timer 0-3
-// and the ADC; anything else raises BusFault, as an unmapped access would on the chip. A mapped register used in a mode the model
+// block, PCONP, PCLKSEL0-1, EXTINT/EXTMODE/EXTPOLAR, SysTick, the NVIC, Timer 0-3,
+// the ADC and SSP1; anything else raises BusFault, as an unmapped access would on the chip. A mapped register used in a mode the model
 // does not implement (ADC burst mode, ...) raises NotModelled.
 #include <array>
 #include <cstdint>
@@ -15,6 +15,7 @@
 #include "lpc17xx/eint.hpp"
 #include "lpc17xx/gpio.hpp"
 #include "lpc17xx/nvic.hpp"
+#include "lpc17xx/ssp.hpp"
 #include "lpc17xx/systick.hpp"
 #include "lpc17xx/timer.hpp"
 #include "lpc17xx/usb_device.hpp"
@@ -192,6 +193,11 @@ public:
     // ("Power: always enabled"); docs/phase2/open-questions.md.
     std::uint32_t pconp() const { return pconp_; }
 
+    // SSP1 (ssp.hpp) and the device wired to its bus. Each DR store sends a frame to
+    // `peer` inside the store, before it is traced; the peer must not access MMIO.
+    const Ssp& ssp1() const { return ssp1_; }
+    void attach_ssp1(Ssp::Peer peer) { ssp1_.attach(std::move(peer)); }
+
 private:
     struct GpioTarget {
         unsigned port;
@@ -227,6 +233,7 @@ private:
     std::function<void(std::uint32_t)> on_dac_;
     UsbDevice usb_;
     usb::HostPort* usb_host_ = nullptr;
+    Ssp ssp1_;
     std::array<std::function<void()>, kExternalIrqCount + 1> handlers_;  // [irq + 1]
     std::function<void()> thread_mode_;
     bool in_handler_ = false;

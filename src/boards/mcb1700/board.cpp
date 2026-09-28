@@ -31,6 +31,9 @@ Board::Board() {
     drive_active_low(kInt0Pin, false);
     for (unsigned i = 0; i < kLedCount; ++i) leds_shown_[i] = led(i);
     mcu_.on_store([this] { after_store(); });
+    // SSP1's bus is wired to the GLCD whatever PINSEL0 selects; after_store() traces
+    // what the frame did, after the DR store itself.
+    mcu_.attach_ssp1([this](std::uint8_t mosi) { return glcd_.shift(mosi); });
     mcu_.on_dac_output([this](std::uint32_t value) {
         if (((mcu_.pincon(0x04) >> 20) & 3u) == 2u)  // PINSEL1: P0.26 = AOUT
             speaker_.push_back({mcu_.cycles(), static_cast<std::uint16_t>(value)});

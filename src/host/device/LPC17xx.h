@@ -12,8 +12,8 @@
  *   C and C++   latasim_mmio_read32(address), latasim_mmio_write32(address, value)
  *               SystemCoreClock, SystemCoreClockUpdate(), SysTick_Config(ticks),
  *               IRQn_Type and the NVIC_* functions (host/cmsis_system.cpp)
- *   C++ only    LPC_GPIO0..4, LPC_SC, LPC_PINCON, LPC_TIM0..3, LPC_ADC, LPC_DAC and the
- *               USB device registers (latasim_usb), with
+ *   C++ only    LPC_GPIO0..4, LPC_SC, LPC_PINCON, LPC_TIM0..3, LPC_ADC, LPC_DAC, LPC_SSP1
+ *               and the USB device registers (latasim_usb), with
  *               Keil's register names (only the registers the model implements work):
  *                 LPC_GPIO1->FIODIR |= 1UL << 28;  LPC_GPIO1->FIOPIN0 = 0x12;
  *               LATASIM_REG32(address), for firmware that dereferences literal
@@ -166,6 +166,14 @@ typedef struct {
     LATASIM_REG DACR, DACCTRL, DACCNTVAL;  /* 0x00-0x08 */
 } LPC_DAC_TypeDef;
 
+/* SSP1 (UM10360 chapter 18): CR0, CR1, DR, SR and CPSR work (lpc17xx/ssp.hpp);
+ * IMSC to DMACR are declared and not modelled: accessing them faults. SSP0 is
+ * not declared. */
+typedef struct {
+    LATASIM_REG CR0, CR1, DR, SR, CPSR;    /* 0x00-0x10 */
+    LATASIM_REG IMSC, RIS, MIS, ICR, DMACR; /* 0x14-0x24 */
+} LPC_SSP_TypeDef;
+
 /* USB device controller (UM10360 chapter 11), the device-side registers and the
  * clock control pair; the host, OTG and DMA registers are not modelled. The field
  * names are those Keil's USB device driver uses. */
@@ -196,6 +204,8 @@ static_assert(offsetof(LPC_PINCON_TypeDef, I2CPADCFG) == 0x7C, "I2CPADCFG at 0x7
 static_assert(offsetof(LPC_TIM_TypeDef, EMR) == 0x3C, "EMR at 0x3C");
 static_assert(offsetof(LPC_TIM_TypeDef, CTCR) == 0x70, "CTCR at 0x70");
 static_assert(offsetof(LPC_ADC_TypeDef, ADSTAT) == 0x30, "ADSTAT at 0x30");
+static_assert(offsetof(LPC_SSP_TypeDef, CPSR) == 0x10, "SSPnCPSR at 0x10");
+static_assert(offsetof(LPC_SSP_TypeDef, DMACR) == 0x24, "SSPnDMACR at 0x24");
 
 /* The host objects these names refer to hold no register state: each register's
  * LPC address is its offset within them (host/registers.cpp). */
@@ -206,6 +216,7 @@ extern LPC_TIM_TypeDef latasim_tim[4];
 extern LPC_ADC_TypeDef latasim_adc;
 extern LPC_DAC_TypeDef latasim_dac;
 extern LPC_USB_TypeDef latasim_usb;
+extern LPC_SSP_TypeDef latasim_ssp1;
 
 #define LPC_GPIO0_BASE (reinterpret_cast<uintptr_t>(&latasim_gpio_ports[0]))
 #define LPC_GPIO1_BASE (reinterpret_cast<uintptr_t>(&latasim_gpio_ports[1]))
@@ -220,6 +231,7 @@ extern LPC_USB_TypeDef latasim_usb;
 #define LPC_TIM3_BASE (reinterpret_cast<uintptr_t>(&latasim_tim[3]))
 #define LPC_ADC_BASE (reinterpret_cast<uintptr_t>(&latasim_adc))
 #define LPC_DAC_BASE (reinterpret_cast<uintptr_t>(&latasim_dac))
+#define LPC_SSP1_BASE (reinterpret_cast<uintptr_t>(&latasim_ssp1))
 
 #define LPC_GPIO0 (&latasim_gpio_ports[0])
 #define LPC_GPIO1 (&latasim_gpio_ports[1])
@@ -234,6 +246,7 @@ extern LPC_USB_TypeDef latasim_usb;
 #define LPC_TIM3 (&latasim_tim[3])
 #define LPC_ADC (&latasim_adc)
 #define LPC_DAC (&latasim_dac)
+#define LPC_SSP1 (&latasim_ssp1)
 
 #endif /* __cplusplus */
 
