@@ -16,6 +16,11 @@ function(latasim_warnings target)
     endif()
 endfunction()
 
+# The RTOS kernel model (docs/phase5/rtos.md): generic, no microcontroller in it.
+add_library(latasim_rtos STATIC src/rtos/fiber.cpp src/rtos/kernel.cpp)
+target_include_directories(latasim_rtos PUBLIC src)
+latasim_warnings(latasim_rtos)
+
 # Production model: LPC17xx peripherals and the MCB1700 board. See docs/phase1/.
 add_library(latasim_model STATIC
     src/lpc17xx/gpio.cpp
@@ -26,11 +31,13 @@ add_library(latasim_model STATIC
     src/lpc17xx/adc.cpp
     src/lpc17xx/eint.cpp
     src/lpc17xx/keil_gpio_driver.cpp
+    src/lpc17xx/rtos_port.cpp
     src/boards/mcb1700/board.cpp
     src/boards/mcb1700/glcd.cpp
     src/boards/mcb1700/keil_board_led.cpp
     src/trace/trace.cpp)
 target_include_directories(latasim_model PUBLIC src)
+target_link_libraries(latasim_model PUBLIC latasim_rtos)
 latasim_warnings(latasim_model)
 
 # Host-firmware bridge: C-linkage Keil driver functions and the board binding.
@@ -44,10 +51,11 @@ target_link_libraries(latasim_host PUBLIC latasim_model)
 target_include_directories(latasim_host PUBLIC src/host/device)
 latasim_warnings(latasim_host)
 
+set(LATASIM_KEIL_PACKS_DIR "$ENV{LOCALAPPDATA}/Arm/Packs" CACHE PATH "Keil/CMSIS pack root")
+
 # Keil's MCB1700 board-support drivers, compiled unchanged as C from the installed
 # packs (docs/phase2/host-firmware.md). Keil sources are never copied into this
 # repository, so everything that needs them is built only when the packs exist.
-set(LATASIM_KEIL_PACKS_DIR "$ENV{LOCALAPPDATA}/Arm/Packs" CACHE PATH "Keil/CMSIS pack root")
 set(LATASIM_KEIL_DFP "${LATASIM_KEIL_PACKS_DIR}/Keil/LPC1700_DFP/2.6.0")
 set(LATASIM_KEIL_BOARD_API "${LATASIM_KEIL_PACKS_DIR}/Keil/MDK-Middleware/7.13.0/Board")
 set(LATASIM_KEIL_MCB1700 "${LATASIM_KEIL_DFP}/Boards/Keil/MCB1700/Common")

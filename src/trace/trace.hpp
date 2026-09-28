@@ -24,6 +24,38 @@ enum class TraceKind : std::uint8_t {
     AdcConversion,  // an A/D conversion completed: pin = channel, value = 12-bit result
     Display,  // a GLCD controller register write: address = index, value = data;
               // for GRAM (index 0x22) one event per burst, value = pixels written
+    Rtos,     // a scheduler or RTOS object event: op = RtosOp, thread (0 = the idle
+              // demon), object, priority and value as RtosOp says
+};
+
+// TraceKind::Rtos `thread` for an event raised by an interrupt handler.
+inline constexpr std::uint16_t kIsrThread = 0xFFFF;
+
+// TraceKind::Rtos operations. `thread` is the thread the event is about; priorities
+// are RTX levels (0 idle demon, 1-7 osPriorityIdle-osPriorityRealtime).
+enum class RtosOp : std::uint16_t {
+    KernelStart,      // priority: of the thread that started the kernel
+    Create,           // thread created; priority
+    Run,              // thread starts running; priority
+    Preempt,          // thread stopped running, still ready; priority
+    Yield,            // thread passed the processor to an equal-priority thread
+    Delay,            // thread blocked for value ticks
+    Wake,             // thread became ready after a delay or a timed-out wait
+    Terminate,        // thread terminated
+    SignalSet,        // object = the target thread, value = flags set
+    SignalClear,      // object = the target thread, value = flags cleared
+    SignalWait,       // thread blocked waiting for value (0 = any flag)
+    SignalWake,       // thread woken by value
+    MutexAcquire,     // object = mutex
+    MutexBlock,       // object = mutex
+    MutexRelease,     // object = mutex
+    PriorityChange,   // priority = new level, value = old level
+    PriorityInherit,  // thread raised to priority by a waiter on object (mutex)
+    PriorityRestore,  // thread lowered to priority after releasing object (mutex)
+    TimerStart,       // object = timer, value = ticks
+    TimerStop,        // object = timer
+    TimerFire,        // object = timer: its period elapsed
+    TimerCallback,    // object = timer: the timer thread calls its function
 };
 
 // TraceKind::Interrupt values: became pending, handler entered, handler returned.
@@ -42,6 +74,10 @@ struct TraceEvent {
     unsigned pin = 0;   // Input
     unsigned led = 0;   // Led
     int irq = 0;        // Interrupt: CMSIS IRQ number, SysTick = -1
+    RtosOp op = RtosOp::KernelStart;  // Rtos
+    std::uint16_t thread = 0;         // Rtos: stable thread number, 0 = idle demon
+    std::uint16_t object = 0;         // Rtos: stable mutex/timer/thread number
+    std::int16_t priority = 0;        // Rtos: RTX priority level
 
     bool operator==(const TraceEvent&) const = default;
 };

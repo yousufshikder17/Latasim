@@ -88,10 +88,48 @@ std::string register_name(std::uint32_t address, unsigned width) {
     return text;
 }
 
+// RTX levels as osPriority names; 0 is the idle demon, 255 the kernel-start boost.
+const char* priority_name(int level) {
+    static const char* const names[] = {"Demon", "Idle", "Low", "BelowNormal", "Normal", "AboveNormal", "High",
+                                        "Realtime"};
+    return level >= 0 && level < 8 ? names[level] : "Max";
+}
+
+void rtos_text(const TraceEvent& e, char* value, std::size_t size) {
+    const char* p = priority_name(e.priority);
+    const unsigned v = e.value, o = e.object;
+    switch (e.op) {
+    case RtosOp::KernelStart: std::snprintf(value, size, "kernel-start %s", p); break;
+    case RtosOp::Create: std::snprintf(value, size, "create %s", p); break;
+    case RtosOp::Run: std::snprintf(value, size, "run %s", p); break;
+    case RtosOp::Preempt: std::snprintf(value, size, "preempt %s", p); break;
+    case RtosOp::Yield: std::snprintf(value, size, "yield"); break;
+    case RtosOp::Delay: std::snprintf(value, size, "delay %u", v); break;
+    case RtosOp::Wake: std::snprintf(value, size, "wake"); break;
+    case RtosOp::Terminate: std::snprintf(value, size, "terminate"); break;
+    case RtosOp::SignalSet: std::snprintf(value, size, "signal-set T%u 0x%04X", o, v); break;
+    case RtosOp::SignalClear: std::snprintf(value, size, "signal-clear T%u 0x%04X", o, v); break;
+    case RtosOp::SignalWait: std::snprintf(value, size, "signal-wait 0x%04X", v); break;
+    case RtosOp::SignalWake: std::snprintf(value, size, "signal-wake 0x%04X", v); break;
+    case RtosOp::MutexAcquire: std::snprintf(value, size, "mutex-acquire M%u", o); break;
+    case RtosOp::MutexBlock: std::snprintf(value, size, "mutex-block M%u", o); break;
+    case RtosOp::MutexRelease: std::snprintf(value, size, "mutex-release M%u", o); break;
+    case RtosOp::PriorityChange:
+        std::snprintf(value, size, "priority %s->%s", priority_name(static_cast<int>(v)), p);
+        break;
+    case RtosOp::PriorityInherit: std::snprintf(value, size, "inherit %s M%u", p, o); break;
+    case RtosOp::PriorityRestore: std::snprintf(value, size, "restore %s M%u", p, o); break;
+    case RtosOp::TimerStart: std::snprintf(value, size, "timer-start Tm%u %u", o, v); break;
+    case RtosOp::TimerStop: std::snprintf(value, size, "timer-stop Tm%u", o); break;
+    case RtosOp::TimerFire: std::snprintf(value, size, "timer-fire Tm%u", o); break;
+    case RtosOp::TimerCallback: std::snprintf(value, size, "timer-callback Tm%u", o); break;
+    }
+}
+
 }  // namespace
 
 std::string to_string(const TraceEvent& e) {
-    char op[16] = {}, what[32] = {}, value[16] = {};
+    char op[16] = {}, what[32] = {}, value[48] = {};
     switch (e.kind) {
     case TraceKind::Read:
     case TraceKind::Write:
@@ -133,6 +171,13 @@ std::string to_string(const TraceEvent& e) {
         std::snprintf(value, sizeof value, "%s", channels.c_str());
         break;
     }
+    case TraceKind::Rtos:
+        std::snprintf(op, sizeof op, "rtos");
+        if (e.thread == 0) std::snprintf(what, sizeof what, "idle");
+        else if (e.thread == kIsrThread) std::snprintf(what, sizeof what, "isr");
+        else std::snprintf(what, sizeof what, "T%u", static_cast<unsigned>(e.thread));
+        rtos_text(e, value, sizeof value);
+        break;
     case TraceKind::Interrupt: {
         static const char* const phases[] = {"pend", "enter", "exit"};
         std::snprintf(op, sizeof op, "irq");

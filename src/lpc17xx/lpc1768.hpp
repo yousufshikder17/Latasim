@@ -122,6 +122,11 @@ public:
     // virtual time, and nothing here reads a wall clock. SysTick counts these cycles.
     std::uint64_t cycles() const { return cycles_; }
     void advance_cycles(std::uint64_t cycles);
+    // Cycles until the next thing scheduled to happen (a SysTick count to 0, a timer
+    // match, an ADC completion), 0 if nothing is scheduled.
+    std::uint64_t cycles_to_next_event() const;
+    // True while an interrupt handler runs.
+    bool in_handler() const { return in_handler_; }
 
     // Interrupt delivery (docs/phase4/overview.md). The host binds each exception's
     // handler by CMSIS IRQ number (kSysTickIrq, kTimer0Irq, ...); the model never
@@ -182,7 +187,6 @@ private:
     std::uint32_t read_target(std::uint32_t alias, std::uint32_t word_address) const;
     void update_interrupt_lines();
     void advance_peripherals(std::uint64_t step);
-    std::uint64_t cycles_to_next_event() const;
     std::uint64_t adc_conversion_cycles_for(std::uint32_t adcr) const;
     void service_interrupts();
     std::array<bool, kExternalIrqCount + 1> pending_snapshot() const;
