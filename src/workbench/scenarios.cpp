@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <cstring>
 #include <string>
+#include <vector>
 
 #include "firmware/blinky_ulp_host.hpp"
 #include "lpc17xx/nvic.hpp"
@@ -14,7 +15,9 @@
 #include "workloads.h"
 
 #ifdef LATASIM_USER_FIRMWARE_NAME
-extern "C" int latasim_user_main(void);  // the external firmware's main()
+// The external firmware's main() and its interrupt handlers (latasim_add_host_firmware).
+extern "C" int latasim_user_main(void);
+std::vector<int> latasim_user_main_bind_handlers(latasim::lpc17xx::Lpc1768& mcu);
 #endif
 
 namespace latasim::workbench {
@@ -209,6 +212,13 @@ std::vector<Scenario> make() {
     external.name = "External: " LATASIM_USER_FIRMWARE_NAME;
     external.description = "Host-compiled external firmware from " LATASIM_USER_FIRMWARE_DIR ", its main() run bare metal.";
     external.bare_main = [] { latasim_user_main(); };
+    static std::vector<int> external_handlers;
+    external.start = [](Session& s) { external_handlers = latasim_user_main_bind_handlers(s.board().mcu()); };
+    external.status = [](const Session&) {
+        std::string names;
+        for (const int irq : external_handlers) names += (names.empty() ? "" : ", ") + lpc17xx::irq_name(irq);
+        return "Interrupt handlers bound: " + (names.empty() ? std::string("none") : names);
+    };
     external.check_after = 100 * kMs;
     external.check = [](const Session&) { return expect(true, "running without a fault"); };
     all.push_back(external);

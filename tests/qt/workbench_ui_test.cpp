@@ -48,6 +48,26 @@ private Q_SLOTS:
         QVERIFY(w.findChild<QLabel*>("time")->text().startsWith("t = 0 cycles"));
     }
 
+    // Every scenario the build has, external firmware included, can be selected and
+    // run in the window, and its display and LEDs are what its session shows.
+    void every_scenario_runs_in_the_window() {
+        ui::MainWindow w;
+        for (int i = 0; i < static_cast<int>(workbench::scenarios().size()); ++i) {
+            w.select_scenario(i);
+            w.run_for(30 * kMs);
+            QVERIFY2(!w.session()->faulted(), w.session()->fault().c_str());
+            QCOMPARE(w.session()->now(), 30 * kMs);
+            const QImage& img = w.glcd_view()->image();
+            for (unsigned y = 0; y < 240; y += 13)
+                for (unsigned x = 0; x < 320; x += 17)
+                    QCOMPARE(reinterpret_cast<const std::uint16_t*>(img.constScanLine(static_cast<int>(y)))[x],
+                             w.session()->board().glcd().pixel(x, y));
+            for (int led = 0; led < 8; ++led)
+                QCOMPARE(w.findChild<ui::LedWidget*>(QString("led%1").arg(led))->state(),
+                         static_cast<int>(w.session()->board().led(static_cast<unsigned>(led))));
+        }
+    }
+
     void leds_follow_the_board() {
         ui::MainWindow w;
         w.select_scenario(index_of("Blinky_ULp"));

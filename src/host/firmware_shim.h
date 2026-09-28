@@ -13,6 +13,9 @@
  * - fputc is renamed LATASIM_FIRMWARE_FPUTC, out of the C library's way. Firmware that retargets printf
  *   to ITM by defining fputc keeps its definition, unused: printf writes to the
  *   host process's standard output. ITM is not modelled.
+ * - The CMSIS interrupt handlers are renamed per firmware (below).
+ * - Keil board-support headers (Board_*.h) of the board drivers the firmware uses
+ *   are seen through wrappers that give them C linkage (latasim_add_host_firmware).
  */
 #ifndef LATASIM_FIRMWARE_SHIM_H
 #define LATASIM_FIRMWARE_SHIM_H
@@ -31,5 +34,30 @@
 extern "C" int LATASIM_FIRMWARE_MAIN(void);
 #define main LATASIM_FIRMWARE_MAIN
 #define fputc LATASIM_FIRMWARE_FPUTC
+
+/* The CMSIS interrupt handlers of the exceptions Latasim models are renamed
+ * <LATASIM_FIRMWARE_MAIN>_<name>, with C linkage, so they cannot collide with
+ * another firmware's (a built-in scenario's SysTick_Handler). The table that
+ * latasim_add_host_firmware generates binds the ones the firmware defines. */
+#define LATASIM_ISR_NAME2(entry, name) entry##_##name
+#define LATASIM_ISR_NAME(entry, name) LATASIM_ISR_NAME2(entry, name)
+#define SysTick_Handler LATASIM_ISR_NAME(LATASIM_FIRMWARE_MAIN, SysTick_Handler)
+#define TIMER0_IRQHandler LATASIM_ISR_NAME(LATASIM_FIRMWARE_MAIN, TIMER0_IRQHandler)
+#define TIMER1_IRQHandler LATASIM_ISR_NAME(LATASIM_FIRMWARE_MAIN, TIMER1_IRQHandler)
+#define TIMER2_IRQHandler LATASIM_ISR_NAME(LATASIM_FIRMWARE_MAIN, TIMER2_IRQHandler)
+#define TIMER3_IRQHandler LATASIM_ISR_NAME(LATASIM_FIRMWARE_MAIN, TIMER3_IRQHandler)
+#define EINT0_IRQHandler LATASIM_ISR_NAME(LATASIM_FIRMWARE_MAIN, EINT0_IRQHandler)
+#define ADC_IRQHandler LATASIM_ISR_NAME(LATASIM_FIRMWARE_MAIN, ADC_IRQHandler)
+#define USB_IRQHandler LATASIM_ISR_NAME(LATASIM_FIRMWARE_MAIN, USB_IRQHandler)
+extern "C" {
+void SysTick_Handler(void);
+void TIMER0_IRQHandler(void);
+void TIMER1_IRQHandler(void);
+void TIMER2_IRQHandler(void);
+void TIMER3_IRQHandler(void);
+void EINT0_IRQHandler(void);
+void ADC_IRQHandler(void);
+void USB_IRQHandler(void);
+}
 
 #endif /* LATASIM_FIRMWARE_SHIM_H */

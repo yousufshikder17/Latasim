@@ -1,5 +1,6 @@
 # CMake output
 build/
+build-*/
 
 # Generated reference firmware: copies of the Keil pack / the source firmware projects plus their
 # µVision build output (AXF, objects, listings, logs, GUI state). Recreate with scripts/.
