@@ -75,6 +75,11 @@ public:
     Gpio& gpio() { return gpio_; }
     const Gpio& gpio() const { return gpio_; }
 
+    // For observers (tests, assertions): the value a 32-bit load would return, with
+    // no side effects and no trace event. Reading STCTRL this way leaves COUNTFLAG
+    // set. Faults like a load.
+    std::uint32_t peek32(std::uint32_t address) const;
+
     // Every successful load and store above is traced, with the address and width
     // the firmware used; a faulting access records nothing. A bit-band alias access
     // is one event at the alias address.

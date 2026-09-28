@@ -104,6 +104,12 @@ void Lpc1768::write(std::uint32_t address, unsigned size, std::uint32_t value) {
     if (on_store_) on_store_();
 }
 
+std::uint32_t Lpc1768::peek32(std::uint32_t address) const {
+    if (address == kSysTickBase)  // STCTRL: the one read with a side effect
+        return systick_.ctrl() | (systick_.countflag() ? kSysTickCountflag : 0u);
+    return load(address, 4);
+}
+
 std::uint32_t Lpc1768::load(std::uint32_t address, unsigned size) const {
     if (is_alias(address)) {
         // Bit-band aliases are word accesses only here; narrow alias access is not modeled.
