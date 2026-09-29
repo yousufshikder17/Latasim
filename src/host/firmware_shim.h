@@ -4,6 +4,10 @@
  *
  * - LATASIM_HOST is defined, for the few source adaptations a host build needs
  *   (literal register addresses: LATASIM_REG32, LATASIM_REG32_PTR).
+ * - Each source is compiled inside the firmware's own namespace,
+ *   LATASIM_FIRMWARE_NAMESPACE (a generated wrapper includes it there), so two
+ *   firmware in one executable can both define GLCD_Init or LED_Init. Only the
+ *   functions below have C linkage and are shared by name.
  * - main() is renamed LATASIM_FIRMWARE_MAIN (a compile definition, with C linkage):
  *   the workbench runs it as a bare-metal scenario's main (workbench/session.hpp).
  * - __NOP() consumes LATASIM_NOP_CYCLES core cycles of virtual time: a busy-wait
@@ -20,7 +24,16 @@
 #ifndef LATASIM_FIRMWARE_SHIM_H
 #define LATASIM_FIRMWARE_SHIM_H
 
+/* The C library headers firmware commonly uses, included here at global scope so
+ * that a firmware's own #include of them, inside its namespace, adds nothing. */
+#include <ctype.h>
+#include <math.h>
+#include <stdarg.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include <cstdio>
 
@@ -31,7 +44,6 @@
 
 #include "LPC17xx.h"
 
-extern "C" int LATASIM_FIRMWARE_MAIN(void);
 #define main LATASIM_FIRMWARE_MAIN
 #define fputc LATASIM_FIRMWARE_FPUTC
 
@@ -49,7 +61,10 @@ extern "C" int LATASIM_FIRMWARE_MAIN(void);
 #define EINT0_IRQHandler LATASIM_ISR_NAME(LATASIM_FIRMWARE_MAIN, EINT0_IRQHandler)
 #define ADC_IRQHandler LATASIM_ISR_NAME(LATASIM_FIRMWARE_MAIN, ADC_IRQHandler)
 #define USB_IRQHandler LATASIM_ISR_NAME(LATASIM_FIRMWARE_MAIN, USB_IRQHandler)
+/* Declared with C linkage in the firmware's namespace, where its definitions are. */
+namespace LATASIM_FIRMWARE_NAMESPACE {
 extern "C" {
+int main(void);
 void SysTick_Handler(void);
 void TIMER0_IRQHandler(void);
 void TIMER1_IRQHandler(void);
@@ -58,6 +73,7 @@ void TIMER3_IRQHandler(void);
 void EINT0_IRQHandler(void);
 void ADC_IRQHandler(void);
 void USB_IRQHandler(void);
+}
 }
 
 #endif /* LATASIM_FIRMWARE_SHIM_H */

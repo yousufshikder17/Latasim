@@ -14,16 +14,26 @@
 #include <vector>
 
 extern "C" int latasim_sample_main(void);
+namespace latasim_sample_main_firmware {  // each firmware's globals are in its namespace
 extern volatile unsigned long sample_passes;
+}
+using latasim_sample_main_firmware::sample_passes;
 std::vector<int> latasim_sample_main_bind_handlers(latasim::lpc17xx::Lpc1768& mcu);
 
 extern "C" int latasim_irq_sample_main(void);
+namespace latasim_irq_sample_main_firmware {
 extern volatile unsigned long irq_sample_ticks;
 extern volatile unsigned long irq_sample_matches;
+}
+using latasim_irq_sample_main_firmware::irq_sample_matches;
+using latasim_irq_sample_main_firmware::irq_sample_ticks;
 std::vector<int> latasim_irq_sample_main_bind_handlers(latasim::lpc17xx::Lpc1768& mcu);
 
 extern "C" int latasim_adc_sample_main(void);
+namespace latasim_adc_sample_main_firmware {
 extern volatile long adc_sample_last;
+}
+using latasim_adc_sample_main_firmware::adc_sample_last;
 std::vector<int> latasim_adc_sample_main_bind_handlers(latasim::lpc17xx::Lpc1768& mcu);
 
 extern "C" void SysTick_Handler(void);  // Keil's Blinky_ULp IRQ.c, a built-in scenario's

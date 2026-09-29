@@ -1,9 +1,10 @@
 // The workbench's built-in scenarios: Keil's Blinky_ULp, the representative RTOS
 // workloads (firmware/rtos/workloads.h), the USB speaker and the media center; and
-// external firmware when the build has one (LATASIM_USER_FIRMWARE_DIR,
+// the external firmware the build has, if any (LATASIM_USER_FIRMWARE_DIR,
 // docs/external-firmware.md).
 #include <cstdio>
 #include <cstring>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -14,10 +15,14 @@
 #include "workbench/session.hpp"
 #include "workloads.h"
 
-#ifdef LATASIM_USER_FIRMWARE_NAME
-// The external firmware's main() and its interrupt handlers (latasim_add_host_firmware).
-extern "C" int latasim_user_main(void);
-std::vector<int> latasim_user_main_bind_handlers(latasim::lpc17xx::Lpc1768& mcu);
+#ifdef LATASIM_HAVE_EXTERNAL_FIRMWARE
+// Each external firmware's main() and interrupt-handler binder (latasim_add_host_firmware),
+// from the list the build generates.
+#define LATASIM_EXTERNAL_FIRMWARE(entry, name, folder) \
+    extern "C" int entry(void);                        \
+    std::vector<int> entry##_bind_handlers(latasim::lpc17xx::Lpc1768& mcu);
+#include "external_scenarios.inc"
+#undef LATASIM_EXTERNAL_FIRMWARE
 #endif
 
 namespace latasim::workbench {
@@ -71,6 +76,25 @@ void bind_usb_speaker(Session& s) {
     auto& mcu = s.board().mcu();
     mcu.bind_handler(lpc17xx::kUsbIrq, USB_IRQHandler);
     mcu.bind_handler(lpc17xx::kTimer0Irq, usb_speaker_timer_irq);
+}
+
+// An external firmware's scenario: its main() bare metal, its handlers bound.
+// Its statics are not reset between sessions: Latasim cannot know them.
+Scenario external(const char* name, const char* folder, int (*main)(), std::vector<int> (*bind)(lpc17xx::Lpc1768&)) {
+    Scenario s;
+    s.name = std::string("External: ") + name;
+    s.description = std::string("Host-compiled external firmware from ") + folder + ", its main() run bare metal.";
+    s.bare_main = [main] { main(); };
+    auto bound = std::make_shared<std::vector<int>>();
+    s.start = [bind, bound](Session& session) { *bound = bind(session.board().mcu()); };
+    s.status = [bound](const Session&) {
+        std::string names;
+        for (const int irq : *bound) names += (names.empty() ? "" : ", ") + lpc17xx::irq_name(irq);
+        return "Interrupt handlers bound: " + (names.empty() ? std::string("none") : names);
+    };
+    s.check_after = 100 * kMs;
+    s.check = [](const Session&) { return expect(true, "running without a fault"); };
+    return s;
 }
 
 std::vector<Scenario> make() {
@@ -206,22 +230,10 @@ std::vector<Scenario> make() {
     };
     all.push_back(mediacenter);
 
-#ifdef LATASIM_USER_FIRMWARE_NAME
-    // Its statics are not reset between sessions: Latasim cannot know them.
-    Scenario external;
-    external.name = "External: " LATASIM_USER_FIRMWARE_NAME;
-    external.description = "Host-compiled external firmware from " LATASIM_USER_FIRMWARE_DIR ", its main() run bare metal.";
-    external.bare_main = [] { latasim_user_main(); };
-    static std::vector<int> external_handlers;
-    external.start = [](Session& s) { external_handlers = latasim_user_main_bind_handlers(s.board().mcu()); };
-    external.status = [](const Session&) {
-        std::string names;
-        for (const int irq : external_handlers) names += (names.empty() ? "" : ", ") + lpc17xx::irq_name(irq);
-        return "Interrupt handlers bound: " + (names.empty() ? std::string("none") : names);
-    };
-    external.check_after = 100 * kMs;
-    external.check = [](const Session&) { return expect(true, "running without a fault"); };
-    all.push_back(external);
+#ifdef LATASIM_HAVE_EXTERNAL_FIRMWARE
+#define LATASIM_EXTERNAL_FIRMWARE(entry, name, folder) all.push_back(external(name, folder, entry, entry##_bind_handlers));
+#include "external_scenarios.inc"
+#undef LATASIM_EXTERNAL_FIRMWARE
 #endif
     return all;
 }
