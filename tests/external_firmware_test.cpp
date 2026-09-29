@@ -63,9 +63,14 @@ std::vector<TraceEvent> events_of(const Session& s, TraceKind kind) {
 }  // namespace
 
 TEST(ExternalFirmware, SampleDrawsOverSsp1AndBitBandsInVirtualTime) {
+    // The sample sends 62 SSP1 frames (seven register writes of two 3-byte words,
+    // the GRAM index word, the data start byte, eight 2-byte pixels), each 8 bits at
+    // PCLK / (CPSDVSR 2 * (SCR 1 + 1)) with PCLK = CCLK / 4: 128 cycles a frame.
+    constexpr std::uint64_t kDrawn = 62 * 128;  // 7,936
     Session s(bare([] { latasim_sample_main(); }));
     ASSERT_FALSE(s.faulted()) << s.fault();
-    EXPECT_EQ(s.now(), 0u) << "set-up before the first delay takes no time";
+    EXPECT_EQ(s.now(), 0u);
+    s.run_until(kDrawn);
     const auto& glcd = s.board().glcd();
     EXPECT_EQ(glcd.pixel(8, 16), 0xF800u);
     EXPECT_EQ(glcd.pixel(11, 17), 0xF800u);
@@ -73,30 +78,34 @@ TEST(ExternalFirmware, SampleDrawsOverSsp1AndBitBandsInVirtualTime) {
     EXPECT_EQ(glcd.pixel(8, 18), 0u);
     EXPECT_EQ(s.board().led(0), LedState::Off);
 
-    // delay(1000) is 1000 __NOP()s of 10 cycles: the stores after it land exactly.
-    s.run_until(9'999);
+    // Then delay(1000) is 1000 __NOP()s of 10 cycles: the stores after it land exactly.
+    s.run_until(kDrawn + 9'999);
     EXPECT_EQ(s.board().led(0), LedState::Off);
-    s.run_until(10'000);
+    s.run_until(kDrawn + 10'000);
     EXPECT_EQ(s.board().led(0), LedState::On) << "computed bit-band alias through a pointer";
-    s.run_until(19'999);
+    s.run_until(kDrawn + 19'999);
     EXPECT_EQ(s.board().led(0), LedState::On);
-    s.run_until(20'000);
+    s.run_until(kDrawn + 20'000);
     EXPECT_EQ(s.board().led(0), LedState::Off) << "literal bit-band alias";
 
     std::vector<std::uint64_t> alias_writes;
     for (const auto& e : events_of(s, TraceKind::Write))
         if (e.address == 0x233806F0) alias_writes.push_back(e.cycles);
-    EXPECT_EQ(alias_writes, (std::vector<std::uint64_t>{10'000, 20'000}));
+    EXPECT_EQ(alias_writes, (std::vector<std::uint64_t>{kDrawn + 10'000, kDrawn + 20'000}));
     const auto leds = events_of(s, TraceKind::Led);
     ASSERT_GE(leds.size(), 3u);  // driven off, on, off
-    EXPECT_EQ(leds[1].cycles, 10'000u);
-    EXPECT_EQ(leds[2].cycles, 20'000u);
+    EXPECT_EQ(leds[1].cycles, kDrawn + 10'000);
+    EXPECT_EQ(leds[2].cycles, kDrawn + 20'000);
+    std::uint64_t last_frame = 0;
+    for (const auto& e : events_of(s, TraceKind::Write))
+        if (e.address == 0x40030008) last_frame = e.cycles;
+    EXPECT_EQ(last_frame, kDrawn - 128) << "each frame is sent once the one before it is on the wire";
 
     // The idle loop consumes time, so running on neither hangs nor faults.
     const unsigned long passes = sample_passes;
     s.run_for(100 * latasim::lpc17xx::kCyclesPerMillisecond);
     EXPECT_FALSE(s.faulted()) << s.fault();
-    EXPECT_EQ(s.now(), 10'020'000u);
+    EXPECT_EQ(s.now(), kDrawn + 10'020'000);
     EXPECT_GT(sample_passes, passes);
 }
 

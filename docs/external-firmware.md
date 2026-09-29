@@ -141,7 +141,11 @@ ITM is not modelled.
 ## Timing
 
 - **`__NOP()` takes `LATASIM_FIRMWARE_NOP_CYCLES` core cycles.** The default, 10, is what the LPC1768 simulator measured for one pass of a `volatile` counter loop around `__NOP()` (docs/phase0/findings.md). That makes such a delay loop take its target time. A different loop shape or compiler gives a different cost; the option is the calibration.
-- **Other host code takes no virtual time.** That includes busy loops without `__NOP()`, SSP transfers and interrupt handlers. A polling loop needs a modeled cost (see Polling main loops).
+- **Each SSP1 frame takes its time on the wire:** 8 bits at PCLK_SSP1 / (CPSDVSR × (SCR + 1)), with PCLK_SSP1 from PCLKSEL0.
+  - At the MCB1700 GLCD drivers' 12.5 MHz that is 64 core cycles a byte, so clearing the screen takes about 100 ms, as on the board.
+  - The frame completes at once in the model, and its time is charged to the firmware's `main()`, as if it had polled `SR` until the frame was done.
+  - RTOS threads are not charged.
+- **Other host code takes no virtual time.** That includes busy loops without `__NOP()` and interrupt handlers. A polling loop needs a modeled cost (see Polling main loops).
 
 ## SSP1
 
@@ -150,8 +154,8 @@ ITM is not modelled.
 - **DR write:** sends one 8-bit frame at once to the MCB1700 GLCD, which is wired to SSP1's bus.
 - **The reply** goes to an 8-frame receive FIFO, which a DR read empties.
 - **SR:** reads TFE = TNF = 1 and BSY = 0, with RNE and RFF following the FIFO.
-- **Not modelled** (the session stops with a message): frames other than 8-bit SPI, slave and loopback modes, DR writes while disabled, receive overrun, the IMSC/RIS/MIS/ICR/DMACR registers, and SSP0.
-- **No virtual time:** the bit rate is stored, not applied.
+- **Not modelled** (the session stops with a message): frames other than 8-bit SPI, slave and loopback modes, DR writes while disabled, a clock prescale below 2, receive overrun, the IMSC/RIS/MIS/ICR/DMACR registers, and SSP0.
+- **Timing:** each frame's time on the wire is charged to the sending firmware (see Timing).
 - **Chip select** is GPIO P0.6, as the board's GLCD drivers drive it.
 
 ## What cannot be loaded

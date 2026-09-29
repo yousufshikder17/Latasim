@@ -78,6 +78,9 @@ void mmio_write(std::uint32_t address, unsigned size, std::uint32_t value) {
         fail("register write", e.what());
     }
     after_store();
+    // Time the firmware would spend waiting on the peripheral (an SSP frame on the
+    // wire), for a bare-metal main() (host/binding.hpp); RTOS threads are not charged.
+    if (const std::uint64_t stall = mcu.take_stall_cycles()) consume(stall);
 }
 
 }  // namespace latasim::host

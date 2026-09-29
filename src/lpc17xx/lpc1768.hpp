@@ -10,6 +10,7 @@
 #include <functional>
 #include <stdexcept>
 #include <string>
+#include <utility>
 
 #include "lpc17xx/adc.hpp"
 #include "lpc17xx/eint.hpp"
@@ -198,6 +199,12 @@ public:
     const Ssp& ssp1() const { return ssp1_; }
     void attach_ssp1(Ssp::Peer peer) { ssp1_.attach(std::move(peer)); }
 
+    // Core cycles the code that made the stores since the last call would have
+    // spent waiting for a peripheral: each SSP1 frame's time on the wire, at
+    // PCLK_SSP1 (PCLKSEL0[21:20]). The model completes such transfers at once and
+    // never advances time for them; host firmware is charged these cycles.
+    std::uint64_t take_stall_cycles() { return std::exchange(stall_cycles_, std::uint64_t{0}); }
+
 private:
     struct GpioTarget {
         unsigned port;
@@ -234,6 +241,7 @@ private:
     UsbDevice usb_;
     usb::HostPort* usb_host_ = nullptr;
     Ssp ssp1_;
+    std::uint64_t stall_cycles_ = 0;
     std::array<std::function<void()>, kExternalIrqCount + 1> handlers_;  // [irq + 1]
     std::function<void()> thread_mode_;
     bool in_handler_ = false;

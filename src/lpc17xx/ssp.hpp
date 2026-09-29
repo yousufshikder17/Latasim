@@ -16,9 +16,10 @@
 // Not modelled (Lpc1768 raises NotModelled): frames other than 8-bit SPI (CR0 DSS,
 // FRF), slave mode, loopback, DR writes while disabled (they would wait in the
 // transmit FIFO), receive overrun (the manual leaves open which frame is kept),
-// the interrupt and DMA registers (IMSC, RIS, MIS, ICR, DMACR), and SSP0. Frames
-// take no virtual time: the bit rate (CPSR, CR0 SCR, PCLKSEL0) is stored, not
-// applied.
+// the interrupt and DMA registers (IMSC, RIS, MIS, ICR, DMACR), a clock prescale
+// below 2 (18.6.5), and SSP0. A frame completes at once in the model; the time it
+// would take on the wire (frame_pclk_cycles) is reported to the code that sent it
+// as stall time (Lpc1768::take_stall_cycles), which host firmware is charged.
 #include <cstdint>
 #include <deque>
 #include <functional>
@@ -51,6 +52,12 @@ public:
     // Why a DR write cannot be modelled in the current configuration, or nullptr.
     const char* cannot_send() const;
     void write(std::uint32_t offset, std::uint32_t value);  // not SR (read-only)
+
+    // One frame's time on the wire, in SSP_PCLK cycles: DSS + 1 bits at
+    // SSP_PCLK / (CPSDVSR * (SCR + 1)) (UM10360 18.6.1, 18.6.5).
+    std::uint64_t frame_pclk_cycles() const {
+        return ((cr0_ & 0xFu) + 1) * std::uint64_t{cpsr_} * (((cr0_ >> 8) & 0xFFu) + 1);
+    }
 
 private:
     std::uint32_t cr0_ = 0, cr1_ = 0, cpsr_ = 0;

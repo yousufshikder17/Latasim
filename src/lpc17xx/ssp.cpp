@@ -31,6 +31,7 @@ const char* Ssp::cannot_send() const {
     if (cr1_ & kMs) return "SSP slave mode";
     if (cr1_ & kLbm) return "SSP loopback mode";
     if ((cr0_ & 0x3Fu) != 0x07u) return "SSP frames other than 8-bit SPI (CR0 DSS, FRF)";
+    if (cpsr_ < 2) return "SSP clock prescale below 2 (CPSR)";
     if (rx_.size() == kSspFifoFrames) return "SSP receive overrun (DR written with the receive FIFO full)";
     return nullptr;
 }

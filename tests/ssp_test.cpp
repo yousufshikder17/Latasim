@@ -144,3 +144,21 @@ TEST(Ssp1, RegisterLevelFirmwareDrivesTheGlcd) {
     for (const auto& e : events) gram += e.kind == TraceKind::Display && e.address == 0x22 && e.value == 6;
     EXPECT_EQ(gram, 1u) << "one six-pixel GRAM burst";
 }
+
+// Each frame costs the sender its time on the wire: DSS + 1 bits at
+// PCLK_SSP1 / (CPSDVSR * (SCR + 1)).
+TEST(Ssp1, FramesReportTheirTimeOnTheWireAsStall) {
+    Lpc1768 mcu;
+    configure(mcu);  // 8 bits, CPSDVSR 2, SCR 1: 32 PCLK cycles a frame
+    EXPECT_EQ(mcu.take_stall_cycles(), 0u);
+    mcu.write32(kDr, 0x12);
+    EXPECT_EQ(mcu.take_stall_cycles(), 128u) << "PCLK_SSP1 = CCLK / 4 at reset";
+    EXPECT_EQ(mcu.take_stall_cycles(), 0u) << "taken once";
+    mcu.write32(0x400FC1A8, 2u << 20);  // PCLKSEL0: PCLK_SSP1 = CCLK / 2
+    mcu.write32(kDr, 0x12);
+    mcu.write32(kDr, 0x34);
+    EXPECT_EQ(mcu.take_stall_cycles(), 128u) << "two frames at 64 cycles";
+    EXPECT_EQ(mcu.peek32(0x40030000), 0x01C7u);
+    mcu.write32(kCpsr, 0);
+    EXPECT_THROW(mcu.write32(kDr, 0x56), NotModelled) << "CPSDVSR must be at least 2";
+}

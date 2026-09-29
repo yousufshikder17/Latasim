@@ -423,8 +423,11 @@ void Lpc1768::store(std::uint32_t address, unsigned size, std::uint32_t value) {
     if (is_ssp1(address)) {
         const std::uint32_t reg = ssp_offset(address, size);
         if (reg == static_cast<std::uint32_t>(SspReg::Sr)) throw BusFault(address);  // read-only
-        if (reg == static_cast<std::uint32_t>(SspReg::Dr))
+        if (reg == static_cast<std::uint32_t>(SspReg::Dr)) {
             if (const char* why = ssp1_.cannot_send()) throw NotModelled(address, why);
+            static constexpr std::uint32_t kDivider[] = {4, 1, 2, 8};  // CCLK / PCLK
+            stall_cycles_ += ssp1_.frame_pclk_cycles() * kDivider[(pclksel_[0] >> 20) & 3u];
+        }
         return ssp1_.write(reg, value);
     }
     const GpioTarget t = decode_gpio(address, size);
