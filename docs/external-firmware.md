@@ -1,24 +1,24 @@
 # External host-compiled firmware
 
-An existing LPC1768 firmware project can be compiled into the workbench and run as a scenario, from where it lives. Its sources are never modified and nothing from it is copied into this repository. A file that needs host adaptations is compiled from an adapted copy in the build tree (see Source adaptations).
+Existing LPC1768 firmware projects can be compiled into the workbench and run as scenarios, from where they live, several in one executable. Its sources are never modified and nothing from it is copied into this repository. A file that needs host adaptations is compiled from an adapted copy in the build tree (see Source adaptations).
 
 ## Building
 
 ```
 cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH=C:/Qt/6.8.3/msvc2022_64 ^
-      -DLATASIM_USER_FIRMWARE_DIR="C:/path/to/project"
+      -DLATASIM_USER_FIRMWARE_DIR="C:/path/to/project;C:/path/to/other"
 cmake --build build
 build\latasim-workbench.exe
 ```
 
-The scenario list then ends with **External: *folder name***.
+The scenario list then ends with one **External: *folder name*** per folder.
 
 | Option | Default | Meaning |
 |---|---|---|
-| `LATASIM_USER_FIRMWARE_DIR` | empty (no external firmware) | The project folder. |
-| `LATASIM_USER_FIRMWARE_SOURCES` | the folder's top-level `*.c` | Its sources, relative to the folder, `;`-separated. Needed when the top level holds more than one program or the sources are in subfolders. |
-| `LATASIM_USER_FIRMWARE_ADAPTER` | `local/adapters/<folder name>.cmake` if it exists | A CMake script of source adaptations (see below). Relative paths are from this repository. |
-| `LATASIM_USER_FIRMWARE_BOARD_DRIVERS` | empty | Keil MCB1700 board drivers the firmware uses: `ADC`, `LED`, `Joystick`, `Buttons` (see Keil board drivers). An adapter may set it. |
+| `LATASIM_USER_FIRMWARE_DIR` | empty (no external firmware) | The project folders, `;`-separated. Folder names must differ. |
+| `LATASIM_USER_FIRMWARE_SOURCES` | each folder's top-level `*.c` | With a single folder: its sources, relative to it, `;`-separated. Needed when the top level holds more than one program or the sources are in subfolders. |
+| `LATASIM_USER_FIRMWARE_ADAPTER` | `local/adapters/<folder name>.cmake` if it exists | With a single folder: a CMake script of source adaptations (see below). Relative paths are from this repository. With several folders, each uses its own `local/adapters/<folder name>.cmake`. |
+| `LATASIM_USER_FIRMWARE_BOARD_DRIVERS` | empty | Keil MCB1700 board drivers the firmware uses: `ADC`, `LED`, `Joystick`, `Buttons` (see Keil board drivers). A folder's adapter may set it for that folder alone. |
 | `LATASIM_FIRMWARE_NOP_CYCLES` | 10 | Core cycles one `__NOP()` takes (see Timing). |
 
 - **Requirements.** The option needs the workbench session layer, which needs the Keil packs (as the built-in scenarios do); configuring without them is an error. The desktop also needs Qt.
@@ -27,11 +27,14 @@ The scenario list then ends with **External: *folder name***.
   - The `.c` files are compiled as C++, so register expressions bind to the host register proxies ([phase2/host-registers.md](phase2/host-registers.md)). Ordinary driver C is valid C++; C-only constructs (an implicit `void *` conversion, for example) need adapting.
   - The host `LPC17xx.h` comes before any device header on the include path. Headers next to a source file are found as usual.
   - `src/host/firmware_shim.h` is force-included into every source.
+  - **Each firmware has its own C++ namespace.** Every source is compiled through a generated wrapper that includes it inside `<entry>_firmware`. So two firmware in one executable can both define `GLCD_Init`, `LED_Init` or `delay`.
+    - Only `main`, the interrupt handlers and the C functions they call (board drivers, the C library) are shared by name.
+    - The shim includes the common C library headers first, at global scope.
   - The firmware's own warnings are its own: Latasim's warning policy is not applied, and nothing is weakened globally.
 
 ## The firmware's entry point
 
-- **One `int main(void)`.** The shim renames it (`latasim_user_main`, C linkage). The scenario runs it bare metal on a fiber of its own (`Scenario::bare_main`, `workbench/session.hpp`).
+- **One `int main(void)` per folder.** The shim renames it (`latasim_user<N>_main` for the N-th folder, C linkage). The scenario runs it bare metal on a fiber of its own (`Scenario::bare_main`, `workbench/session.hpp`).
 - **Main runs whenever virtual time has caught up with the processor time it has used.** So each register access happens at the right virtual time. Set-up before the first delay happens at t = 0, as soon as the scenario is selected.
 - **Time passes only through `__NOP()` and `latasim_consume_cycles()`.** A loop without either takes no virtual time. A loop that never ends without either (an empty final `while (1) {}`) never gives control back, and the workbench hangs. Give such a loop a `__NOP()` (see below).
 - **Returning from main** leaves the processor idle; time still advances.
@@ -91,7 +94,7 @@ Register accesses from a polling loop can reach millions a second. The trace kee
 
 Most register-level code builds unchanged. What needs changing is marked in the table below. There are two ways to make the changes:
 
-- **Adapter script** (recommended: the firmware stays untouched). A CMake script lists exact text replacements with `latasim_adapt_source(<file> <old> <new>)`. `<file>` is relative to the firmware folder, and `<old>` must occur exactly once in the original. Bracket arguments (`[[...]]`) take C text as it is. At configure time the original is read, the replacements applied, and the result written to `build/user_firmware/` with a `#line` directive, so diagnostics point at the original file and line. That copy is compiled instead. Editing the original re-runs the configuration. A replacement that no longer matches it is a configure error, so the adapter cannot silently drift.
+- **Adapter script** (recommended: the firmware stays untouched). A CMake script lists exact text replacements with `latasim_adapt_source(<file> <old> <new>)`. `<file>` is relative to the firmware folder, and `<old>` must occur exactly once in the original. Bracket arguments (`[[...]]`) take C text as it is. At configure time the original is read, the replacements applied, and the result written to `build/user_firmware/<folder name>/` with a `#line` directive, so diagnostics point at the original file and line. That copy is compiled instead. Editing the original re-runs the configuration. A replacement that no longer matches it is a configure error, so the adapter cannot silently drift.
   - Adapters for private projects belong in `local/adapters/`, which git ignores. `local/adapters/<folder name>.cmake` is picked up without naming it, so each project gets its own file.
   - The adapter only changes text. Product behaviour is the same with or without one.
 - **Guarded edits in the firmware**, if you own it. `#ifdef LATASIM_HOST` (defined by the shim) keeps the target build identical.
@@ -157,4 +160,3 @@ ITM is not modelled.
 - **Assembly sources** and CMSIS core intrinsics other than `__NOP()`.
 - **Peripherals the model does not implement.** They fault at their first access: see `lpc17xx/lpc1768.hpp` for what is mapped.
 - **Text drawn beyond the GLCD's edge.** The GLCD model wraps GRAM addresses beyond the panel back onto it, so a string longer than a line reappears at the line's start. The controller's behaviour there is not specified: treat such output as a firmware overflow.
-- **More than one external folder at a time.** To switch, reconfigure with another `LATASIM_USER_FIRMWARE_DIR`.

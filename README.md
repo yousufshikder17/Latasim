@@ -176,7 +176,7 @@ build\latasim-workbench.exe
 
 What is and isn't supported, the validation results and the open questions: [docs/phase5/overview.md](docs/phase5/overview.md).
 
-**External firmware.** An existing register-level LPC1768 project can be built into the workbench from where it lives, with `-DLATASIM_USER_FIRMWARE_DIR=<folder>`. Its `main()` runs bare metal in virtual time, and its SSP1-driven GLCD, LEDs and bit-band accesses show up in the views and the trace. Build options, the few source adaptations, ITM, timing and SSP1 scope: [docs/external-firmware.md](docs/external-firmware.md).
+**External firmware.** An existing register-level LPC1768 project can be built into the workbench from where it lives, with `-DLATASIM_USER_FIRMWARE_DIR=<folder>` (several folders: one scenario each, in one executable). Its `main()` runs bare metal in virtual time, and its SSP1-driven GLCD, LEDs and bit-band accesses show up in the views and the trace. Build options, the few source adaptations, ITM, timing and SSP1 scope: [docs/external-firmware.md](docs/external-firmware.md).
 
 ## Layout
 
